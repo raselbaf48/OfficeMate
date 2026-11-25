@@ -303,8 +303,9 @@ export function unicodeToBijoy(input: string): string {
     .replace(/য\u09BC/g, 'য়')
     .replace(/ড\u09BC/g, 'ড়')
     .replace(/ঢ\u09BC/g, 'ঢ়')
-    .replace(/র\u200D্য়/g, RA_JOPHOLA_TOKEN)
-    .replace(/র\u200D্য/g, RA_JOPHOLA_TOKEN)
+    .replace(/কর্পোর্যাল/g, `কর্পো${RA_JOPHOLA_TOKEN}াল`)
+    .replace(/র[\u200C\u200D]?্[\u200C\u200D](?:য|য়)/g, RA_JOPHOLA_TOKEN)
+    .replace(/র[\u200C\u200D]্[\u200C\u200D]?(?:য|য়)/g, RA_JOPHOLA_TOKEN)
     .replace(/[\u200C\u200D]/g, '');
 
   let out = '';
@@ -317,7 +318,7 @@ export function unicodeToBijoy(input: string): string {
     if (ch === RA_JOPHOLA_TOKEN) {
       i += 1;
       const kar = text[i];
-      const eSign = out.length > 0 && !/\s$/.test(out) ? '‡' : '†';
+      const eSign = out.length > 0 && !/[\s(\["'“‘\/\-—]$/.test(out) ? '‡' : '†';
       if (kar && PRE_KARS[kar] !== undefined) {
         out += (kar === 'ে' ? eSign : PRE_KARS[kar]) + 'i¨';
         i += 1;
@@ -410,21 +411,26 @@ export function unicodeToBijoy(input: string): string {
         i += 2;
       }
 
-      // Special SutonnyMJ ligatures for `রু`, `রূ`, `গু`, `শু`, `হু`, `ভু`
+      // Special SutonnyMJ ligatures for `রু`, `রূ`, `হু`, `গু`, `শু`, `ভু`
       const kar = text[i];
       if (kar === 'ু' && matchedConjunct === 'র' && !baseCluster.includes('¨')) {
-        out += hasReph ? 'iæ©' : 'iæ';
+        out += hasReph ? 'i\u201C©' : 'i\u201C';
         i += 1;
         continue;
       }
       if (kar === 'ূ' && matchedConjunct === 'র' && !baseCluster.includes('¨')) {
-        out += hasReph ? 'iƒ©' : 'iƒ';
+        out += hasReph ? 'i~©' : 'i~';
+        i += 1;
+        continue;
+      }
+      if (kar === 'ু' && matchedConjunct === 'হ' && !hasReph && !baseCluster.includes('¨')) {
+        out += '\u00FB';
         i += 1;
         continue;
       }
 
       // Reorder vowel kar around baseCluster + reph
-      const eSign = out.length > 0 && !/\s$/.test(out) ? '‡' : '†';
+      const eSign = out.length > 0 && !/[\s(\["'“‘\/\-—]$/.test(out) ? '‡' : '†';
       if (kar && PRE_KARS[kar] !== undefined) {
         const pre = kar === 'ে' ? eSign : PRE_KARS[kar];
         out += pre + baseCluster + (hasReph ? '©' : '');
@@ -440,7 +446,7 @@ export function unicodeToBijoy(input: string): string {
         i += 1;
       } else if (kar && TRAILING_KARS[kar] !== undefined) {
         const post =
-          kar === 'ু' && (matchedConjunct === 'ভ' || matchedConjunct === 'গ' || matchedConjunct === 'শ' || matchedConjunct === 'হ')
+          kar === 'ু' && (matchedConjunct === 'ভ' || matchedConjunct === 'গ' || matchedConjunct === 'শ')
             ? 'z'
             : TRAILING_KARS[kar];
         out += baseCluster + (hasReph ? '©' : '') + post;

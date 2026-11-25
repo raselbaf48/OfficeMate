@@ -159,9 +159,12 @@ export const UploadTemplatePage: React.FC<UploadTemplatePageProps> = ({
       fields,
       pageSettings: {
         size: 'A4',
-        margins: { top: 20, right: 20, bottom: 20, left: 22 },
+        margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
         fontFamily: settings.defaultFont || 'Arial',
-        fontSize: settings.defaultFontSize || 12,
+        fontSize:
+          (settings.defaultFont || 'Arial') === 'SutonnyMJ'
+            ? 14
+            : settings.defaultFontSize || 12,
         lineHeight: 1.45,
         headerText: '',
         footerText: '',

@@ -213,7 +213,7 @@ export function sanitizeDocumentHtml(html: string): string {
 }
 
 const BENGALI_SEGMENT_REGEX =
-  /([\u0980-\u09FF\u0964\u0965][\u0980-\u09FF\u0964\u09650-9/\-,.:;"'() ]*[\u0980-\u09FF\u0964\u0965]|[\u0980-\u09FF\u0964\u0965])/g;
+  /([\u0980-\u09FF\u0964\u0965][\u0980-\u09FF\u0964\u0965\u200C\u200D0-9/\-,.:;"'() ]*[\u0980-\u09FF\u0964\u0965\u200C\u200D]|[\u0980-\u09FF\u0964\u0965])/g;
 
 /**
  * Wraps Bengali Unicode text runs in <span class="om-bn"> so Bangla renders in
@@ -239,6 +239,7 @@ export function decorateMixedScriptHtml(html: string): string {
         if (match.index > lastIndex) {
           frag.appendChild(doc.createTextNode(text.slice(lastIndex, match.index)));
         }
+
         const span = doc.createElement('span');
         span.className = 'om-bn';
         if (useSutonny) {
@@ -248,7 +249,7 @@ export function decorateMixedScriptHtml(html: string): string {
           span.style.fontFamily = '"Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", serif';
           span.textContent = match[0];
         }
-        span.style.fontSize = '14pt';
+
         frag.appendChild(span);
         lastIndex = match.index + match[0].length;
       }
@@ -301,7 +302,7 @@ export function renderTemplateBody(
     if (!raw) {
       unfilledSet.add(key);
       if (options.blankDotted) {
-        return '<span class="om-blank-slot">&nbsp;</span>';
+        return '&nbsp;';
       }
       if (options.highlightUnfilled) {
         return `<span class="om-unfilled" data-missing-key="${escapeHtml(key)}">{{${escapeHtml(key)}}}</span>`;

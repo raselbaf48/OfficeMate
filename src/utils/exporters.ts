@@ -22,7 +22,7 @@ import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
 import { Person, Template } from '../types/models';
-import { unicodeToBijoy } from './bijoyConverter';
+import { isSutonnyMJAvailable, unicodeToBijoy } from './bijoyConverter';
 import { decorateMixedScriptHtml, sanitizeDocumentHtml } from './placeholderEngine';
 
 export function triggerFileDownload(blob: Blob, filename: string): void {
@@ -68,12 +68,112 @@ interface InlineRunStyle {
 
 const BENGALI_CHAR_TEST = /[\u0980-\u09FF\u0964\u0965]/;
 const BENGALI_SPLIT_REGEX =
-  /([\u0980-\u09FF\u0964\u0965][\u0980-\u09FF\u0964\u09650-9/\-,.:;"'() ]*[\u0980-\u09FF\u0964\u0965]|[\u0980-\u09FF\u0964\u0965])/g;
+  /([\u0980-\u09FF\u0964\u0965][\u0980-\u09FF\u0964\u0965\u200C\u200D0-9/\-,.:;"'() ]*[\u0980-\u09FF\u0964\u0965\u200C\u200D]|[\u0980-\u09FF\u0964\u0965])/g;
+
+let cachedMeasureCtx: CanvasRenderingContext2D | null | undefined;
+
+function getCanvasMeasureContext(): CanvasRenderingContext2D | null {
+  if (cachedMeasureCtx !== undefined) return cachedMeasureCtx;
+  if (typeof document === 'undefined') {
+    cachedMeasureCtx = null;
+    return null;
+  }
+  const canvas = document.createElement('canvas');
+  cachedMeasureCtx = canvas.getContext('2d');
+  return cachedMeasureCtx;
+}
+
+function measureTextWidthTwips(
+  text: string,
+  baseFontFamily: string,
+  baseFontSizePt: number,
+  bold = false,
+): number {
+  const cleanText = text.replace(/\u00A0/g, ' ').trim();
+  if (!cleanText) return 0;
+
+  const ctx = getCanvasMeasureContext();
+  const sutonnyInstalled = isSutonnyMJAvailable();
+  const safeBaseFont = baseFontFamily === 'SutonnyMJ' ? 'Arial' : baseFontFamily || 'Arial';
+
+  const measureSegTwips = (str: string, cssFont: string, fallbackCharTwips: number): number => {
+    if (ctx) {
+      ctx.font = `${bold ? 'bold ' : ''}${cssFont}`;
+      const px = ctx.measureText(str).width;
+      if (px > 0) return Math.round(px * 15);
+    }
+    return Math.round(str.length * fallbackCharTwips);
+  };
+
+  if (!BENGALI_CHAR_TEST.test(cleanText)) {
+    return measureSegTwips(cleanText, `${baseFontSizePt}pt "${safeBaseFont}", sans-serif`, 115);
+  }
+
+  let totalTwips = 0;
+  let lastIndex = 0;
+  BENGALI_SPLIT_REGEX.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = BENGALI_SPLIT_REGEX.exec(cleanText)) !== null) {
+    if (match.index > lastIndex) {
+      const enPart = cleanText.slice(lastIndex, match.index);
+      totalTwips += measureSegTwips(enPart, `${baseFontSizePt}pt "${safeBaseFont}", sans-serif`, 115);
+    }
+    const bijoyStr = unicodeToBijoy(match[0]);
+    if (ctx && sutonnyInstalled) {
+      totalTwips += measureSegTwips(bijoyStr, '14pt "SutonnyMJ"', 140);
+    } else {
+      let est = 0;
+      for (const ch of bijoyStr) {
+        est += ch === ' ' ? 70 : /[0-9.,/:;]/.test(ch) ? 105 : 148;
+      }
+      totalTwips += Math.round(est * (bold ? 1.04 : 1));
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < cleanText.length) {
+    totalTwips += measureSegTwips(
+      cleanText.slice(lastIndex),
+      `${baseFontSizePt}pt "${safeBaseFont}", sans-serif`,
+      115,
+    );
+  }
+  return totalTwips;
+}
+
+function splitElementLines(el: HTMLElement): string[] {
+  const lines: string[] = [];
+  let current = '';
+  const walkLines = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      current += (node.textContent ?? '').replace(/\u00A0/g, ' ');
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const childEl = node as HTMLElement;
+    const tag = childEl.tagName.toLowerCase();
+    if (tag === 'br') {
+      lines.push(current.trim());
+      current = '';
+      return;
+    }
+    for (const c of Array.from(childEl.childNodes)) {
+      walkLines(c);
+    }
+    if (tag === 'p' || tag === 'div') {
+      lines.push(current.trim());
+      current = '';
+    }
+  };
+  walkLines(el);
+  if (current.trim()) lines.push(current.trim());
+  return lines.filter(Boolean);
+}
 
 function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun[] {
   const cleanText = text.replace(/\u00A0/g, ' ');
   if (!cleanText) return [];
-  const safeFallbackFont = style.fontFamily === 'SutonnyMJ' ? 'Arial' : style.fontFamily;
+  const safeFallbackFont = style.fontFamily === 'SutonnyMJ' ? 'Arial' : style.fontFamily || 'Arial';
+  const englishHalfPt = style.fontFamily === 'SutonnyMJ' ? 24 : style.fontSizeHalfPt;
   if (!BENGALI_CHAR_TEST.test(cleanText)) {
     return [
       new TextRun({
@@ -82,7 +182,7 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
         italics: style.italics,
         underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
         font: safeFallbackFont,
-        size: style.fontSizeHalfPt,
+        size: englishHalfPt,
         color: '000000',
       }),
     ];
@@ -102,7 +202,7 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
           italics: style.italics,
           underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
           font: safeFallbackFont,
-          size: style.fontSizeHalfPt,
+          size: englishHalfPt,
           color: '000000',
         }),
       );
@@ -128,7 +228,7 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
         italics: style.italics,
         underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
         font: safeFallbackFont,
-        size: style.fontSizeHalfPt,
+        size: englishHalfPt,
         color: '000000',
       }),
     );
@@ -168,15 +268,18 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
   }
   if (
     el.classList.contains('om-bn') ||
+    el.classList.contains('om-bn-sm') ||
+    el.classList.contains('om-bn-md') ||
+    el.classList.contains('om-bn-xs') ||
     el.style.fontFamily.toLowerCase().includes('sutonnymj')
   ) {
     nextStyle.fontFamily = 'SutonnyMJ';
     nextStyle.fontSizeHalfPt = 28;
   }
 
-  if (el.classList.contains('om-blank-slot')) {
+  if (el.classList.contains('om-blank-slot') || el.classList.contains('om-line-fill')) {
     const insideLineCell = Boolean(el.closest('.om-line-cell, .om-sig-line'));
-    const insideBlankSlot = Boolean(el.parentElement?.closest('.om-blank-slot'));
+    const insideBlankSlot = Boolean(el.parentElement?.closest('.om-blank-slot, .om-line-fill'));
     if (!insideLineCell && !insideBlankSlot) {
       const cleanText = (el.textContent || '').replace(/\u00A0/g, ' ').trim();
       if (!cleanText) {
@@ -249,18 +352,257 @@ function htmlToDocxChildren(
   const parser = new DOMParser();
   const doc = parser.parseFromString(cleanHtml, 'text/html');
 
-  const fontFamily = template.pageSettings.fontFamily || 'Arial';
-  const fontSizeHalfPt = (template.pageSettings.fontSize || 12) * 2;
+  const fontFamily =
+    template.pageSettings.fontFamily && template.pageSettings.fontFamily !== 'SutonnyMJ'
+      ? template.pageSettings.fontFamily
+      : 'Arial';
+  const fontSizeHalfPt =
+    (template.pageSettings.fontFamily === 'SutonnyMJ'
+      ? 12
+      : template.pageSettings.fontSize || 12) * 2;
   const lineSpacing = Math.round((template.pageSettings.lineHeight || 1.45) * 240);
   const baseStyle: InlineRunStyle = { fontFamily, fontSizeHalfPt };
 
   const blocks: Array<Paragraph | Table> = [];
 
-  const processBlockElement = (el: HTMLElement) => {
-    const tag = el.tagName.toLowerCase();
+  const buildDocxTable = (tableEl: HTMLElement, activeStyle: InlineRunStyle): Table => {
+    const isLayoutTable = tableEl.classList.contains('om-layout-table');
+    const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+    const solidBorder = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
+    const doubleBorder = { style: BorderStyle.DOUBLE, size: 6, color: '000000' };
 
-    if (tag === 'hr' || el.classList.contains('om-page-break')) {
-      blocks.push(new Paragraph({ children: [new PageBreak()] }));
+    const rows: TableRow[] = [];
+    const trEls = Array.from(tableEl.children).flatMap((child) =>
+      child.tagName.toLowerCase() === 'tr'
+        ? [child]
+        : Array.from(child.children).filter((gc) => gc.tagName.toLowerCase() === 'tr'),
+    );
+
+    for (const tr of trEls) {
+      const cellEls = Array.from(tr.children).filter((c) => {
+        const t = c.tagName.toLowerCase();
+        return t === 'td' || t === 'th';
+      });
+      if (cellEls.length === 0) continue;
+
+      const cells = cellEls.map((cellEl) => {
+        const isTh = cellEl.tagName.toLowerCase() === 'th';
+        const htmlCell = cellEl as HTMLElement;
+        const colSpanAttr = Number(htmlCell.getAttribute('colspan') || '1');
+        const rowSpanAttr = Number(htmlCell.getAttribute('rowspan') || '1');
+        const isLineCell =
+          isLayoutTable &&
+          (htmlCell.classList.contains('om-line-cell') ||
+            htmlCell.style.borderBottom.includes('solid'));
+        const isTopCell = isLayoutTable && htmlCell.classList.contains('om-top-cell');
+        const hasRightDouble = htmlCell.style.borderRight.includes('double');
+        const hasRightSolid = !hasRightDouble && htmlCell.style.borderRight.includes('solid');
+
+        const cellBorders = isLayoutTable
+          ? {
+              top: noBorder,
+              bottom: isLineCell ? solidBorder : noBorder,
+              left: noBorder,
+              right: hasRightDouble ? doubleBorder : hasRightSolid ? solidBorder : noBorder,
+            }
+          : { top: solidBorder, bottom: solidBorder, left: solidBorder, right: solidBorder };
+
+        const widthStyle = htmlCell.style.width;
+        const pctMatch = /^(\d+(?:\.\d+)?)%$/.exec(widthStyle);
+        const directSigBlock = Array.from(htmlCell.children).find((c) =>
+          (c as HTMLElement).classList?.contains('om-sig-block'),
+        ) as HTMLElement | undefined;
+        const sigRows = directSigBlock
+          ? Array.from(directSigBlock.querySelectorAll('.om-sig-row'))
+          : [];
+
+        if (sigRows.length > 0 && Array.from(htmlCell.children).length === 1) {
+          const printableWidthMm =
+            210 -
+            (template.pageSettings.margins.left || 20) -
+            (template.pageSettings.margins.right || 20);
+          const cellPct = pctMatch ? Number(pctMatch[1]) : 50;
+          const cellTwips = Math.round(
+            convertMillimetersToTwip(printableWidthMm) * (cellPct / 100),
+          );
+
+          const sigParagraphs = sigRows.map((rowEl) => {
+            const labelText = (rowEl.querySelector('.om-sig-label')?.textContent || '').trim();
+            const valueText = (rowEl.querySelector('.om-sig-line')?.textContent || '')
+              .replace(/\u00A0/g, ' ')
+              .trim();
+
+            const labelTwips = Math.round(labelText.length * 105 + 140);
+            const endPos = Math.max(labelTwips + 600, cellTwips - 40);
+            const centerPos = Math.round(labelTwips + (endPos - labelTwips) / 2);
+
+            const rowRuns: TextRun[] = [
+              ...createScriptAwareTextRuns(`${labelText} `, activeStyle),
+              new TextRun({
+                text: '\t',
+                font: activeStyle.fontFamily,
+                size: activeStyle.fontSizeHalfPt,
+                underline: { type: UnderlineType.SINGLE },
+                color: '000000',
+              }),
+            ];
+
+            if (valueText) {
+              rowRuns.push(
+                ...createScriptAwareTextRuns(valueText, {
+                  ...activeStyle,
+                  underline: true,
+                }),
+              );
+            }
+
+            rowRuns.push(
+              new TextRun({
+                text: '\t',
+                font: activeStyle.fontFamily,
+                size: activeStyle.fontSizeHalfPt,
+                underline: { type: UnderlineType.SINGLE },
+                color: '000000',
+              }),
+            );
+
+            return new Paragraph({
+              tabStops: [
+                { type: TabStopType.CENTER, position: centerPos },
+                { type: TabStopType.RIGHT, position: endPos },
+              ],
+              spacing: { after: 60, line: lineSpacing },
+              children: rowRuns,
+            });
+          });
+
+          return new TableCell({
+            width: pctMatch
+              ? { size: Number(pctMatch[1]), type: WidthType.PERCENTAGE }
+              : undefined,
+            borders: cellBorders,
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
+            children: sigParagraphs,
+          });
+        }
+
+        const blockChildren = Array.from(htmlCell.children).filter((c) => {
+          const childTag = c.tagName.toLowerCase();
+          return childTag === 'p' || childTag === 'div' || childTag === 'table';
+        });
+
+        const cellChildren: Array<Paragraph | Table> = [];
+        if (blockChildren.length > 0) {
+          for (const child of blockChildren) {
+            const cTag = child.tagName.toLowerCase();
+            if (cTag === 'table') {
+              cellChildren.push(buildDocxTable(child as HTMLElement, activeStyle));
+            } else {
+              const pHtml = child as HTMLElement;
+              const pRuns = collectTextRuns(pHtml, {
+                ...activeStyle,
+                bold: isTh || undefined,
+              });
+              const marginTopPx = parseFloat(pHtml.style.marginTop || '0') || 0;
+              cellChildren.push(
+                new Paragraph({
+                  alignment: mapAlignment(
+                    pHtml.style.textAlign ||
+                      htmlCell.style.textAlign ||
+                      (isLineCell ? 'center' : undefined),
+                  ),
+                  spacing: {
+                    before: marginTopPx > 0 ? Math.round(marginTopPx * 15) : 0,
+                    after: isLayoutTable ? 10 : 40,
+                    line: lineSpacing,
+                  },
+                  children: pRuns.length > 0 ? pRuns : [new TextRun('')],
+                }),
+              );
+            }
+          }
+        } else {
+          const cellRuns = collectTextRuns(cellEl, {
+            ...activeStyle,
+            bold: isTh || undefined,
+          });
+          cellChildren.push(
+            new Paragraph({
+              alignment: mapAlignment(
+                htmlCell.style.textAlign || (isLineCell ? 'center' : undefined),
+              ),
+              spacing: { after: isLayoutTable ? 10 : 40, line: lineSpacing },
+              children: cellRuns.length > 0 ? cellRuns : [new TextRun('')],
+            }),
+          );
+        }
+
+        if (cellChildren.length === 0) {
+          cellChildren.push(new Paragraph(''));
+        }
+
+        return new TableCell({
+          width: pctMatch
+            ? { size: Number(pctMatch[1]), type: WidthType.PERCENTAGE }
+            : undefined,
+          columnSpan: colSpanAttr > 1 ? colSpanAttr : undefined,
+          rowSpan: rowSpanAttr > 1 ? rowSpanAttr : undefined,
+          verticalAlign: isLayoutTable
+            ? isTopCell
+              ? VerticalAlign.TOP
+              : VerticalAlign.BOTTOM
+            : undefined,
+          borders: cellBorders,
+          margins: isLayoutTable
+            ? { top: isTopCell ? 20 : 70, bottom: 25, left: isLineCell ? 40 : 0, right: isLineCell ? 40 : 60 }
+            : { top: 60, bottom: 60, left: 95, right: 95 },
+          children: cellChildren,
+        });
+      });
+      rows.push(new TableRow({ children: cells }));
+    }
+
+    return new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: isLayoutTable
+        ? {
+            top: noBorder,
+            bottom: noBorder,
+            left: noBorder,
+            right: noBorder,
+            insideHorizontal: noBorder,
+            insideVertical: noBorder,
+          }
+        : undefined,
+      rows: rows.length > 0 ? rows : [new TableRow({ children: [new TableCell({ children: [new Paragraph('')] })] })],
+    });
+  };
+
+  const processBlockElement = (el: HTMLElement, currentStyle: InlineRunStyle = baseStyle) => {
+    const tag = el.tagName.toLowerCase();
+    const activeStyle: InlineRunStyle = { ...currentStyle };
+    if (
+      el.classList.contains('om-bn') ||
+      el.classList.contains('om-bn-sm') ||
+      el.classList.contains('om-bn-md') ||
+      el.classList.contains('om-bn-xs')
+    ) {
+      activeStyle.fontFamily = 'SutonnyMJ';
+      activeStyle.fontSizeHalfPt = 28;
+    }
+
+    if (tag === 'hr') {
+      if (el.classList.contains('om-page-break')) {
+        blocks.push(new Paragraph({ children: [new PageBreak()] }));
+        return;
+      }
+      blocks.push(
+        new Paragraph({
+          border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: '000000' } },
+          spacing: { before: 80, after: 80 },
+          children: [],
+        }),
+      );
       return;
     }
 
@@ -303,11 +645,11 @@ function htmlToDocxChildren(
           const centerPos = Math.round(labelTwips + (endPos - labelTwips) / 2);
 
           const rowRuns: TextRun[] = [
-            ...createScriptAwareTextRuns(`${labelText} `, baseStyle),
+            ...createScriptAwareTextRuns(`${labelText} `, activeStyle),
             new TextRun({
               text: '\t',
-              font: fontFamily,
-              size: fontSizeHalfPt,
+              font: activeStyle.fontFamily,
+              size: activeStyle.fontSizeHalfPt,
               underline: { type: UnderlineType.SINGLE },
               color: '000000',
             }),
@@ -316,7 +658,7 @@ function htmlToDocxChildren(
           if (valueText) {
             rowRuns.push(
               ...createScriptAwareTextRuns(valueText, {
-                ...baseStyle,
+                ...activeStyle,
                 underline: true,
               }),
             );
@@ -325,8 +667,8 @@ function htmlToDocxChildren(
           rowRuns.push(
             new TextRun({
               text: '\t',
-              font: fontFamily,
-              size: fontSizeHalfPt,
+              font: activeStyle.fontFamily,
+              size: activeStyle.fontSizeHalfPt,
               underline: { type: UnderlineType.SINGLE },
               color: '000000',
             }),
@@ -393,188 +735,7 @@ function htmlToDocxChildren(
     }
 
     if (tag === 'table') {
-      const isLayoutTable = el.classList.contains('om-layout-table');
-      const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
-      const solidBorder = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
-
-      const rows: TableRow[] = [];
-      const trEls = Array.from(el.querySelectorAll('tr'));
-      for (const tr of trEls) {
-        const cellEls = Array.from(tr.querySelectorAll('td, th'));
-        if (cellEls.length === 0) continue;
-        const cells = cellEls.map((cellEl) => {
-          const isTh = cellEl.tagName.toLowerCase() === 'th';
-          const htmlCell = cellEl as HTMLElement;
-          const isLineCell =
-            isLayoutTable &&
-            (htmlCell.classList.contains('om-line-cell') ||
-              htmlCell.style.borderBottom.includes('solid'));
-
-          const cellBorders = isLayoutTable
-            ? {
-                top: noBorder,
-                bottom: isLineCell ? solidBorder : noBorder,
-                left: noBorder,
-                right: noBorder,
-              }
-            : { top: solidBorder, bottom: solidBorder, left: solidBorder, right: solidBorder };
-
-          const cellRuns = collectTextRuns(cellEl, {
-            ...baseStyle,
-            bold: isTh || undefined,
-          });
-          const widthStyle = htmlCell.style.width;
-          const pctMatch = /^(\d+(?:\.\d+)?)%$/.exec(widthStyle);
-          const sigRows = Array.from(htmlCell.querySelectorAll('.om-sig-row'));
-
-          if (sigRows.length > 0) {
-            const printableWidthMm =
-              210 -
-              (template.pageSettings.margins.left || 20) -
-              (template.pageSettings.margins.right || 20);
-            const cellPct = pctMatch ? Number(pctMatch[1]) : 50;
-            const cellTwips = Math.round(
-              convertMillimetersToTwip(printableWidthMm) * (cellPct / 100),
-            );
-
-            const sigParagraphs = sigRows.map((rowEl) => {
-              const labelText = (rowEl.querySelector('.om-sig-label')?.textContent || '').trim();
-              const valueText = (rowEl.querySelector('.om-sig-line')?.textContent || '')
-                .replace(/\u00A0/g, ' ')
-                .trim();
-
-              const labelTwips = Math.round(labelText.length * 105 + 140);
-              const endPos = Math.max(labelTwips + 600, cellTwips - 40);
-              const centerPos = Math.round(labelTwips + (endPos - labelTwips) / 2);
-
-              const rowRuns: TextRun[] = [
-                new TextRun({
-                  text: `${labelText} `,
-                  font: fontFamily,
-                  size: fontSizeHalfPt,
-                  color: '000000',
-                }),
-                new TextRun({
-                  text: '\t',
-                  font: fontFamily,
-                  size: fontSizeHalfPt,
-                  underline: { type: UnderlineType.SINGLE },
-                  color: '000000',
-                }),
-              ];
-
-              if (valueText) {
-                rowRuns.push(
-                  new TextRun({
-                    text: valueText,
-                    font: fontFamily,
-                    size: fontSizeHalfPt,
-                    underline: { type: UnderlineType.SINGLE },
-                    color: '000000',
-                  }),
-                );
-              }
-
-              rowRuns.push(
-                new TextRun({
-                  text: '\t',
-                  font: fontFamily,
-                  size: fontSizeHalfPt,
-                  underline: { type: UnderlineType.SINGLE },
-                  color: '000000',
-                }),
-              );
-
-              return new Paragraph({
-                tabStops: [
-                  { type: TabStopType.CENTER, position: centerPos },
-                  { type: TabStopType.RIGHT, position: endPos },
-                ],
-                spacing: { after: 90, line: lineSpacing },
-                children: rowRuns,
-              });
-            });
-
-            return new TableCell({
-              width: pctMatch
-                ? { size: Number(pctMatch[1]), type: WidthType.PERCENTAGE }
-                : undefined,
-              borders: cellBorders,
-              margins: { top: 0, bottom: 0, left: 0, right: 0 },
-              children: sigParagraphs,
-            });
-          }
-
-          const cellBlockParagraphs = Array.from(htmlCell.children).filter((c) => {
-            const childTag = c.tagName.toLowerCase();
-            return childTag === 'p' || childTag === 'div';
-          });
-
-          const cellParagraphs: Paragraph[] =
-            cellBlockParagraphs.length > 0
-              ? cellBlockParagraphs.map((pEl) => {
-                  const pHtml = pEl as HTMLElement;
-                  const pRuns = collectTextRuns(pHtml, {
-                    ...baseStyle,
-                    bold: isTh || undefined,
-                  });
-                  const marginTopPx = parseFloat(pHtml.style.marginTop || '0') || 0;
-                  return new Paragraph({
-                    alignment: mapAlignment(
-                      pHtml.style.textAlign ||
-                        htmlCell.style.textAlign ||
-                        (isLineCell ? 'center' : undefined),
-                    ),
-                    spacing: {
-                      before: marginTopPx > 0 ? Math.round(marginTopPx * 15) : 0,
-                      after: isLayoutTable ? 10 : 40,
-                      line: lineSpacing,
-                    },
-                    children: pRuns.length > 0 ? pRuns : [new TextRun('')],
-                  });
-                })
-              : [
-                  new Paragraph({
-                    alignment: mapAlignment(
-                      htmlCell.style.textAlign || (isLineCell ? 'center' : undefined),
-                    ),
-                    spacing: { after: isLayoutTable ? 10 : 40, line: lineSpacing },
-                    children: cellRuns.length > 0 ? cellRuns : [new TextRun('')],
-                  }),
-                ];
-
-          return new TableCell({
-            width: pctMatch
-              ? { size: Number(pctMatch[1]), type: WidthType.PERCENTAGE }
-              : undefined,
-            verticalAlign: isLayoutTable ? VerticalAlign.BOTTOM : undefined,
-            borders: cellBorders,
-            margins: isLayoutTable
-              ? { top: 70, bottom: 25, left: isLineCell ? 40 : 0, right: isLineCell ? 40 : 60 }
-              : { top: 80, bottom: 80, left: 120, right: 120 },
-            children: cellParagraphs,
-          });
-        });
-        rows.push(new TableRow({ children: cells }));
-      }
-      if (rows.length > 0) {
-        blocks.push(
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            borders: isLayoutTable
-              ? {
-                  top: noBorder,
-                  bottom: noBorder,
-                  left: noBorder,
-                  right: noBorder,
-                  insideHorizontal: noBorder,
-                  insideVertical: noBorder,
-                }
-              : undefined,
-            rows,
-          }),
-        );
-      }
+      blocks.push(buildDocxTable(el, activeStyle));
       return;
     }
 
@@ -591,13 +752,59 @@ function htmlToDocxChildren(
 
       const items = Array.from(el.children).filter((c) => c.tagName.toLowerCase() === 'li');
       for (const li of items) {
-        const runs = collectTextRuns(li, baseStyle);
+        const runs = collectTextRuns(li, activeStyle);
         blocks.push(
           new Paragraph({
             numbering: { reference: refName, level: 0 },
             alignment: mapAlignment((li as HTMLElement).style.textAlign || el.style.textAlign),
             spacing: { after: 60, line: lineSpacing },
             children: runs.length > 0 ? runs : [new TextRun('')],
+          }),
+        );
+      }
+      return;
+    }
+
+    if (el.classList.contains('om-st-right-wrap') || el.classList.contains('om-st-right-block')) {
+      const blockEl = (el.classList.contains('om-st-right-block')
+        ? el
+        : el.querySelector('.om-st-right-block')) as HTMLElement | null;
+      const targetEl = blockEl || el;
+      const printableWidthMm =
+        210 -
+        (template.pageSettings.margins.left || 20) -
+        (template.pageSettings.margins.right || 20);
+      const printableTwips = convertMillimetersToTwip(printableWidthMm);
+
+      const childBlocks = Array.from(targetEl.children).filter((c) => {
+        const cTag = c.tagName.toLowerCase();
+        return cTag === 'p' || cTag === 'div';
+      }) as HTMLElement[];
+      const paraEls = childBlocks.length > 0 ? childBlocks : [targetEl];
+
+      const baseFontPt = template.pageSettings.fontSize || 14;
+      const maxLineTwips = paraEls.reduce((maxW, pEl) => {
+        const hasBold = Boolean(pEl.querySelector('strong, b'));
+        for (const line of splitElementLines(pEl)) {
+          maxW = Math.max(maxW, measureTextWidthTwips(line, fontFamily, baseFontPt, hasBold));
+        }
+        return maxW;
+      }, 0);
+      const spacerTwips = Math.max(0, printableTwips - (maxLineTwips > 0 ? maxLineTwips + 40 : 2800));
+
+      for (const pEl of paraEls) {
+        const pRuns = collectTextRuns(pEl, activeStyle);
+        const marginTopPx = parseFloat(pEl.style.marginTop || '0') || 0;
+        blocks.push(
+          new Paragraph({
+            alignment: AlignmentType.LEFT,
+            indent: spacerTwips > 0 ? { left: spacerTwips } : undefined,
+            spacing: {
+              before: marginTopPx > 0 ? Math.round(marginTopPx * 15) : 0,
+              after: 20,
+              line: lineSpacing,
+            },
+            children: pRuns.length > 0 ? pRuns : [new TextRun('')],
           }),
         );
       }
@@ -611,14 +818,12 @@ function htmlToDocxChildren(
       const row1Right = (row1?.children[1]?.textContent || '').trim();
       const row2Text = (row2?.textContent || '').trim();
       const headingStyle: InlineRunStyle = {
-        ...baseStyle,
+        ...activeStyle,
         bold: true,
         underline: true,
       };
-      const rightEdgeTwips = Math.max(
-        3800,
-        Math.round(row2Text.length * 130 + 180),
-      );
+      const measuredRow2Twips = measureTextWidthTwips(row2Text, 'SutonnyMJ', 14, true);
+      const rightEdgeTwips = Math.max(3800, measuredRow2Twips);
       blocks.push(
         new Paragraph({
           tabStops: [{ type: TabStopType.RIGHT, position: rightEdgeTwips }],
@@ -649,8 +854,8 @@ function htmlToDocxChildren(
     if (el.classList.contains('om-st-item')) {
       const numEl = el.querySelector('.om-st-num');
       const textEl = el.querySelector('.om-st-text');
-      const numRuns = numEl ? collectTextRuns(numEl, baseStyle) : [];
-      const textRuns = textEl ? collectTextRuns(textEl, baseStyle) : [];
+      const numRuns = numEl ? collectTextRuns(numEl, activeStyle) : [];
+      const textRuns = textEl ? collectTextRuns(textEl, activeStyle) : [];
       blocks.push(
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
@@ -661,7 +866,7 @@ function htmlToDocxChildren(
             new TextRun({
               text: '\t',
               font: 'Arial',
-              size: fontSizeHalfPt,
+              size: activeStyle.fontSizeHalfPt,
             }),
             ...textRuns,
           ],
@@ -672,18 +877,19 @@ function htmlToDocxChildren(
 
     if (tag === 'div' && el.querySelector('p, ol, ul, table, h1, h2, h3, h4, hr')) {
       for (const child of Array.from(el.children)) {
-        processBlockElement(child as HTMLElement);
+        processBlockElement(child as HTMLElement, activeStyle);
       }
       return;
     }
 
     const isHeading = tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4';
     const runs = collectTextRuns(el, {
-      ...baseStyle,
+      ...activeStyle,
       bold: isHeading || undefined,
     });
 
     const marginLeftPx = parseFloat(el.style.marginLeft || el.style.paddingLeft || '0') || 0;
+    const marginTopPx = parseFloat(el.style.marginTop || '0') || 0;
     const textIndentPx = parseFloat(el.style.textIndent || '0') || 0;
     const indentLeftTwips = marginLeftPx > 0 ? Math.round(marginLeftPx * 15) : undefined;
     const hangingTwips = textIndentPx < 0 ? Math.round(Math.abs(textIndentPx) * 15) : undefined;
@@ -695,6 +901,7 @@ function htmlToDocxChildren(
           ? { left: indentLeftTwips, hanging: hangingTwips }
           : undefined,
         spacing: {
+          before: marginTopPx > 0 ? Math.round(marginTopPx * 15) : undefined,
           after: runs.length > 0 ? 60 : 20,
           line: runs.length > 0 ? lineSpacing : 240,
         },
@@ -798,12 +1005,12 @@ export async function buildDocxBlob(
               height: convertMillimetersToTwip(297),
             },
             margin: {
-              top: convertMillimetersToTwip(headerText ? Math.max(15, margins.top) : margins.top),
-              right: convertMillimetersToTwip(margins.right),
-              bottom: convertMillimetersToTwip(footerText ? Math.max(15, margins.bottom) : margins.bottom),
-              left: convertMillimetersToTwip(margins.left),
-              header: convertMillimetersToTwip(6),
-              footer: convertMillimetersToTwip(6),
+              top: convertMillimetersToTwip(margins.top || 25.4),
+              right: convertMillimetersToTwip(margins.right || 25.4),
+              bottom: convertMillimetersToTwip(margins.bottom || 25.4),
+              left: convertMillimetersToTwip(margins.left || 25.4),
+              header: convertMillimetersToTwip(Math.min(12.7, (margins.top || 25.4) / 2)),
+              footer: convertMillimetersToTwip(Math.min(12.7, (margins.bottom || 25.4) / 2)),
             },
           },
         },
@@ -814,8 +1021,9 @@ export async function buildDocxBlob(
                   new Paragraph({
                     alignment: AlignmentType.CENTER,
                     children: createScriptAwareTextRuns(headerText, {
-                      fontFamily: fontFamily || 'Arial',
-                      fontSizeHalfPt: (fontSize || 12) * 2,
+                      fontFamily:
+                        fontFamily && fontFamily !== 'SutonnyMJ' ? fontFamily : 'Arial',
+                      fontSizeHalfPt: (fontFamily === 'SutonnyMJ' ? 12 : fontSize || 12) * 2,
                     }),
                   }),
                 ],
@@ -829,8 +1037,9 @@ export async function buildDocxBlob(
                   new Paragraph({
                     alignment: AlignmentType.CENTER,
                     children: createScriptAwareTextRuns(footerText, {
-                      fontFamily: fontFamily || 'Arial',
-                      fontSizeHalfPt: (fontSize || 12) * 2,
+                      fontFamily:
+                        fontFamily && fontFamily !== 'SutonnyMJ' ? fontFamily : 'Arial',
+                      fontSizeHalfPt: (fontFamily === 'SutonnyMJ' ? 12 : fontSize || 12) * 2,
                     }),
                   }),
                 ],
@@ -915,18 +1124,19 @@ export async function exportHtmlItemsToPdf(
         sheet.style.color = '#000000';
         const resolvedPdfFont =
           fontFamily && fontFamily !== 'SutonnyMJ' ? fontFamily : 'Arial';
+        const resolvedPdfEnglishPt = fontFamily === 'SutonnyMJ' ? 12 : fontSize || 12;
         sheet.style.fontFamily = `"${resolvedPdfFont}", "Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", sans-serif`;
-        sheet.style.fontSize = `${fontSize || 12}pt`;
+        sheet.style.fontSize = `${resolvedPdfEnglishPt}pt`;
         sheet.style.lineHeight = String(lineHeight);
         sheet.style.display = 'flex';
         sheet.style.flexDirection = 'column';
         sheet.style.justifyContent = 'space-between';
 
         const headerEl = headerText
-          ? `<div style="text-align:center;font-size:${fontSize || 12}pt;color:#000000;letter-spacing:0.02em;margin-bottom:4mm;">${decorateMixedScriptHtml(headerText)}</div>`
+          ? `<div style="text-align:center;font-size:${resolvedPdfEnglishPt}pt;color:#000000;letter-spacing:0.02em;margin-bottom:2mm;">${decorateMixedScriptHtml(headerText)}</div>`
           : '';
         const footerEl = footerText
-          ? `<div style="text-align:center;font-size:${fontSize || 12}pt;color:#000000;letter-spacing:0.02em;margin-top:4mm;">${decorateMixedScriptHtml(footerText)}</div>`
+          ? `<div style="text-align:center;font-size:${resolvedPdfEnglishPt}pt;color:#000000;letter-spacing:0.02em;margin-top:2mm;">${decorateMixedScriptHtml(footerText)}</div>`
           : '';
 
         sheet.innerHTML = `

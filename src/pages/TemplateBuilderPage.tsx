@@ -133,9 +133,12 @@ function createBlankTemplate(settings: AppSettings): Template {
     ],
     pageSettings: {
       size: 'A4',
-      margins: { top: 20, right: 20, bottom: 20, left: 22 },
+      margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
       fontFamily: settings.defaultFont || 'Arial',
-      fontSize: settings.defaultFontSize || 12,
+      fontSize:
+        (settings.defaultFont || 'Arial') === 'SutonnyMJ'
+          ? 14
+          : settings.defaultFontSize || 12,
       lineHeight: 1.45,
       headerText: '',
       footerText: '',
@@ -1092,12 +1095,17 @@ export const TemplateBuilderPage: React.FC<TemplateBuilderPageProps> = ({
                   </label>
                   <select
                     value={template.pageSettings.fontFamily}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const nextFont = e.target.value;
                       setTemplate((p) => ({
                         ...p,
-                        pageSettings: { ...p.pageSettings, fontFamily: e.target.value },
-                      }))
-                    }
+                        pageSettings: {
+                          ...p.pageSettings,
+                          fontFamily: nextFont,
+                          fontSize: nextFont === 'SutonnyMJ' ? 14 : 12,
+                        },
+                      }));
+                    }}
                     className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg"
                   >
                     <option value="Arial">Arial (English 12pt)</option>
@@ -1165,6 +1173,7 @@ export const TemplateBuilderPage: React.FC<TemplateBuilderPageProps> = ({
                       </label>
                       <input
                         type="number"
+                        step={0.1}
                         min={5}
                         max={45}
                         value={template.pageSettings.margins[side]}
@@ -1175,7 +1184,7 @@ export const TemplateBuilderPage: React.FC<TemplateBuilderPageProps> = ({
                               ...p.pageSettings,
                               margins: {
                                 ...p.pageSettings.margins,
-                                [side]: Number(e.target.value) || 20,
+                                [side]: Number(e.target.value) || 25.4,
                               },
                             },
                           }))

@@ -62,8 +62,17 @@
   font-size: 14pt;
 }
 
+.a4-paper .om-bn-md .om-bn,
+.a4-paper .om-bn-md,
+.a4-paper .om-bn-sm .om-bn,
+.a4-paper .om-bn-sm,
+.a4-paper .om-bn-xs .om-bn,
+.a4-paper .om-bn-xs {
+  font-size: 14pt;
+}
+
 .a4-paper p {
-  margin: 0 0 0.18em 0;
+  margin: 0 0 0.16em 0;
 }
 
 .a4-paper h1,
@@ -78,13 +87,13 @@
 .a4-paper table {
   width: 100%;
   border-collapse: collapse;
-  margin: 0.6em 0;
+  margin: 0.45em 0;
 }
 
 .a4-paper table td,
 .a4-paper table th {
   border: 1px solid #000000;
-  padding: 4px 8px;
+  padding: 3px 6px;
   vertical-align: top;
 }
 
@@ -92,25 +101,30 @@
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
-  margin: 0.25em 0;
+  margin: 0.2em 0;
 }
 
 .a4-paper table.om-layout-table td,
 .a4-paper table.om-layout-table th {
   border: none !important;
-  padding: 7px 0 2px 0;
+  padding: 2px 0 1px 0;
   vertical-align: bottom;
 }
 
+.a4-paper table.om-layout-table td.om-top-cell {
+  vertical-align: top;
+  padding: 0;
+}
+
 .a4-paper table.om-layout-table td.om-label-cell {
-  padding: 7px 8px 2px 0;
+  padding: 6px 8px 2px 0;
   white-space: nowrap;
 }
 
 .a4-paper table.om-layout-table td.om-line-cell {
   border-bottom: 1px solid #000000 !important;
   text-align: center;
-  padding: 7px 6px 2px 6px;
+  padding: 6px 6px 2px 6px;
 }
 
 .a4-paper .om-blank-slot {
@@ -123,14 +137,77 @@
   line-height: 1.2;
 }
 
+.a4-paper .om-line-fill {
+  display: inline-block;
+  min-width: 80px;
+  border-bottom: 1px dotted #000000;
+  text-align: center;
+  padding: 0 5px 1px 5px;
+  margin: 0 2px;
+  line-height: 1.15;
+}
+
+.a4-paper .om-line-fill.om-solid {
+  border-bottom: 1px solid #000000;
+}
+
+.a4-paper .om-w-xs { min-width: 32px; }
+.a4-paper .om-w-sm { min-width: 58px; }
+.a4-paper .om-w-md { min-width: 104px; }
+.a4-paper .om-w-lg { min-width: 168px; }
+.a4-paper .om-w-xl { min-width: 240px; }
+
 .a4-paper .om-line-cell .om-blank-slot,
 .a4-paper .om-sig-line .om-blank-slot,
-.a4-paper .om-blank-slot .om-blank-slot {
+.a4-paper .om-blank-slot .om-blank-slot,
+.a4-paper .om-line-fill .om-blank-slot {
   display: inline;
   min-width: 0;
   border-bottom: none;
   padding: 0;
   margin: 0;
+}
+
+.a4-paper .om-hr-solid {
+  border: 0;
+  border-top: 1.5px solid #000000;
+  margin: 4px 0;
+}
+
+.a4-paper .om-baf295-stamp {
+  border: 1.5px solid #000000;
+  padding: 4px 10px;
+  text-align: center;
+  font-size: 12pt;
+  line-height: 1.2;
+  display: inline-block;
+  min-width: 95px;
+}
+
+.a4-paper .om-baf295-vertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 12pt;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  padding: 6px 0;
+}
+
+.a4-paper table.om-form-grid {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 3px 0;
+}
+
+.a4-paper table.om-form-grid td,
+.a4-paper table.om-form-grid th {
+  border: 1px solid #000000;
+  padding: 2px 4px;
+  vertical-align: top;
+}
+
+.a4-paper table.om-form-grid.om-heavy-box {
+  border: 2px solid #000000;
 }
 
 .a4-paper .om-sig-align-right {
@@ -151,7 +228,7 @@
   display: inline-flex;
   flex-direction: column;
   width: max-content;
-  min-width: 165px;
+  min-width: 155px;
   max-width: 100%;
 }
 
@@ -170,16 +247,16 @@
 .a4-paper .om-sig-label {
   white-space: nowrap;
   flex-shrink: 0;
-  line-height: 1.18;
+  line-height: 1.15;
 }
 
 .a4-paper .om-sig-line {
   flex: 1 1 auto;
   border-bottom: 1px solid #000000;
   text-align: center;
-  padding: 0 2ch 1px 2ch;
-  line-height: 1.18;
-  min-height: 1.18em;
+  padding: 0 1.2ch 1px 1.2ch;
+  line-height: 1.15;
+  min-height: 1.15em;
   white-space: nowrap;
 }
 
@@ -223,6 +300,24 @@
 
 .a4-paper .om-st-text {
   flex: 1 1 auto;
+}
+
+.a4-paper .om-st-right-wrap {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 0;
+}
+
+.a4-paper .om-st-right-block {
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  text-align: left;
+}
+
+.a4-paper .om-st-right-block p {
+  margin-bottom: 0;
 }
 
 .a4-paper ol {

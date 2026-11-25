@@ -1,5 +1,10 @@
 import React from 'react';
 import {
+  CalendarCheck,
+  Car,
+  ClipboardCheck,
+  ClipboardList,
+  FileBadge,
   FileCheck2,
   FileText,
   Lock,
@@ -58,8 +63,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'tpl-statement-bn',
-      label: 'Statement',
+      label: 'Statement (বিবৃতি)',
       icon: FileText,
+    },
+    {
+      id: 'tpl-baf-295',
+      label: 'BAF Form 295 (Leave / Pass)',
+      icon: ClipboardCheck,
+    },
+    {
+      id: 'tpl-baf-10096',
+      label: 'Leave Application (10096)',
+      icon: CalendarCheck,
+    },
+    {
+      id: 'tpl-td-cert-bn',
+      label: 'TD Certificate (প্রত্যয়ন পত্র)',
+      icon: FileBadge,
+    },
+    {
+      id: 'tpl-vehicle-pass-bn',
+      label: 'Vehicle Pass (গাড়ীর পাশ)',
+      icon: Car,
+    },
+    {
+      id: 'tpl-ration-card',
+      label: 'Ration Card Form',
+      icon: ClipboardList,
     },
   ];
 

@@ -75,15 +75,25 @@ const ST_MEMORY_KEYS = new Set([
   'to_unit_bn',
 ]);
 
-type InputSectionKey =
-  | 'cycle'
-  | 'leave'
-  | 'applicant'
-  | 'clerk'
-  | 'st_unit'
-  | 'st_person'
-  | 'st_body'
-  | 'st_sign';
+type InputSectionKey = string;
+
+interface SectionConfig {
+  id: string;
+  title: string;
+  keys: Set<string>;
+  icon: 'building' | 'user' | 'file' | 'badge' | 'calendar' | 'range';
+  subtitle: (vals: Record<string, string>, fields: TemplateField[]) => string;
+}
+
+const TEMPLATE_SUBTITLES: Record<string, string> = {
+  'tpl-jsi-8-80': 'JSI-8/80 · Official Format (Arial 12pt / SutonnyMJ 14pt)',
+  'tpl-statement-bn': 'Bangla Official Statement · গোপনীয় · SutonnyMJ 14pt',
+  'tpl-baf-295': 'BAF Form 295 (1978) · 2-Page Leave / Pass Counterfoil & Address',
+  'tpl-baf-10096': 'বিএএফ ফরম-১০০৯৬ · Official Leave Application (SutonnyMJ)',
+  'tpl-td-cert-bn': 'প্রত্যয়ন পত্র · অস্থায়ী কর্তব্য (Temporary Duty Certificate)',
+  'tpl-vehicle-pass-bn': 'গাড়ীর পাশের জন্য আবেদন পত্র · BAF Base ZHR (SutonnyMJ)',
+  'tpl-ration-card': 'Pre-Payment Service Ration Form · Family Particulars & BRO/POR',
+};
 
 function readStoredJsonMap(key: string): Record<string, string> {
   try {
@@ -177,6 +187,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   );
 
   const isStatement = activeTemplate?.id === 'tpl-statement-bn';
+  const isBanglaTemplate = activeTemplate?.pageSettings.fontFamily === 'SutonnyMJ';
 
   const [rawValues, setRawValues] = useState<Record<string, string>>({});
   const [zoom, setZoom] = useState(0.9);
@@ -187,6 +198,25 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   const [pendingAction, setPendingAction] = useState<'docx' | 'pdf' | 'print' | null>(
     null,
   );
+
+  const getDefaultSectionForTemplate = (tplId: string | undefined): string => {
+    switch (tplId) {
+      case 'tpl-statement-bn':
+        return 'st_body';
+      case 'tpl-baf-295':
+        return 'b295_airman';
+      case 'tpl-baf-10096':
+        return 'b10096_person';
+      case 'tpl-td-cert-bn':
+        return 'td_person';
+      case 'tpl-vehicle-pass-bn':
+        return 'vp_applicant';
+      case 'tpl-ration-card':
+        return 'rc_applicant';
+      default:
+        return 'applicant';
+    }
+  };
 
   useEffect(() => {
     if (!activeTemplate) return;
@@ -206,7 +236,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
           savedStatement[f.key] !== undefined && savedStatement[f.key] !== ''
             ? savedStatement[f.key]
             : f.defaultValue || '';
-      } else if (CLERK_KEYS.has(f.key)) {
+      } else if (activeTemplate.id === 'tpl-jsi-8-80' && CLERK_KEYS.has(f.key)) {
         if (savedClerk[f.key] !== undefined && savedClerk[f.key] !== '') {
           defaults[f.key] = savedClerk[f.key];
         } else if (f.type === 'signer' && f.signerRole && f.signerProperty) {
@@ -235,7 +265,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
       Object.assign(defaults, initialValues);
     }
     setRawValues(defaults);
-    setActiveSection(activeTemplate.id === 'tpl-statement-bn' ? 'st_body' : 'applicant');
+    setActiveSection(getDefaultSectionForTemplate(activeTemplate.id));
     setShowErrors(false);
   }, [activeTemplate?.id, initialValues, initialPersonId]);
 
@@ -356,17 +386,8 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
     if (Object.keys(validationErrors).length > 0) {
       setFormExpanded(true);
       const firstErrKey = Object.keys(validationErrors)[0];
-      if (isStatement) {
-        if (ST_UNIT_KEYS.has(firstErrKey)) setActiveSection('st_unit');
-        else if (ST_PERSON_KEYS.has(firstErrKey)) setActiveSection('st_person');
-        else if (ST_BODY_KEYS.has(firstErrKey)) setActiveSection('st_body');
-        else if (ST_SIGN_KEYS.has(firstErrKey)) setActiveSection('st_sign');
-      } else {
-        if (CYCLE_KEYS.has(firstErrKey)) setActiveSection('cycle');
-        else if (LEAVE_KEYS.has(firstErrKey)) setActiveSection('leave');
-        else if (APPLICANT_KEYS.has(firstErrKey)) setActiveSection('applicant');
-        else if (CLERK_KEYS.has(firstErrKey)) setActiveSection('clerk');
-      }
+      const matchedCfg = sectionConfigs.find((c) => c.keys.has(firstErrKey));
+      if (matchedCfg) setActiveSection(matchedCfg.id);
     }
     void executeExport(kind);
   };
@@ -394,115 +415,326 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   const cycleStartParsed = parseFlexibleDate(computedValues.cycle_start ?? '');
   const cycleStartYear = cycleStartParsed ? cycleStartParsed.getFullYear() : 2026;
 
-  const sectionFields: Record<InputSectionKey, TemplateField[]> = {
-    cycle: activeTemplate.fields.filter((f) => CYCLE_KEYS.has(f.key)),
-    leave: activeTemplate.fields.filter((f) => LEAVE_KEYS.has(f.key)),
-    applicant: activeTemplate.fields.filter(
-      (f) =>
-        APPLICANT_KEYS.has(f.key) ||
-        (!CYCLE_KEYS.has(f.key) && !LEAVE_KEYS.has(f.key) && !CLERK_KEYS.has(f.key)),
-    ),
-    clerk: activeTemplate.fields.filter((f) => CLERK_KEYS.has(f.key)),
-    st_unit: activeTemplate.fields.filter((f) => ST_UNIT_KEYS.has(f.key)),
-    st_person: activeTemplate.fields.filter((f) => ST_PERSON_KEYS.has(f.key)),
-    st_body: activeTemplate.fields.filter((f) => ST_BODY_KEYS.has(f.key)),
-    st_sign: activeTemplate.fields.filter((f) => ST_SIGN_KEYS.has(f.key)),
+  const sectionConfigs: SectionConfig[] = useMemo(() => {
+    const countFilled = (vals: Record<string, string>, fields: TemplateField[]) =>
+      `${fields.filter((f) => (vals[f.key] ?? '').trim() !== '').length}/${fields.length} filled`;
+
+    switch (activeTemplate?.id) {
+      case 'tpl-statement-bn':
+        return [
+          {
+            id: 'st_unit',
+            title: 'Unit & Date',
+            keys: ST_UNIT_KEYS,
+            icon: 'building',
+            subtitle: (vals) => vals.unit_line1 || 'ইউনিট ও তারিখ',
+          },
+          {
+            id: 'st_person',
+            title: 'Person & Title',
+            keys: ST_PERSON_KEYS,
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name_bn
+                ? `${vals.rank_bn ? `${vals.rank_bn} ` : ''}${vals.name_bn}`
+                : 'বিডি নং, পদবী ও নাম',
+          },
+          {
+            id: 'st_body',
+            title: 'বিবৃতি (Statement)',
+            keys: ST_BODY_KEYS,
+            icon: 'file',
+            subtitle: countFilled,
+          },
+          {
+            id: 'st_sign',
+            title: 'Signature & প্রতি',
+            keys: ST_SIGN_KEYS,
+            icon: 'badge',
+            subtitle: (vals) => vals.sign_name_bn || 'স্বাক্ষর ও প্রাপক',
+          },
+        ];
+
+      case 'tpl-baf-295':
+        return [
+          {
+            id: 'b295_unit',
+            title: 'Unit & Pass',
+            keys: new Set(['pass_type', 'base_unit', 'sqn_flt', 'issue_date']),
+            icon: 'building',
+            subtitle: (vals) => `${vals.pass_type || 'Leave'} · ${vals.base_unit || 'Base/Unit'}`,
+          },
+          {
+            id: 'b295_airman',
+            title: 'Airman Info',
+            keys: new Set(['bd_no', 'rank', 'name', 'trade']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name ? `${vals.rank ? `${vals.rank} ` : ''}${vals.name}` : 'BD/No, Rank & Name',
+          },
+          {
+            id: 'b295_time',
+            title: 'Duration & Time',
+            keys: new Set(['from_hours', 'from_day_mon', 'from_yr', 'to_hours', 'to_day_mon', 'to_yr']),
+            icon: 'calendar',
+            subtitle: (vals) =>
+              vals.from_day_mon || vals.to_day_mon
+                ? `${vals.from_day_mon || '...'} – ${vals.to_day_mon || '...'}`
+                : 'Hours & Dates',
+          },
+          {
+            id: 'b295_addr',
+            title: 'Reverse Address',
+            keys: new Set(['address_line1', 'address_line2', 'address_line3']),
+            icon: 'file',
+            subtitle: countFilled,
+          },
+        ];
+
+      case 'tpl-baf-10096':
+        return [
+          {
+            id: 'b10096_person',
+            title: 'আবেদনকারী',
+            keys: new Set(['bd_no_bn', 'rank_bn', 'name_bn', 'trade_bn', 'unit_bn', 'section_bn', 'resident_bn']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name_bn ? `${vals.rank_bn ? `${vals.rank_bn} ` : ''}${vals.name_bn}` : 'বিডি, পদবী ও নাম',
+          },
+          {
+            id: 'b10096_leave',
+            title: 'ছুটির বিবরণ',
+            keys: new Set(['leave_nature_bn', 'leave_from_bn', 'leave_to_bn', 'total_days_bn', 'entitled_days_bn', 'leave_reasons_bn']),
+            icon: 'calendar',
+            subtitle: (vals) =>
+              vals.leave_nature_bn ? `${vals.leave_nature_bn} (${vals.total_days_bn || '—'} দিন)` : 'ছুটি প্রকৃতি ও তারিখ',
+          },
+          {
+            id: 'b10096_travel',
+            title: 'ভ্রমণ ও পূর্বের ছুটি',
+            keys: new Set([
+              'travel_from_1',
+              'travel_to_1',
+              'travel_for_1',
+              'travel_self',
+              'travel_wife',
+              'travel_child_o12',
+              'travel_child_u12',
+              'prev_annual_from',
+              'prev_annual_to',
+              'prev_annual_days',
+              'prev_casual_from',
+              'prev_casual_to',
+              'prev_casual_days',
+            ]),
+            icon: 'range',
+            subtitle: countFilled,
+          },
+          {
+            id: 'b10096_mov',
+            title: 'তারিখ ও সংগ্রহ',
+            keys: new Set(['application_date_bn', 'collect_date_bn', 'collect_time_bn']),
+            icon: 'badge',
+            subtitle: countFilled,
+          },
+        ];
+
+      case 'tpl-td-cert-bn':
+        return [
+          {
+            id: 'td_person',
+            title: 'বিমানসেনার তথ্য',
+            keys: new Set(['bd_no_bn', 'rank_bn', 'name_bn', 'trade_bn', 'unit_bn', 'base_bn']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name_bn ? `${vals.rank_bn ? `${vals.rank_bn} ` : ''}${vals.name_bn}` : 'বিডি, পদবী ও নাম',
+          },
+          {
+            id: 'td_duty',
+            title: 'অস্থায়ী কর্তব্য ও আইভি',
+            keys: new Set(['td_from_bn', 'td_to_bn', 'td_place_bn', 'iv_no_bn']),
+            icon: 'calendar',
+            subtitle: (vals) => vals.td_place_bn || 'তারিখ, স্থান ও আইভি নং',
+          },
+          {
+            id: 'td_officers',
+            title: 'ইনচার্জ / অধিনায়ক',
+            keys: new Set(['camp_ic_name_bn', 'camp_ic_rank_bn', 'co_name_bn', 'co_rank_bn']),
+            icon: 'badge',
+            subtitle: countFilled,
+          },
+          {
+            id: 'td_accounts',
+            title: 'হিসাব শাখা',
+            keys: new Set(['accounts_name_bn', 'accounts_rank_bn']),
+            icon: 'building',
+            subtitle: countFilled,
+          },
+        ];
+
+      case 'tpl-vehicle-pass-bn':
+        return [
+          {
+            id: 'vp_applicant',
+            title: 'আবেদনকারী ও ঠিকানা',
+            keys: new Set(['app_date_bn', 'vehicle_type_bn', 'name_bn', 'mobile_bn', 'village_bn', 'po_bn', 'thana_bn', 'district_bn']),
+            icon: 'user',
+            subtitle: (vals) => vals.name_bn || 'নাম, মোবাইল ও ঠিকানা',
+          },
+          {
+            id: 'vp_vehicle',
+            title: 'গাড়ীর বিবরণ',
+            keys: new Set(['vehicle_no_bn', 'blue_book_no_bn', 'engine_no_bn', 'chassis_no_bn', 'route_permit_bn', 'insurance_validity_bn']),
+            icon: 'file',
+            subtitle: (vals) => vals.vehicle_no_bn || 'গাড়ীর নং, ইঞ্জিন ও চেসিস',
+          },
+          {
+            id: 'vp_driver',
+            title: 'চালকের বিবরণ',
+            keys: new Set(['driving_mode', 'driver_name_bn', 'driver_age_bn', 'father_name_bn', 'license_info_bn']),
+            icon: 'badge',
+            subtitle: (vals) => vals.driver_name_bn || vals.driving_mode || 'Self Driving / চালক',
+          },
+          {
+            id: 'vp_perm_addr',
+            title: 'স্থায়ী ও বর্তমান ঠিকানা',
+            keys: new Set(['perm_village_bn', 'perm_po_bn', 'perm_thana_bn', 'perm_district_bn', 'present_address_bn']),
+            icon: 'building',
+            subtitle: countFilled,
+          },
+        ];
+
+      case 'tpl-ration-card':
+        return [
+          {
+            id: 'rc_applicant',
+            title: 'Applicant Info',
+            keys: new Set(['bd_no', 'rank', 'name', 'trade', 'ration_base', 'app_date']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name ? `${vals.rank ? `${vals.rank} ` : ''}${vals.name}` : 'BD/No, Rank & Name',
+          },
+          {
+            id: 'rc_counts',
+            title: 'Ration Count',
+            keys: new Set(['cnt_self', 'cnt_wife', 'cnt_o12', 'cnt_u12', 'cnt_u3', 'cnt_total']),
+            icon: 'range',
+            subtitle: (vals) => `Total: ${vals.cnt_total || '—'}`,
+          },
+          {
+            id: 'rc_family',
+            title: 'Family Members',
+            keys: new Set([
+              'fam1_name', 'fam1_rel', 'fam1_marital', 'fam1_dob', 'fam1_occ',
+              'fam2_name', 'fam2_rel', 'fam2_marital', 'fam2_dob', 'fam2_occ',
+              'fam3_name', 'fam3_rel', 'fam3_marital', 'fam3_dob', 'fam3_occ',
+            ]),
+            icon: 'file',
+            subtitle: (vals) => vals.fam1_name || countFilled(vals, activeTemplate.fields.filter((f) => f.key.startsWith('fam'))),
+          },
+          {
+            id: 'rc_orders',
+            title: 'BRO / POR & Dates',
+            keys: new Set(['bro_ser_no', 'bro_date', 'por_ser_no', 'por_date', 'present_address', 'adjt_date', 'approve_date']),
+            icon: 'badge',
+            subtitle: (vals) => vals.por_ser_no || countFilled(vals, activeTemplate.fields),
+          },
+        ];
+
+      default:
+        return [
+          {
+            id: 'cycle',
+            title: 'Cycle',
+            keys: CYCLE_KEYS,
+            icon: 'range',
+            subtitle: (vals) =>
+              vals.cycle_start && vals.cycle_end
+                ? `${vals.cycle_start} – ${vals.cycle_end}`
+                : '01 Jul – 30 Jun',
+          },
+          {
+            id: 'leave',
+            title: 'Leave Info',
+            keys: LEAVE_KEYS,
+            icon: 'calendar',
+            subtitle: countFilled,
+          },
+          {
+            id: 'applicant',
+            title: 'Applicant Info',
+            keys: APPLICANT_KEYS,
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name ? `${vals.rank ? `${vals.rank} ` : ''}${vals.name}` : 'BD/No, Rank & Name',
+          },
+          {
+            id: 'clerk',
+            title: 'Document Clerk',
+            keys: CLERK_KEYS,
+            icon: 'badge',
+            subtitle: (vals) =>
+              vals.clerk_name
+                ? `${vals.clerk_rank ? `${vals.clerk_rank} ` : ''}${vals.clerk_name}`
+                : 'Manual & Auto-saved',
+          },
+        ];
+    }
+  }, [activeTemplate?.id, activeTemplate?.fields]);
+
+  const sectionFields: Record<string, TemplateField[]> = useMemo(() => {
+    const map: Record<string, TemplateField[]> = {};
+    if (!activeTemplate) return map;
+    const assigned = new Set<string>();
+    for (const cfg of sectionConfigs) {
+      map[cfg.id] = activeTemplate.fields.filter((f) => {
+        if (cfg.keys.has(f.key)) {
+          assigned.add(f.key);
+          return true;
+        }
+        return false;
+      });
+    }
+    const leftovers = activeTemplate.fields.filter((f) => !assigned.has(f.key));
+    if (leftovers.length > 0 && sectionConfigs.length > 0) {
+      const targetId = sectionConfigs.find((c) => c.id === 'applicant')?.id ?? sectionConfigs[0].id;
+      map[targetId] = [...(map[targetId] ?? []), ...leftovers];
+    }
+    return map;
+  }, [activeTemplate, sectionConfigs]);
+
+  const renderSectionIcon = (icon: SectionConfig['icon']) => {
+    switch (icon) {
+      case 'building':
+        return <Building2 className="w-4 h-4" />;
+      case 'user':
+        return <User className="w-4 h-4" />;
+      case 'file':
+        return <FilePenLine className="w-4 h-4" />;
+      case 'badge':
+        return <BadgeCheck className="w-4 h-4" />;
+      case 'calendar':
+        return <Calendar className="w-4 h-4" />;
+      case 'range':
+        return <CalendarRange className="w-4 h-4" />;
+    }
   };
+
+  const sectionCards = sectionConfigs.map((cfg) => {
+    const flds = sectionFields[cfg.id] ?? [];
+    return {
+      id: cfg.id,
+      title: cfg.title,
+      subtitle: cfg.subtitle(computedValues, flds),
+      icon: renderSectionIcon(cfg.icon),
+      hasError: showErrors && flds.some((f) => Boolean(validationErrors[f.key])),
+    };
+  });
 
   const cycleYears: number[] = [];
   for (let y = 2018; y <= 2038; y++) {
     cycleYears.push(y);
   }
-
-  const sectionCards: Array<{
-    id: InputSectionKey;
-    title: string;
-    subtitle: string;
-    icon: React.ReactNode;
-    hasError: boolean;
-  }> = isStatement
-    ? [
-        {
-          id: 'st_unit',
-          title: 'Unit & Date',
-          subtitle: computedValues.unit_line1 || 'ইউনিট ও তারিখ',
-          icon: <Building2 className="w-4 h-4" />,
-          hasError:
-            showErrors &&
-            sectionFields.st_unit.some((f) => Boolean(validationErrors[f.key])),
-        },
-        {
-          id: 'st_person',
-          title: 'Person & Title',
-          subtitle: computedValues.name_bn
-            ? `${computedValues.rank_bn ? `${computedValues.rank_bn} ` : ''}${computedValues.name_bn}`
-            : 'বিডি নং, পদবী ও নাম',
-          icon: <User className="w-4 h-4" />,
-          hasError:
-            showErrors &&
-            sectionFields.st_person.some((f) => Boolean(validationErrors[f.key])),
-        },
-        {
-          id: 'st_body',
-          title: 'বিবৃতি (Statement)',
-          subtitle: `${sectionFields.st_body.filter((f) => (computedValues[f.key] ?? '').trim() !== '').length}/${sectionFields.st_body.length} filled`,
-          icon: <FilePenLine className="w-4 h-4" />,
-          hasError:
-            showErrors &&
-            sectionFields.st_body.some((f) => Boolean(validationErrors[f.key])),
-        },
-        {
-          id: 'st_sign',
-          title: 'Signature & প্রতি',
-          subtitle: computedValues.sign_name_bn || 'স্বাক্ষর ও প্রাপক',
-          icon: <BadgeCheck className="w-4 h-4" />,
-          hasError:
-            showErrors &&
-            sectionFields.st_sign.some((f) => Boolean(validationErrors[f.key])),
-        },
-      ]
-    : [
-        {
-          id: 'cycle',
-          title: 'Cycle',
-          subtitle:
-            computedValues.cycle_start && computedValues.cycle_end
-              ? `${computedValues.cycle_start} – ${computedValues.cycle_end}`
-              : '01 Jul – 30 Jun',
-          icon: <CalendarRange className="w-4 h-4" />,
-          hasError:
-            showErrors && sectionFields.cycle.some((f) => Boolean(validationErrors[f.key])),
-        },
-        {
-          id: 'leave',
-          title: 'Leave Info',
-          subtitle: `${sectionFields.leave.filter((f) => (computedValues[f.key] ?? '').trim() !== '').length}/${sectionFields.leave.length} filled`,
-          icon: <Calendar className="w-4 h-4" />,
-          hasError:
-            showErrors && sectionFields.leave.some((f) => Boolean(validationErrors[f.key])),
-        },
-        {
-          id: 'applicant',
-          title: 'Applicant Info',
-          subtitle: computedValues.name
-            ? `${computedValues.rank ? `${computedValues.rank} ` : ''}${computedValues.name}`
-            : `${sectionFields.applicant.filter((f) => (computedValues[f.key] ?? '').trim() !== '').length}/${sectionFields.applicant.length} filled`,
-          icon: <User className="w-4 h-4" />,
-          hasError:
-            showErrors &&
-            sectionFields.applicant.some((f) => Boolean(validationErrors[f.key])),
-        },
-        {
-          id: 'clerk',
-          title: 'Document Clerk',
-          subtitle: computedValues.clerk_name
-            ? `${computedValues.clerk_rank ? `${computedValues.clerk_rank} ` : ''}${computedValues.clerk_name}`
-            : 'Manual & Auto-saved',
-          icon: <BadgeCheck className="w-4 h-4" />,
-          hasError:
-            showErrors && sectionFields.clerk.some((f) => Boolean(validationErrors[f.key])),
-        },
-      ];
 
   const handleSectionClick = (sec: InputSectionKey) => {
     setActiveSection(sec);
@@ -561,7 +793,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
       );
     }
 
-    const isBanglaField = isStatement;
+    const isBanglaField = isBanglaTemplate || /[\u0980-\u09FF]/.test(field.label);
     const banglaInputStyle = isBanglaField
       ? { fontFamily: '"Noto Serif Bengali", "Tiro Bangla", "Noto Sans Bengali", sans-serif' }
       : undefined;
@@ -571,7 +803,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         key={field.id}
         className={
           field.type === 'textarea'
-            ? isStatement
+            ? isBanglaTemplate
               ? 'sm:col-span-2 lg:col-span-4'
               : 'sm:col-span-2'
             : undefined
@@ -686,9 +918,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
                 {activeTemplate.name}
               </h2>
               <p className="text-[11px] text-slate-400">
-                {isStatement
-                  ? 'Bangla Official Statement · সীমিত · SutonnyMJ 14pt'
-                  : 'JSI-8/80 · Official Format (Arial 12pt / SutonnyMJ 14pt)'}
+                {TEMPLATE_SUBTITLES[activeTemplate.id] ?? activeTemplate.description}
               </p>
             </div>
           </div>
@@ -759,13 +989,13 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 truncate mt-0.5">
-                    {isStatement
+                    {isBanglaTemplate
                       ? computedValues.name_bn
                         ? `${computedValues.rank_bn ? `${computedValues.rank_bn} ` : ''}${computedValues.name_bn}${computedValues.bd_no_bn ? ` · বিডি/${computedValues.bd_no_bn}` : ''}`
-                        : 'Click to edit Unit, Person, বিবৃতি & Signature'
+                        : `Click to fill ${sectionConfigs.map((c) => c.title).join(', ')}`
                       : computedValues.name
                         ? `${computedValues.rank ? `${computedValues.rank} ` : ''}${computedValues.name}${computedValues.bd_no ? ` · BD/${computedValues.bd_no}` : ''}`
-                        : 'Click to input Cycle, Leave Info, Applicant Info & Document Clerk'}
+                        : `Click to fill ${sectionConfigs.map((c) => c.title).join(', ')}`}
                   </p>
                 </div>
               </div>
@@ -834,7 +1064,11 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
                             if (!ST_MEMORY_KEYS.has(f.key)) {
                               next[f.key] = '';
                             }
-                          } else if (!CLERK_KEYS.has(f.key) && !CYCLE_KEYS.has(f.key)) {
+                          } else if (activeTemplate.id === 'tpl-jsi-8-80') {
+                            if (!CLERK_KEYS.has(f.key) && !CYCLE_KEYS.has(f.key)) {
+                              next[f.key] = '';
+                            }
+                          } else {
                             next[f.key] = '';
                           }
                         }
@@ -846,11 +1080,19 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
                     title={
                       isStatement
                         ? 'Clears Person & বিবৃতি fields while keeping Unit, Date & প্রতি'
-                        : 'Clears Applicant & Leave fields while keeping Cycle & Document Clerk'
+                        : activeTemplate.id === 'tpl-jsi-8-80'
+                          ? 'Clears Applicant & Leave fields while keeping Cycle & Document Clerk'
+                          : 'Clear all form inputs for blank template printing'
                     }
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>{isStatement ? 'Clear Person & বিবৃতি' : 'Clear Applicant & Leave'}</span>
+                    <span>
+                      {isStatement
+                        ? 'Clear Person & বিবৃতি'
+                        : activeTemplate.id === 'tpl-jsi-8-80'
+                          ? 'Clear Applicant & Leave'
+                          : 'Clear All Fields'}
+                    </span>
                   </button>
                 </div>
 

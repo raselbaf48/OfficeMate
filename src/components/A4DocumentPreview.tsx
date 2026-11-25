@@ -23,7 +23,7 @@ export const A4DocumentPreview: React.FC<A4DocumentPreviewProps> = ({
   const cleanFooter = footerText ? decorateMixedScriptHtml(footerText) : '';
   const pages = cleanHtml.split(/<hr[^>]*class="[^"]*om-page-break[^"]*"[^>]*\/?>/gi);
   const resolvedFont = fontFamily && fontFamily !== 'SutonnyMJ' ? fontFamily : 'Arial';
-  const resolvedSize = fontSize || 12;
+  const resolvedSize = fontFamily === 'SutonnyMJ' ? 12 : fontSize || 12;
 
   return (
     <div
@@ -51,7 +51,7 @@ export const A4DocumentPreview: React.FC<A4DocumentPreviewProps> = ({
                   textAlign: 'center',
                   fontSize: `${resolvedSize}pt`,
                   color: '#000000',
-                  marginBottom: '4mm',
+                  marginBottom: '2mm',
                   letterSpacing: '0.02em',
                 }}
                 dangerouslySetInnerHTML={{ __html: cleanHeader }}
@@ -66,7 +66,7 @@ export const A4DocumentPreview: React.FC<A4DocumentPreviewProps> = ({
                 textAlign: 'center',
                 fontSize: `${resolvedSize}pt`,
                 color: '#000000',
-                marginTop: '4mm',
+                marginTop: '2mm',
                 letterSpacing: '0.02em',
               }}
               dangerouslySetInnerHTML={{ __html: cleanFooter }}

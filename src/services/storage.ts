@@ -94,23 +94,10 @@ class DexieStorageService implements StorageService {
     if (templatesCount === 0) {
       await db.templates.bulkPut(INITIAL_TEMPLATES);
     } else {
-      const existingJsi = await db.templates.get('tpl-jsi-8-80');
-      const latestJsi = INITIAL_TEMPLATES.find((t) => t.id === 'tpl-jsi-8-80');
-      if (existingJsi && latestJsi && existingJsi.updatedAt !== latestJsi.updatedAt) {
-        await db.templates.put(latestJsi);
-      }
-      const existingStmt = await db.templates.get('tpl-statement-bn');
-      const latestStmt = INITIAL_TEMPLATES.find((t) => t.id === 'tpl-statement-bn');
-      if (latestStmt && (!existingStmt || existingStmt.updatedAt !== latestStmt.updatedAt)) {
-        await db.templates.put(latestStmt);
-      }
-      for (const tplId of ['tpl-leave-application', 'tpl-service-certificate']) {
-        const existingTpl = await db.templates.get(tplId);
-        if (existingTpl && existingTpl.pageSettings.fontFamily === 'Times New Roman') {
-          await db.templates.put({
-            ...existingTpl,
-            pageSettings: { ...existingTpl.pageSettings, fontFamily: 'Arial', fontSize: 12 },
-          });
+      for (const latestTpl of INITIAL_TEMPLATES) {
+        const existingTpl = await db.templates.get(latestTpl.id);
+        if (!existingTpl || existingTpl.updatedAt !== latestTpl.updatedAt) {
+          await db.templates.put(latestTpl);
         }
       }
     }
