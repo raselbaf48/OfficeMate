@@ -1,0 +1,947 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  AlertCircle,
+  BadgeCheck,
+  Building2,
+  Calendar,
+  CalendarRange,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  FilePenLine,
+  FileText,
+  Printer,
+  RotateCcw,
+  Save,
+  SlidersHorizontal,
+  User,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
+import { A4DocumentPreview } from '../components/A4DocumentPreview';
+import { ConfirmModal } from '../components/CommonModals';
+import { DatePickerField } from '../components/DatePickerModal';
+import {
+  AppSettings,
+  GeneratedDocument,
+  Person,
+  Signer,
+  Template,
+  TemplateField,
+} from '../types/models';
+import {
+  buildDocumentFilename,
+  exportHtmlItemsToPdf,
+  exportSingleDocx,
+} from '../utils/exporters';
+import {
+  computeAutoFields,
+  formatDateByPattern,
+  parseFlexibleDate,
+  renderTemplateBody,
+  validateFieldValues,
+} from '../utils/placeholderEngine';
+
+const CLERK_MEMORY_KEY = 'officemate_clerk_memory_v1';
+const CYCLE_MEMORY_KEY = 'officemate_cycle_start_memory_v1';
+const STATEMENT_MEMORY_KEY = 'officemate_statement_memory_v1';
+
+const CLERK_KEYS = new Set(['clerk_bd_no', 'clerk_rank', 'clerk_name', 'unit']);
+const CYCLE_KEYS = new Set(['cycle_start', 'cycle_end']);
+const LEAVE_KEYS = new Set(['leave_from', 'leave_to', 'due_wef']);
+const APPLICANT_KEYS = new Set(['bd_no', 'rank', 'name']);
+
+const ST_UNIT_KEYS = new Set(['unit_line1', 'unit_line2', 'phone_line', 'date_bn']);
+const ST_PERSON_KEYS = new Set([
+  'statement_title_for',
+  'bd_no_bn',
+  'rank_bn',
+  'name_bn',
+  'trade_bn',
+]);
+const ST_BODY_KEYS = new Set(['statement_para1', 'statement_para2']);
+const ST_SIGN_KEYS = new Set([
+  'sign_name_bn',
+  'sign_rank_bn',
+  'to_designation_bn',
+  'to_unit_bn',
+]);
+const ST_MEMORY_KEYS = new Set([
+  'unit_line1',
+  'unit_line2',
+  'phone_line',
+  'date_bn',
+  'to_designation_bn',
+  'to_unit_bn',
+]);
+
+type InputSectionKey =
+  | 'cycle'
+  | 'leave'
+  | 'applicant'
+  | 'clerk'
+  | 'st_unit'
+  | 'st_person'
+  | 'st_body'
+  | 'st_sign';
+
+function readStoredJsonMap(key: string): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function readStoredClerkMemory(): Record<string, string> {
+  return readStoredJsonMap(CLERK_MEMORY_KEY);
+}
+
+function writeStoredClerkMemory(values: Record<string, string>): void {
+  try {
+    const payload = {
+      clerk_bd_no: values.clerk_bd_no ?? '',
+      clerk_rank: values.clerk_rank ?? '',
+      clerk_name: values.clerk_name ?? '',
+      unit: values.unit ?? '',
+    };
+    localStorage.setItem(CLERK_MEMORY_KEY, JSON.stringify(payload));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
+function readStoredStatementMemory(): Record<string, string> {
+  return readStoredJsonMap(STATEMENT_MEMORY_KEY);
+}
+
+function writeStoredStatementMemory(values: Record<string, string>): void {
+  try {
+    const payload: Record<string, string> = {};
+    ST_MEMORY_KEYS.forEach((k) => {
+      if (values[k] !== undefined) {
+        payload[k] = values[k];
+      }
+    });
+    localStorage.setItem(STATEMENT_MEMORY_KEY, JSON.stringify(payload));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
+function readStoredCycleStart(): string {
+  try {
+    return localStorage.getItem(CYCLE_MEMORY_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function writeStoredCycleStart(val: string): void {
+  try {
+    if (val) localStorage.setItem(CYCLE_MEMORY_KEY, val);
+  } catch {
+    // ignore
+  }
+}
+
+interface GenerateDocumentPageProps {
+  templates: Template[];
+  personnel: Person[];
+  signers: Signer[];
+  settings: AppSettings;
+  selectedTemplateId: string | null;
+  initialValues?: Record<string, string> | null;
+  initialPersonId?: string;
+  onSelectTemplateId: (id: string) => void;
+  onSaveToHistory: (doc: GeneratedDocument) => Promise<void>;
+  onNotify: (type: 'success' | 'error' | 'info', msg: string) => void;
+}
+
+export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
+  templates,
+  signers,
+  settings,
+  selectedTemplateId,
+  initialValues,
+  initialPersonId,
+  onSaveToHistory,
+  onNotify,
+}) => {
+  const activeTemplate = useMemo(
+    () => templates.find((t) => t.id === selectedTemplateId) ?? templates[0] ?? null,
+    [templates, selectedTemplateId],
+  );
+
+  const isStatement = activeTemplate?.id === 'tpl-statement-bn';
+
+  const [rawValues, setRawValues] = useState<Record<string, string>>({});
+  const [zoom, setZoom] = useState(0.9);
+  const [formExpanded, setFormExpanded] = useState(false);
+  const [activeSection, setActiveSection] = useState<InputSectionKey>('applicant');
+  const [exporting, setExporting] = useState<'docx' | 'pdf' | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'docx' | 'pdf' | 'print' | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!activeTemplate) return;
+    const savedClerk = readStoredClerkMemory();
+    const savedCycleStart = readStoredCycleStart();
+    const savedStatement = readStoredStatementMemory();
+    const defaults: Record<string, string> = {};
+
+    for (const f of activeTemplate.fields) {
+      if (f.key === 'cycle_start') {
+        const candidate = savedCycleStart || f.defaultValue || '01 Jul 26';
+        const parsed = parseFlexibleDate(candidate);
+        const yr = parsed ? parsed.getFullYear() : 2026;
+        defaults[f.key] = formatDateByPattern(new Date(yr, 6, 1), settings.dateFormat);
+      } else if (activeTemplate.id === 'tpl-statement-bn' && ST_MEMORY_KEYS.has(f.key)) {
+        defaults[f.key] =
+          savedStatement[f.key] !== undefined && savedStatement[f.key] !== ''
+            ? savedStatement[f.key]
+            : f.defaultValue || '';
+      } else if (CLERK_KEYS.has(f.key)) {
+        if (savedClerk[f.key] !== undefined && savedClerk[f.key] !== '') {
+          defaults[f.key] = savedClerk[f.key];
+        } else if (f.type === 'signer' && f.signerRole && f.signerProperty) {
+          const signer =
+            signers.find((s) => s.role === f.signerRole && s.isDefault) ??
+            signers.find((s) => s.role === f.signerRole);
+          defaults[f.key] = signer ? signer[f.signerProperty] : f.defaultValue;
+        } else if (f.key === 'unit' && !f.defaultValue) {
+          defaults[f.key] = settings.defaultUnit;
+        } else {
+          defaults[f.key] = f.defaultValue || '';
+        }
+      } else if (f.type === 'signer' && f.signerRole && f.signerProperty) {
+        const signer =
+          signers.find((s) => s.role === f.signerRole && s.isDefault) ??
+          signers.find((s) => s.role === f.signerRole);
+        defaults[f.key] = signer ? signer[f.signerProperty] : f.defaultValue;
+      } else if (f.key === 'unit' && !f.defaultValue) {
+        defaults[f.key] = settings.defaultUnit;
+      } else {
+        defaults[f.key] = f.defaultValue || '';
+      }
+    }
+
+    if (initialValues) {
+      Object.assign(defaults, initialValues);
+    }
+    setRawValues(defaults);
+    setActiveSection(activeTemplate.id === 'tpl-statement-bn' ? 'st_body' : 'applicant');
+    setShowErrors(false);
+  }, [activeTemplate?.id, initialValues, initialPersonId]);
+
+  const updateFieldValue = (key: string, val: string) => {
+    setRawValues((prev) => {
+      const next = { ...prev, [key]: val };
+      if (CLERK_KEYS.has(key)) {
+        writeStoredClerkMemory(next);
+      }
+      if (key === 'cycle_start') {
+        writeStoredCycleStart(val);
+      }
+      if (isStatement && ST_MEMORY_KEYS.has(key)) {
+        writeStoredStatementMemory(next);
+      }
+      return next;
+    });
+  };
+
+  const setCycleStartYear = (year: number) => {
+    const formatted = formatDateByPattern(new Date(year, 6, 1), settings.dateFormat);
+    updateFieldValue('cycle_start', formatted);
+  };
+
+  const computedValues = useMemo(() => {
+    if (!activeTemplate) return {};
+    return computeAutoFields(activeTemplate.fields, rawValues, settings.dateFormat);
+  }, [activeTemplate, rawValues, settings.dateFormat]);
+
+  const validationErrors = useMemo(() => {
+    if (!activeTemplate) return {};
+    return validateFieldValues(activeTemplate.fields, computedValues);
+  }, [activeTemplate, computedValues]);
+
+  const rendered = useMemo(() => {
+    if (!activeTemplate) return { html: '', unfilledKeys: [] };
+    return renderTemplateBody(activeTemplate, computedValues, settings.dateFormat, {
+      highlightUnfilled: false,
+      blankDotted: true,
+    });
+  }, [activeTemplate, computedValues, settings.dateFormat]);
+
+  const renderedClean = useMemo(() => {
+    if (!activeTemplate) return { html: '', unfilledKeys: [] };
+    return renderTemplateBody(activeTemplate, computedValues, settings.dateFormat, {
+      highlightUnfilled: false,
+      blankDotted: true,
+    });
+  }, [activeTemplate, computedValues, settings.dateFormat]);
+
+  const buildHistoryRecord = (): GeneratedDocument | null => {
+    if (!activeTemplate) return null;
+    const now = new Date().toISOString();
+    return {
+      id: `doc-${Date.now()}`,
+      templateId: activeTemplate.id,
+      templateName: activeTemplate.name,
+      category: activeTemplate.category,
+      personId: initialPersonId || undefined,
+      personSummary: {
+        bd_no: computedValues.bd_no ?? computedValues.bd_no_bn ?? '',
+        rank: computedValues.rank ?? computedValues.rank_bn ?? '',
+        name: computedValues.name ?? computedValues.name_bn ?? '',
+      },
+      values: { ...computedValues },
+      renderedHtml: renderedClean.html,
+      createdAt: now,
+      updatedAt: now,
+    };
+  };
+
+  const handleSaveHistory = async () => {
+    const rec = buildHistoryRecord();
+    if (!rec) return;
+    await onSaveToHistory(rec);
+    onNotify('success', 'Document saved to history.');
+  };
+
+  const executeExport = async (kind: 'docx' | 'pdf' | 'print') => {
+    if (!activeTemplate) return;
+    setPendingAction(null);
+
+    if (kind === 'print') {
+      const rec = buildHistoryRecord();
+      if (rec) await onSaveToHistory(rec);
+      window.print();
+      return;
+    }
+
+    setExporting(kind);
+    try {
+      const filename = buildDocumentFilename(
+        activeTemplate.name,
+        computedValues,
+        kind,
+      );
+      if (kind === 'docx') {
+        await exportSingleDocx(activeTemplate, renderedClean.html, filename);
+        onNotify('success', `Exported ${filename}`);
+      } else {
+        await exportHtmlItemsToPdf(activeTemplate, [renderedClean.html], filename);
+        onNotify('success', `Exported ${filename}`);
+      }
+      const rec = buildHistoryRecord();
+      if (rec) await onSaveToHistory(rec);
+    } catch (err) {
+      onNotify(
+        'error',
+        err instanceof Error ? err.message : 'Export failed. Please try again.',
+      );
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const requestAction = (kind: 'docx' | 'pdf' | 'print') => {
+    setShowErrors(true);
+    if (Object.keys(validationErrors).length > 0) {
+      setFormExpanded(true);
+      const firstErrKey = Object.keys(validationErrors)[0];
+      if (isStatement) {
+        if (ST_UNIT_KEYS.has(firstErrKey)) setActiveSection('st_unit');
+        else if (ST_PERSON_KEYS.has(firstErrKey)) setActiveSection('st_person');
+        else if (ST_BODY_KEYS.has(firstErrKey)) setActiveSection('st_body');
+        else if (ST_SIGN_KEYS.has(firstErrKey)) setActiveSection('st_sign');
+      } else {
+        if (CYCLE_KEYS.has(firstErrKey)) setActiveSection('cycle');
+        else if (LEAVE_KEYS.has(firstErrKey)) setActiveSection('leave');
+        else if (APPLICANT_KEYS.has(firstErrKey)) setActiveSection('applicant');
+        else if (CLERK_KEYS.has(firstErrKey)) setActiveSection('clerk');
+      }
+    }
+    void executeExport(kind);
+  };
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        requestAction('print');
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  });
+
+  if (!activeTemplate) {
+    return (
+      <div className="bg-[#0C1526] border border-slate-800 rounded-xl p-12 text-center">
+        <FileText className="w-8 h-8 text-slate-500 mx-auto mb-3" />
+        <p className="text-sm font-semibold text-white">No templates available</p>
+      </div>
+    );
+  }
+
+  const cycleStartParsed = parseFlexibleDate(computedValues.cycle_start ?? '');
+  const cycleStartYear = cycleStartParsed ? cycleStartParsed.getFullYear() : 2026;
+
+  const sectionFields: Record<InputSectionKey, TemplateField[]> = {
+    cycle: activeTemplate.fields.filter((f) => CYCLE_KEYS.has(f.key)),
+    leave: activeTemplate.fields.filter((f) => LEAVE_KEYS.has(f.key)),
+    applicant: activeTemplate.fields.filter(
+      (f) =>
+        APPLICANT_KEYS.has(f.key) ||
+        (!CYCLE_KEYS.has(f.key) && !LEAVE_KEYS.has(f.key) && !CLERK_KEYS.has(f.key)),
+    ),
+    clerk: activeTemplate.fields.filter((f) => CLERK_KEYS.has(f.key)),
+    st_unit: activeTemplate.fields.filter((f) => ST_UNIT_KEYS.has(f.key)),
+    st_person: activeTemplate.fields.filter((f) => ST_PERSON_KEYS.has(f.key)),
+    st_body: activeTemplate.fields.filter((f) => ST_BODY_KEYS.has(f.key)),
+    st_sign: activeTemplate.fields.filter((f) => ST_SIGN_KEYS.has(f.key)),
+  };
+
+  const cycleYears: number[] = [];
+  for (let y = 2018; y <= 2038; y++) {
+    cycleYears.push(y);
+  }
+
+  const sectionCards: Array<{
+    id: InputSectionKey;
+    title: string;
+    subtitle: string;
+    icon: React.ReactNode;
+    hasError: boolean;
+  }> = isStatement
+    ? [
+        {
+          id: 'st_unit',
+          title: 'Unit & Date',
+          subtitle: computedValues.unit_line1 || 'ইউনিট ও তারিখ',
+          icon: <Building2 className="w-4 h-4" />,
+          hasError:
+            showErrors &&
+            sectionFields.st_unit.some((f) => Boolean(validationErrors[f.key])),
+        },
+        {
+          id: 'st_person',
+          title: 'Person & Title',
+          subtitle: computedValues.name_bn
+            ? `${computedValues.rank_bn ? `${computedValues.rank_bn} ` : ''}${computedValues.name_bn}`
+            : 'বিডি নং, পদবী ও নাম',
+          icon: <User className="w-4 h-4" />,
+          hasError:
+            showErrors &&
+            sectionFields.st_person.some((f) => Boolean(validationErrors[f.key])),
+        },
+        {
+          id: 'st_body',
+          title: 'বিবৃতি (Statement)',
+          subtitle: `${sectionFields.st_body.filter((f) => (computedValues[f.key] ?? '').trim() !== '').length}/${sectionFields.st_body.length} filled`,
+          icon: <FilePenLine className="w-4 h-4" />,
+          hasError:
+            showErrors &&
+            sectionFields.st_body.some((f) => Boolean(validationErrors[f.key])),
+        },
+        {
+          id: 'st_sign',
+          title: 'Signature & প্রতি',
+          subtitle: computedValues.sign_name_bn || 'স্বাক্ষর ও প্রাপক',
+          icon: <BadgeCheck className="w-4 h-4" />,
+          hasError:
+            showErrors &&
+            sectionFields.st_sign.some((f) => Boolean(validationErrors[f.key])),
+        },
+      ]
+    : [
+        {
+          id: 'cycle',
+          title: 'Cycle',
+          subtitle:
+            computedValues.cycle_start && computedValues.cycle_end
+              ? `${computedValues.cycle_start} – ${computedValues.cycle_end}`
+              : '01 Jul – 30 Jun',
+          icon: <CalendarRange className="w-4 h-4" />,
+          hasError:
+            showErrors && sectionFields.cycle.some((f) => Boolean(validationErrors[f.key])),
+        },
+        {
+          id: 'leave',
+          title: 'Leave Info',
+          subtitle: `${sectionFields.leave.filter((f) => (computedValues[f.key] ?? '').trim() !== '').length}/${sectionFields.leave.length} filled`,
+          icon: <Calendar className="w-4 h-4" />,
+          hasError:
+            showErrors && sectionFields.leave.some((f) => Boolean(validationErrors[f.key])),
+        },
+        {
+          id: 'applicant',
+          title: 'Applicant Info',
+          subtitle: computedValues.name
+            ? `${computedValues.rank ? `${computedValues.rank} ` : ''}${computedValues.name}`
+            : `${sectionFields.applicant.filter((f) => (computedValues[f.key] ?? '').trim() !== '').length}/${sectionFields.applicant.length} filled`,
+          icon: <User className="w-4 h-4" />,
+          hasError:
+            showErrors &&
+            sectionFields.applicant.some((f) => Boolean(validationErrors[f.key])),
+        },
+        {
+          id: 'clerk',
+          title: 'Document Clerk',
+          subtitle: computedValues.clerk_name
+            ? `${computedValues.clerk_rank ? `${computedValues.clerk_rank} ` : ''}${computedValues.clerk_name}`
+            : 'Manual & Auto-saved',
+          icon: <BadgeCheck className="w-4 h-4" />,
+          hasError:
+            showErrors && sectionFields.clerk.some((f) => Boolean(validationErrors[f.key])),
+        },
+      ];
+
+  const handleSectionClick = (sec: InputSectionKey) => {
+    setActiveSection(sec);
+    if (!formExpanded) setFormExpanded(true);
+  };
+
+  const renderStandardField = (field: TemplateField) => {
+    const value = computedValues[field.key] ?? '';
+    const err = showErrors ? validationErrors[field.key] : undefined;
+
+    if (field.key === 'cycle_start') {
+      return (
+        <div key={field.id} className="sm:col-span-2 lg:col-span-1">
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-medium text-slate-300 truncate">
+              {field.label}
+              <span className="text-red-400 ml-0.5">*</span>
+            </label>
+            <span className="text-[10px] font-medium text-indigo-400 shrink-0 ml-1">
+              Always 01 Jul
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              aria-label="Cycle Start Year"
+              value={cycleStartYear}
+              onChange={(e) => setCycleStartYear(Number(e.target.value))}
+              className="px-3 py-2 text-sm font-medium bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 tabular-nums"
+            >
+              {cycleYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  Year: {yr}
+                </option>
+              ))}
+            </select>
+            <DatePickerField
+              value={value}
+              onChange={(_formatted, iso) => {
+                if (!iso) return;
+                const parsed = parseFlexibleDate(iso);
+                if (parsed) setCycleStartYear(parsed.getFullYear());
+              }}
+              allowClear={false}
+              dateFormat={settings.dateFormat}
+              lockDayMonth={{ day: 1, monthZeroBased: 6 }}
+              ariaLabel="Cycle Start Calendar"
+            />
+          </div>
+          {err ? (
+            <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{err}</span>
+            </p>
+          ) : null}
+        </div>
+      );
+    }
+
+    const isBanglaField = isStatement;
+    const banglaInputStyle = isBanglaField
+      ? { fontFamily: '"Noto Serif Bengali", "Tiro Bangla", "Noto Sans Bengali", sans-serif' }
+      : undefined;
+
+    return (
+      <div
+        key={field.id}
+        className={
+          field.type === 'textarea'
+            ? isStatement
+              ? 'sm:col-span-2 lg:col-span-4'
+              : 'sm:col-span-2'
+            : undefined
+        }
+      >
+        <div className="flex items-center justify-between mb-1">
+          <label
+            htmlFor={`field-${field.key}`}
+            className="text-xs font-medium text-slate-300 truncate"
+            style={banglaInputStyle}
+          >
+            {field.label}
+            {field.required ? <span className="text-red-400 ml-0.5">*</span> : null}
+          </label>
+          {field.type === 'auto' ? (
+            <span className="text-[10px] font-medium text-emerald-400 shrink-0 ml-1">
+              Auto
+            </span>
+          ) : CLERK_KEYS.has(field.key) || (isStatement && ST_MEMORY_KEYS.has(field.key)) ? (
+            <span className="text-[10px] font-medium text-slate-400 shrink-0 ml-1">
+              Auto-saved
+            </span>
+          ) : null}
+        </div>
+
+        {field.type === 'rank' ? (
+          <select
+            id={`field-${field.key}`}
+            value={value}
+            onChange={(e) => updateFieldValue(field.key, e.target.value)}
+            className="w-full px-3 py-2 text-sm bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="">Select rank...</option>
+            {settings.ranks.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        ) : field.type === 'select' ? (
+          <select
+            id={`field-${field.key}`}
+            value={value}
+            onChange={(e) => updateFieldValue(field.key, e.target.value)}
+            className="w-full px-3 py-2 text-sm bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="">Select option...</option>
+            {(field.options ?? []).map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        ) : field.type === 'textarea' ? (
+          <textarea
+            id={`field-${field.key}`}
+            rows={isStatement ? (field.key === 'statement_para1' ? 4 : 3) : 2}
+            value={value}
+            onChange={(e) => updateFieldValue(field.key, e.target.value)}
+            style={banglaInputStyle}
+            className={`w-full px-3 py-2 ${isBanglaField ? 'text-[15px] leading-relaxed' : 'text-sm'} bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500`}
+          />
+        ) : field.type === 'date' ? (
+          <DatePickerField
+            value={value}
+            onChange={(formatted) => updateFieldValue(field.key, formatted)}
+            placeholder={settings.dateFormat}
+            dateFormat={settings.dateFormat}
+            ariaLabel={field.label}
+          />
+        ) : field.type === 'auto' ? (
+          <input
+            id={`field-${field.key}`}
+            type="text"
+            readOnly
+            value={value}
+            placeholder="Calculated automatically"
+            className="w-full px-3 py-2 text-sm bg-[#09101E] text-emerald-300 border border-slate-800 rounded-lg font-medium tabular-nums"
+          />
+        ) : (
+          <input
+            id={`field-${field.key}`}
+            type={field.type === 'number' ? 'number' : 'text'}
+            value={value}
+            onChange={(e) => updateFieldValue(field.key, e.target.value)}
+            style={banglaInputStyle}
+            className={`w-full px-3 py-2 ${isBanglaField ? 'text-[15px]' : 'text-sm'} bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500`}
+          />
+        )}
+
+        {err ? (
+          <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <span>{err}</span>
+          </p>
+        ) : null}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <div className="no-print space-y-5">
+        {/* Top Action Strip (Clean title without other template list) */}
+        <div className="bg-[#0C1526] border border-slate-800 rounded-xl px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+              <FileText className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold text-white truncate">
+                {activeTemplate.name}
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                {isStatement
+                  ? 'Bangla Official Statement · সীমিত · SutonnyMJ 14pt'
+                  : 'JSI-8/80 · Official Format (Arial 12pt / SutonnyMJ 14pt)'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleSaveHistory}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-200 bg-[#111C31] border border-slate-700 rounded-lg hover:bg-slate-800"
+            >
+              <Save className="w-4 h-4" />
+              <span>Save</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => requestAction('print')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-200 bg-[#111C31] border border-slate-700 rounded-lg hover:bg-slate-800"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => requestAction('pdf')}
+              disabled={exporting !== null}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 disabled:opacity-60"
+            >
+              <Download className="w-4 h-4" />
+              <span>{exporting === 'pdf' ? 'Exporting PDF...' : 'Export PDF'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => requestAction('docx')}
+              disabled={exporting !== null}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-950 bg-emerald-500 rounded-lg hover:bg-emerald-400 disabled:opacity-60"
+            >
+              <Download className="w-4 h-4" />
+              <span>{exporting === 'docx' ? 'Exporting DOCX...' : 'Export DOCX'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Top-to-Bottom Workspace: Collapsible Categorized Input on Top | Full A4 Preview Below */}
+        <div className="space-y-5">
+          {/* Information Input Panel (Collapsed by default, click to unhide) */}
+          <div className="bg-[#0C1526] border border-slate-800 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setFormExpanded((v) => !v)}
+              aria-expanded={formExpanded}
+              className="w-full px-5 py-3.5 flex items-center justify-between gap-4 text-left hover:bg-[#101C33] transition-colors"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="text-sm font-semibold text-white">
+                      Information Input
+                    </span>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-[#111C31] border border-slate-700 text-slate-300 tabular-nums">
+                      {activeTemplate.fields.length - rendered.unfilledKeys.length}/
+                      {activeTemplate.fields.length} filled
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">
+                    {isStatement
+                      ? computedValues.name_bn
+                        ? `${computedValues.rank_bn ? `${computedValues.rank_bn} ` : ''}${computedValues.name_bn}${computedValues.bd_no_bn ? ` · বিডি/${computedValues.bd_no_bn}` : ''}`
+                        : 'Click to edit Unit, Person, বিবৃতি & Signature'
+                      : computedValues.name
+                        ? `${computedValues.rank ? `${computedValues.rank} ` : ''}${computedValues.name}${computedValues.bd_no ? ` · BD/${computedValues.bd_no}` : ''}`
+                        : 'Click to input Cycle, Leave Info, Applicant Info & Document Clerk'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-medium text-emerald-400">
+                  {formExpanded ? 'Hide Inputs' : 'Fill Information'}
+                </span>
+                {formExpanded ? (
+                  <ChevronUp className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-emerald-400" />
+                )}
+              </div>
+            </button>
+
+            {formExpanded ? (
+              <div className="p-5 pt-4 border-t border-slate-800 space-y-4">
+                {/* 4 Clickable Section Selector Cards */}
+                <div className="flex flex-col lg:flex-row lg:items-stretch justify-between gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1">
+                    {sectionCards.map((sec) => {
+                      const isActive = activeSection === sec.id;
+                      return (
+                        <button
+                          key={sec.id}
+                          type="button"
+                          onClick={() => handleSectionClick(sec.id)}
+                          className={`px-3.5 py-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
+                            isActive
+                              ? 'bg-emerald-500/15 border-emerald-500/60 text-white shadow-sm'
+                              : sec.hasError
+                                ? 'bg-red-950/20 border-red-500/40 text-slate-200 hover:bg-[#111C31]'
+                                : 'bg-[#111C31] border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                          }`}
+                        >
+                          <div
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                              isActive
+                                ? 'bg-emerald-500 text-slate-950'
+                                : 'bg-[#0C1526] text-emerald-400 border border-slate-700'
+                            }`}
+                          >
+                            {sec.icon}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold leading-tight truncate">
+                              {sec.title}
+                            </p>
+                            <p className="text-[11px] text-slate-400 truncate mt-0.5 tabular-nums">
+                              {sec.subtitle}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRawValues((prev) => {
+                        const next = { ...prev };
+                        for (const f of activeTemplate.fields) {
+                          if (isStatement) {
+                            if (!ST_MEMORY_KEYS.has(f.key)) {
+                              next[f.key] = '';
+                            }
+                          } else if (!CLERK_KEYS.has(f.key) && !CYCLE_KEYS.has(f.key)) {
+                            next[f.key] = '';
+                          }
+                        }
+                        return next;
+                      });
+                      setShowErrors(false);
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-300 bg-[#111C31] border border-slate-700 rounded-xl hover:text-white hover:bg-slate-800 shrink-0"
+                    title={
+                      isStatement
+                        ? 'Clears Person & বিবৃতি fields while keeping Unit, Date & প্রতি'
+                        : 'Clears Applicant & Leave fields while keeping Cycle & Document Clerk'
+                    }
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>{isStatement ? 'Clear Person & বিবৃতি' : 'Clear Applicant & Leave'}</span>
+                  </button>
+                </div>
+
+                {/* Active Section Fields */}
+                <div className="bg-[#09101E]/70 border border-slate-800/90 rounded-xl p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(sectionFields[activeSection] ?? []).map((field) => renderStandardField(field))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Bottom Full A4 Live Preview */}
+          <div className="bg-[#080E1B] border border-slate-800 rounded-xl overflow-hidden flex flex-col">
+            <div className="bg-[#0C1526] px-4 py-2.5 border-b border-slate-800 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 text-xs">
+                <span className="font-semibold text-white">Full A4 Document Preview</span>
+                {rendered.unfilledKeys.length > 0 ? (
+                  <span className="text-slate-400 tabular-nums">
+                    {rendered.unfilledKeys.length} blank field(s) shown as solid lines
+                  </span>
+                ) : (
+                  <span className="text-emerald-400 font-medium">All fields filled</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.1).toFixed(2))))}
+                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
+                  title="Zoom out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-mono text-slate-300 w-11 text-center tabular-nums">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => Math.min(1.2, Number((z + 0.1).toFixed(2))))}
+                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
+                  title="Zoom in"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-x-auto flex justify-center">
+              <div
+                style={{
+                  width: `${210 * zoom}mm`,
+                  minHeight: `${297 * zoom}mm`,
+                }}
+              >
+                <A4DocumentPreview
+                  renderedHtml={rendered.html}
+                  pageSettings={activeTemplate.pageSettings}
+                  zoom={zoom}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Print-only clean A4 output */}
+      <div className="hidden print-only-container">
+        <A4DocumentPreview
+          renderedHtml={renderedClean.html}
+          pageSettings={activeTemplate.pageSettings}
+          zoom={1}
+        />
+      </div>
+
+      <ConfirmModal
+        open={pendingAction !== null}
+        title="Unfilled or Invalid Fields Detected"
+        description={
+          rendered.unfilledKeys.length > 0
+            ? `The following placeholders are still empty: ${rendered.unfilledKeys.join(', ')}. Export anyway?`
+            : 'Some fields have validation warnings. Export anyway?'
+        }
+        confirmLabel="Export Anyway"
+        onCancel={() => setPendingAction(null)}
+        onConfirm={() => {
+          if (pendingAction) void executeExport(pendingAction);
+        }}
+      />
+    </>
+  );
+};

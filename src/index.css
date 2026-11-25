@@ -1,0 +1,357 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Arial", "SutonnyMJ", "Noto Sans Bengali", system-ui, sans-serif;
+  --font-sans: "Arial", "SutonnyMJ", "Noto Sans Bengali", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color: #f1f5f9;
+    background-color: #060b16;
+    color-scheme: dark;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+}
+
+/* Subtle dark scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.22);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.38);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Official A4 document preview styling - pure black on pure white, independent of UI chrome */
+.a4-paper {
+  background-color: #ffffff;
+  color: #000000;
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+  font-family: "Arial", "Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", sans-serif;
+  font-size: 12pt;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.a4-paper .om-bn,
+.om-bn {
+  font-family: "SutonnyMJ", "Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", serif;
+  font-size: 14pt;
+}
+
+.a4-paper p {
+  margin: 0 0 0.18em 0;
+}
+
+.a4-paper h1,
+.a4-paper h2,
+.a4-paper h3,
+.a4-paper h4 {
+  font-family: inherit;
+  color: #000000;
+  margin: 0 0 0.5em 0;
+}
+
+.a4-paper table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6em 0;
+}
+
+.a4-paper table td,
+.a4-paper table th {
+  border: 1px solid #000000;
+  padding: 4px 8px;
+  vertical-align: top;
+}
+
+.a4-paper table.om-layout-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 0.25em 0;
+}
+
+.a4-paper table.om-layout-table td,
+.a4-paper table.om-layout-table th {
+  border: none !important;
+  padding: 7px 0 2px 0;
+  vertical-align: bottom;
+}
+
+.a4-paper table.om-layout-table td.om-label-cell {
+  padding: 7px 8px 2px 0;
+  white-space: nowrap;
+}
+
+.a4-paper table.om-layout-table td.om-line-cell {
+  border-bottom: 1px solid #000000 !important;
+  text-align: center;
+  padding: 7px 6px 2px 6px;
+}
+
+.a4-paper .om-blank-slot {
+  display: inline-block;
+  min-width: 85px;
+  border-bottom: 1px solid #000000;
+  text-align: center;
+  padding: 0 2ch 1px 2ch;
+  margin: 0 2px;
+  line-height: 1.2;
+}
+
+.a4-paper .om-line-cell .om-blank-slot,
+.a4-paper .om-sig-line .om-blank-slot,
+.a4-paper .om-blank-slot .om-blank-slot {
+  display: inline;
+  min-width: 0;
+  border-bottom: none;
+  padding: 0;
+  margin: 0;
+}
+
+.a4-paper .om-sig-align-right {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 0.25em 0;
+}
+
+.a4-paper .om-sig-align-left {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  margin: 0.25em 0;
+}
+
+.a4-paper .om-sig-block {
+  display: inline-flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 165px;
+  max-width: 100%;
+}
+
+.a4-paper .om-sig-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.a4-paper .om-sig-row:first-child {
+  margin-top: 0;
+}
+
+.a4-paper .om-sig-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.18;
+}
+
+.a4-paper .om-sig-line {
+  flex: 1 1 auto;
+  border-bottom: 1px solid #000000;
+  text-align: center;
+  padding: 0 2ch 1px 2ch;
+  line-height: 1.18;
+  min-height: 1.18em;
+  white-space: nowrap;
+}
+
+/* Bangla Statement underlined heading & hanging numbered items */
+.a4-paper .om-st-heading {
+  display: inline-flex;
+  flex-direction: column;
+  width: max-content;
+  max-width: 100%;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.a4-paper .om-st-heading-row1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  width: 100%;
+  border-bottom: 1.25px solid #000000;
+  padding-bottom: 1px;
+  margin-bottom: 2px;
+}
+
+.a4-paper .om-st-heading-row2 {
+  border-bottom: 1.25px solid #000000;
+  padding-bottom: 1px;
+}
+
+.a4-paper .om-st-item {
+  display: flex;
+  align-items: flex-start;
+  text-align: justify;
+  margin-bottom: 10px;
+}
+
+.a4-paper .om-st-num {
+  flex: 0 0 34px;
+  white-space: nowrap;
+}
+
+.a4-paper .om-st-text {
+  flex: 1 1 auto;
+}
+
+.a4-paper ol {
+  padding-left: 1.6em;
+  margin: 0.35em 0 0.6em 0;
+}
+
+.a4-paper ol[data-list-style="lower-alpha"],
+.a4-paper ol.list-alpha {
+  list-style-type: lower-alpha;
+}
+
+.a4-paper ol:not([data-list-style="lower-alpha"]):not(.list-alpha) {
+  list-style-type: decimal;
+}
+
+.a4-paper ul {
+  list-style-type: disc;
+  padding-left: 1.6em;
+  margin: 0.35em 0 0.6em 0;
+}
+
+.a4-paper li {
+  margin-bottom: 0.25em;
+}
+
+.a4-paper .om-page-break {
+  border: 0;
+  border-top: 1px dashed #94a3b8;
+  margin: 18px 0;
+  position: relative;
+}
+
+.a4-paper .om-page-break::after {
+  content: "PAGE BREAK";
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  color: #64748b;
+  font-family: var(--font-sans);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  padding: 0 6px;
+}
+
+/* Unfilled placeholder highlight inside live preview */
+.om-unfilled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-bottom: 1.5px solid #dc2626;
+  padding: 0 3px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+/* Template builder placeholder token highlight */
+.om-token {
+  background-color: #dbeafe;
+  color: #1e40af;
+  padding: 0 3px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/* Rich editor interactive canvas */
+.om-editor-canvas:focus {
+  outline: none;
+}
+
+/* Print stylesheet: hide all UI chrome and print only the A4 sheet(s) */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only-container {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  .a4-paper {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    page-break-after: always;
+  }
+
+  .a4-paper:last-child {
+    page-break-after: auto;
+  }
+
+  .a4-paper .om-page-break {
+    border: none !important;
+    margin: 0 !important;
+    height: 0 !important;
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .a4-paper .om-page-break::after {
+    display: none !important;
+  }
+
+  .om-unfilled {
+    background-color: transparent !important;
+    color: #000000 !important;
+    border-bottom: none !important;
+  }
+}

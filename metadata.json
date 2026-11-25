@@ -1,0 +1,6 @@
+{
+  "name": "OfficeMate",
+  "description": "Fill. Generate. Export. Official military base document templating, personnel registry, and batch DOCX/PDF generator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
