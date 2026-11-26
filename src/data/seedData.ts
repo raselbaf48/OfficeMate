@@ -463,12 +463,12 @@ export const INITIAL_TEMPLATES: Template[] = [
       'Official two-page BAF Form 295 (1978) Leave/Pass counterfoil, pass certificate, mobilization instructions, and reverse address.',
     isBuiltIn: true,
     createdAt: '2026-11-25T11:00:00.000Z',
-    updatedAt: '2026-11-25T12:00:00.000Z',
+    updatedAt: '2026-11-26T02:00:00.000Z',
     pageSettings: {
       size: 'A4',
       margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
-      fontFamily: 'Arial',
-      fontSize: 12,
+      fontFamily: 'Times New Roman',
+      fontSize: 10,
       lineHeight: 1.24,
       headerText: '',
       footerText: '',
@@ -482,8 +482,8 @@ export const INITIAL_TEMPLATES: Template[] = [
         label: 'Type (Leave / Pass)',
         type: 'select',
         options: ['Leave', 'Pass'],
-        required: true,
-        defaultValue: 'Leave',
+        required: false,
+        defaultValue: '',
       },
       {
         id: 'f295-unit',
@@ -622,52 +622,71 @@ export const INITIAL_TEMPLATES: Template[] = [
     bodyHtml: `<table class="om-layout-table" style="width: 100%; border-collapse: collapse;">
   <tbody>
     <tr>
-      <td class="om-top-cell" style="width: 37%; border-right: 3px double #000000 !important; padding-right: 10px; line-height: 1.35;">
-        <p style="text-align: right; margin: 0 0 10px 0;">BAF Form 295</p>
-        <p style="margin: 0 0 3px 0;">Base/Unit <span class="om-line-fill om-w-md">{{base_unit}}</span></p>
-        <p style="margin: 0 0 3px 0;">Sqn/Flt <span class="om-line-fill om-w-md">{{sqn_flt}}</span></p>
-        <p style="margin: 0 0 3px 0;">BD/ <span class="om-line-fill om-w-sm">{{bd_no}}</span> Rank <span class="om-line-fill om-w-sm">{{rank}}</span></p>
-        <p style="margin: 0 0 3px 0;">Name <span class="om-line-fill om-w-md">{{name}}</span></p>
-        <p style="margin: 0 0 3px 0;">Trade <span class="om-line-fill om-w-md">{{trade}}</span></p>
-        <p style="margin: 0 0 3px 0;">From <span class="om-line-fill om-w-xs">{{from_hours}}</span> hours on <span class="om-line-fill om-w-sm">{{from_day_mon}}</span></p>
-        <p style="margin: 0 0 3px 0;"><span class="om-line-fill om-w-md">&nbsp;</span> 20<span class="om-line-fill om-w-xs">{{from_yr}}</span></p>
-        <p style="margin: 0 0 3px 0;">to <span class="om-line-fill om-w-xs">{{to_hours}}</span> hours on <span class="om-line-fill om-w-sm">{{to_day_mon}}</span> 20<span class="om-line-fill om-w-xs">{{to_yr}}</span></p>
-        <p style="margin: 0 0 24px 0;">He is permitted to wear plain cloths.</p>
-        <p style="text-align: right; margin: 0 0 10px 0;"><span class="om-line-fill om-w-md">&nbsp;</span><br>Initials of OC</p>
-        <p style="margin: 0 0 20px 0;">Initials of Sqn/Flt Cdr <span class="om-line-fill om-w-sm">&nbsp;</span></p>
-        <p style="margin: 0 0 2px 0;">Date <span class="om-line-fill om-w-md">{{issue_date}}</span></p>
-        <p style="margin: 0 0 18px 0;">(State address on reverse)</p>
-        <p style="margin: 0;">BAF Press-7812-5000 Pads-11-06-2023</p>
+      <td class="om-top-cell" style="width: 38%; border-right: 3px double #000000 !important; padding-right: 10px; line-height: 1.26;">
+        <p style="text-align: right; margin: 0 0 14px 0;">BAF Form 295</p>
+        <div class="om-295-row"><span class="om-295-lbl">Base/Unit</span><span class="om-295-dot">{{base_unit}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">Sqn/Flt</span><span class="om-295-dot">{{sqn_flt}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">BD/</span><span class="om-295-dot">{{bd_no}}</span><span class="om-295-lbl">Rank</span><span class="om-295-dot om-295-dot-md">{{rank}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">Name</span><span class="om-295-dot">{{name}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">Trade</span><span class="om-295-dot">{{trade}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">From</span><span class="om-295-dot om-295-dot-xs">{{from_hours}}</span><span class="om-295-lbl">hours on</span><span class="om-295-dot">{{from_day_mon}}</span></div>
+        <div class="om-295-row"><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-xs">{{from_yr}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">to</span><span class="om-295-dot om-295-dot-xs">{{to_hours}}</span><span class="om-295-lbl">hours on</span><span class="om-295-dot">{{to_day_mon}}</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-xs">{{to_yr}}</span></div>
+        <p style="margin: 2px 0 0 0;">He is permitted to wear plain cloths.</p>
+        <p style="text-align: right; margin: 48px 0 0 0; line-height: 1.25;"><span class="om-line-fill om-w-md">&nbsp;</span><br>Initials of OC</p>
+        <div class="om-295-row" style="margin-top: 26px;"><span class="om-295-lbl">Initials of Sqn/Flt Cdr</span><span class="om-295-dot">&nbsp;</span></div>
+        <div class="om-295-row" style="margin-top: 32px;"><span class="om-295-lbl">Date</span><span class="om-295-dot">{{issue_date}}</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
+        <p style="margin: 1px 0 0 0;">(State address on reverse)</p>
+        <p style="margin: 34px 0 0 0; font-size: 7.5pt;">BAF Press-7812-5000 Pads-11-06-2023</p>
       </td>
-      <td class="om-top-cell" style="width: 63%; padding-left: 12px; line-height: 1.35;">
-        <p style="text-align: right; margin: 0 0 2px 0;">BAF Form 295<br>(1978)</p>
-        <p style="text-align: center; margin: 0 0 6px 0;"><strong>Bangladesh Air Force</strong></p>
-        <table class="om-layout-table" style="width: 100%; margin: 0 0 6px 0;">
+      <td class="om-top-cell" style="width: 62%; padding-left: 12px; line-height: 1.26;">
+        <p style="text-align: right; margin: 0 0 2px 0; line-height: 1.15;">BAF Form 295<br>(1978)</p>
+        <p style="text-align: center; margin: 0 0 4px 0; font-size: 16pt; line-height: 1.15;">Bangladesh Air Force</p>
+        <table class="om-layout-table" style="width: 100%; margin: 0 0 2px 0;">
           <tbody>
             <tr>
-              <td class="om-top-cell" style="width: 34%;"><strong>LEAVE*<br>PASS*</strong> &nbsp;} FROM</td>
-              <td class="om-top-cell" style="width: 66%; line-height: 1.25;">If a General Mobilization is order every Airmen/MODC (Air) on leave or pass must return immediately to his unit without waiting for instructions.</td>
+              <td class="om-top-cell" style="width: 34%; vertical-align: middle;">
+                <table class="om-layout-table" style="width: 100%; margin: 0;">
+                  <tbody>
+                    <tr>
+                      <td class="om-top-cell" style="width: 46%; vertical-align: middle; font-size: 9pt; line-height: 1.15;">{{pass_type | strike_295_header}}</td>
+                      <td class="om-top-cell" style="width: 16%; vertical-align: middle; text-align: center; font-size: 20pt; line-height: 1;">&#125;</td>
+                      <td class="om-top-cell" style="width: 38%; vertical-align: middle; font-weight: bold; font-size: 9.5pt;">FROM</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+              <td class="om-top-cell" style="width: 66%; line-height: 1.2;">If a General Mobilization is order every Airmen/MODC (Air) on leave or pass must return immediately to his unit without waiting for instructions.</td>
             </tr>
           </tbody>
         </table>
-        <div style="text-align: right; margin: 4px 0 6px 0;"><span class="om-baf295-stamp">Base/unit<br>Stamp</span></div>
-        <p style="margin: 0 0 3px 0;">Base/Unit <span class="om-line-fill om-w-lg">{{base_unit}}</span></p>
-        <p style="margin: 0 0 3px 0;">Sqn/Flt <span class="om-line-fill om-w-lg">{{sqn_flt}}</span></p>
-        <p style="margin: 0 0 3px 0;">BD/ <span class="om-line-fill om-w-md">{{bd_no}}</span> Rank <span class="om-line-fill om-w-sm">{{rank}}</span></p>
-        <p style="margin: 0 0 3px 0;">Name <span class="om-line-fill om-w-lg">{{name}}</span></p>
-        <p style="margin: 0 0 3px 0;">Trade <span class="om-line-fill om-w-md">{{trade}}</span> has permission</p>
-        <p style="margin: 0 0 3px 0;">to absent from his barrack/quarters, from <span class="om-line-fill om-w-xs">{{from_hours}}</span> hours</p>
-        <p style="margin: 0 0 3px 0;">on <span class="om-line-fill om-w-sm">{{from_day_mon}}</span> 20<span class="om-line-fill om-w-xs">{{from_yr}}</span> to <span class="om-line-fill om-w-xs">{{to_hours}}</span> hours on <span class="om-line-fill om-w-sm">{{to_day_mon}}</span> 20<span class="om-line-fill om-w-xs">{{to_yr}}</span></p>
-        <p style="margin: 0 0 28px 0;">for the purpose of proceeding on <span class="om-line-fill om-w-sm"><strong>{{pass_type}}</strong></span> (*Leave / *Pass) and has permission to wear plain cloths.</p>
-        <table class="om-layout-table" style="width: 100%; margin: 0 0 10px 0;">
+        <table class="om-layout-table" style="width: 100%; margin: 4px 0 6px 0;">
           <tbody>
             <tr>
-              <td style="width: 48%; text-align: left;">Date <span class="om-line-fill om-w-sm">{{issue_date}}</span></td>
-              <td style="width: 52%; text-align: center;"><span class="om-line-fill om-w-md">&nbsp;</span><br>Officer Commanding<br>Appointment Stamp</td>
+              <td class="om-gap-cell" style="width: 72%;">&nbsp;</td>
+              <td class="om-box-cell" style="width: 28%; border: 2px solid #000000 !important; padding: 3px 6px !important; line-height: 1.15;">Base/unit<br>Stamp</td>
             </tr>
           </tbody>
         </table>
-        <p style="text-align: right; margin: 0;">*Strike out words not applicable</p>
+        <div class="om-295-row"><span class="om-295-lbl">Base/Unit</span><span class="om-295-dot">{{base_unit}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">Sqn/Flt</span><span class="om-295-dot">{{sqn_flt}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">BD/</span><span class="om-295-dot">{{bd_no}}</span><span class="om-295-lbl">Rank</span><span class="om-295-dot om-295-dot-md">{{rank}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">Name</span><span class="om-295-dot">{{name}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">Trade</span><span class="om-295-dot">{{trade}}</span><span class="om-295-lbl">has permission</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">to absent from his barrack/quarters, from</span><span class="om-295-dot">{{from_hours}}</span><span class="om-295-lbl">hours</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">on</span><span class="om-295-dot">{{from_day_mon}}</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-xs">{{from_yr}}</span><span class="om-295-lbl">to</span><span class="om-295-dot om-295-dot-xs">{{to_hours}}</span><span class="om-295-lbl">hours on</span><span class="om-295-dot">{{to_day_mon}}</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-xs">{{to_yr}}</span></div>
+        <p style="margin: 6px 0 0 0; line-height: 1.25;">for the purpose of proceeding on {{pass_type | strike_295_stack}} and has permission to wear plain cloths.</p>
+        <table class="om-layout-table" style="width: 100%; margin: 44px 0 8px 0;">
+          <tbody>
+            <tr>
+              <td style="width: 56%; vertical-align: bottom; text-align: left;">
+                <div class="om-295-row"><span class="om-295-lbl">Date</span><span class="om-295-dot">{{issue_date}}</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
+              </td>
+              <td style="width: 44%; vertical-align: bottom; text-align: center; line-height: 1.18;"><span class="om-line-fill om-w-lg">&nbsp;</span><br>Officer Commanding<br>Appointment Stamp</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="text-align: right; margin: 4px 0 0 0;">*Strike out words not applicable</p>
       </td>
     </tr>
   </tbody>
@@ -676,24 +695,33 @@ export const INITIAL_TEMPLATES: Template[] = [
 <table class="om-layout-table" style="width: 100%; border-collapse: collapse;">
   <tbody>
     <tr>
-      <td class="om-top-cell" style="width: 56%; padding-right: 14px; line-height: 1.32; text-align: justify;">
-        <p style="margin: 0 0 8px 0;">1.&nbsp;&nbsp;In the case of General mobilization the Bangladesh Railway will afford every facility to enable the man to re-join in his Base/Unit with all possible speed.</p>
-        <p style="margin: 0 0 8px 0;">2.&nbsp;&nbsp;Leave will expire at 2359 hours on the last date of authorized leave unless an extension has been granted. Individuals must re-join on expiration of the leave granted as otherwise they are liable to be punished under the BAF Act/Rule for the period of overstayal. If unavoidably detained an Individual must report the same to his Base/Unit in a letter countersigned by the chairman of his union or by a Govt. gazetted official.</p>
-        <p style="margin: 0 0 8px 0;">3.&nbsp;&nbsp;This form is not valid unless bearing the stamp of Base/Unit of origin and the signature of an officer. Airmen on leave, or pass must carry this form with them and must produce on demand by law enforcing agencies.</p>
-        <p style="margin: 0 0 8px 0;">4.&nbsp;&nbsp;An airman on leave must notify his OC at once of any change in his address while on leave and must be prepared at all times to re-join on the shortest notice if ordered to do so.</p>
-        <p style="margin: 0 0 8px 0;">5.&nbsp;&nbsp;If an airman on leave, or pass is in contact of an infectious disease he is to notify his OC forthwith and send a Medical certificate showing the date of last exposure to infection.</p>
-        <p style="margin: 0;">6.&nbsp;&nbsp;An airman on leave, or pass who requires Medical aid must, if practicable, report in person in the nearest Military, Naval, Air Force or Civil hospital.</p>
+      <td class="om-top-cell" style="width: 62%; padding-right: 12px; line-height: 1.24; text-align: justify;">
+        <p style="margin: 0 0 10px 0; padding-left: 22px; text-indent: -22px;">1.&nbsp;&nbsp;In the case of General mobilization the Bangladesh Railway will afford every facility to enable the man to re-join in his Base/Unit with all possible speed.</p>
+        <p style="margin: 0 0 10px 0; padding-left: 22px; text-indent: -22px;">2.&nbsp;&nbsp;Leave will expire at 2359 hours on the last date of authorized leave unless an extension has been granted. Individuals must re-join on expiration of the leave granted as otherwise they are liable to be punished under the BAF Act/Rule for the period of overstayal. If unavoidably detained an Individual must report the same to his Base/Unit in a letter countersigned by the chairman of his union or by a Govt. gazetted official.</p>
+        <p style="margin: 0 0 10px 0; padding-left: 22px; text-indent: -22px;">3.&nbsp;&nbsp;This form is not valid unless bearing the stamp of Base/Unit of origin and the signature of an officer. Airmen on leave, or pass must carry this form with them and must produce on demand by law enforcing agencies.</p>
+        <p style="margin: 0 0 10px 0; padding-left: 22px; text-indent: -22px;">4.&nbsp;&nbsp;An airman on leave must notify his OC at once of any change in his address while on leave and must be prepared at all times to re-join on the shortest notice if ordered to do so.</p>
+        <p style="margin: 0 0 10px 0; padding-left: 22px; text-indent: -22px;">5.&nbsp;&nbsp;If an airman on leave, or pass is in contact of an infectious disease he is to notify his OC forthwith and send a Medical certificate showing the date of last exposure to infection.</p>
+        <p style="margin: 0; padding-left: 22px; text-indent: -22px;">6.&nbsp;&nbsp;An airman on leave, or pass who requires Medical aid must, if practicable, report in person in the nearest Military, Naval, Air Force or Civil hospital.</p>
       </td>
-      <td class="om-top-cell" style="width: 44%; padding-left: 14px;">
-        <table class="om-layout-table" style="width: 100%;">
+      <td class="om-top-cell" style="width: 38%; padding-left: 8px;">
+        <table class="om-layout-table" style="width: 100%; margin: 0;">
           <tbody>
             <tr>
-              <td class="om-top-cell" style="width: 16%;"><div class="om-baf295-vertical">FULL ADDRESS OF AIRMAN ON LEAVE/PASS</div></td>
-              <td class="om-top-cell" style="width: 84%; padding-top: 12px;">
-                <p style="margin: 0 0 22px 0; border-bottom: 1px solid #000000; min-height: 20px;">{{address_line1}}</p>
-                <p style="margin: 0 0 22px 0; border-bottom: 1px solid #000000; min-height: 20px;">{{address_line2}}</p>
-                <p style="margin: 0 0 22px 0; border-bottom: 1px solid #000000; min-height: 20px;">{{address_line3}}</p>
-                <p style="margin: 0; border-bottom: 1px solid #000000; min-height: 20px;">&nbsp;</p>
+              <td class="om-top-cell om-vertical-cell" style="width: 22%; vertical-align: middle; text-align: center; font-size: 11.5pt;"><div class="om-baf295-vertical" style="font-size: 11.5pt;">FULL ADDRESS OF AIRMAN ON LEAVE/PASS</div></td>
+              <td class="om-top-cell om-vline-cell" style="width: 26%; padding: 0;">
+                <div class="om-295-vline-wrap" style="padding-top: 0; height: 390px;">
+                  <div class="om-295-vline-rule"><span class="om-295-vtext">{{address_line1}}</span></div>
+                </div>
+              </td>
+              <td class="om-top-cell om-vline-cell" style="width: 26%; padding: 0;">
+                <div class="om-295-vline-wrap" style="padding-top: 22px; height: 365px;">
+                  <div class="om-295-vline-rule"><span class="om-295-vtext">{{address_line2}}</span></div>
+                </div>
+              </td>
+              <td class="om-top-cell om-vline-cell" style="width: 26%; padding: 0;">
+                <div class="om-295-vline-wrap" style="padding-top: 62px; height: 290px;">
+                  <div class="om-295-vline-rule"><span class="om-295-vtext">{{address_line3}}</span></div>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -708,16 +736,16 @@ export const INITIAL_TEMPLATES: Template[] = [
     name: 'Leave Application (10096)',
     category: 'Leave',
     description:
-      'Official Bangla Leave Application form (বিএএফ ফরম-১০০৯৬) for Airmen / MODC (Air) in SutonnyMJ.',
+      'Official 2-page Legal Bangla Leave Application form (বিএএফ ফরম-১০০৯৬) with reverse Address On Leave & Certificate.',
     isBuiltIn: true,
     createdAt: '2026-11-25T11:00:00.000Z',
-    updatedAt: '2026-11-25T12:00:00.000Z',
+    updatedAt: '2026-11-26T02:00:00.000Z',
     pageSettings: {
-      size: 'A4',
-      margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
+      size: 'Legal',
+      margins: { top: 16, right: 17, bottom: 14, left: 17 },
       fontFamily: 'SutonnyMJ',
       fontSize: 14,
-      lineHeight: 1.18,
+      lineHeight: 1.22,
       headerText: '',
       footerText: '',
       showSignatureBlock: false,
@@ -728,7 +756,7 @@ export const INITIAL_TEMPLATES: Template[] = [
       { id: 'f10096-rank', key: 'rank_bn', label: 'পদবী', type: 'text', required: true, defaultValue: '' },
       { id: 'f10096-name', key: 'name_bn', label: 'নাম', type: 'text', required: true, defaultValue: '' },
       { id: 'f10096-trade', key: 'trade_bn', label: 'পেশা', type: 'text', required: true, defaultValue: '' },
-      { id: 'f10096-unit', key: 'unit_bn', label: 'ইউনিট/ঘাঁটি', type: 'text', required: true, defaultValue: '১৫৫ ইউএএসইউ বিএএফ' },
+      { id: 'f10096-unit', key: 'unit_bn', label: 'ইউনিট/ঘাঁটি', type: 'text', required: true, defaultValue: '১৫৫ ইউএএসইউ, বাবিবা জহুর' },
       { id: 'f10096-sec', key: 'section_bn', label: 'প্রশাখা দপ্তর', type: 'text', required: false, defaultValue: '১৫৫ ইউএএসইউ' },
       { id: 'f10096-res', key: 'resident_bn', label: 'বাসিন্দা', type: 'text', required: false, defaultValue: 'বাংলাদেশী' },
       {
@@ -736,7 +764,7 @@ export const INITIAL_TEMPLATES: Template[] = [
         key: 'leave_nature_bn',
         label: 'ছুটি প্রকৃতি',
         type: 'select',
-        options: ['বার্ষিক', 'নৈমিত্তিক', 'চিকিৎসাজনিত', 'বিনোদন'],
+        options: ['বার্ষিক', 'নৈমিত্তিক', 'চিকিৎসাজনিত'],
         required: true,
         defaultValue: 'বার্ষিক',
       },
@@ -761,131 +789,166 @@ export const INITIAL_TEMPLATES: Template[] = [
       { id: 'f10096-app-date', key: 'application_date_bn', label: 'আবেদনের তারিখ', type: 'text', required: false, defaultValue: '' },
       { id: 'f10096-col-date', key: 'collect_date_bn', label: 'সংগ্রহ তারিখ', type: 'text', required: false, defaultValue: '' },
       { id: 'f10096-col-time', key: 'collect_time_bn', label: 'সংগ্রহ সময়', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10096-co', key: 'leave_care_of', label: 'C/O (Page 2)', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10096-vill', key: 'leave_vill', label: 'Vill (Page 2)', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10096-po', key: 'leave_po', label: 'P/O (Page 2)', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10096-ps', key: 'leave_ps', label: 'P/S (Page 2)', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10096-dist', key: 'leave_dist', label: 'Dist (Page 2)', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10096-mob', key: 'leave_mobile', label: 'Mobile No (Page 2)', type: 'text', required: false, defaultValue: '' },
+      {
+        id: 'f10096-duties',
+        key: 'cert_duties',
+        label: 'Not Involved Duties (Page 2)',
+        type: 'textarea',
+        required: false,
+        defaultValue: '1. Base Security Duty\n2. Base Taskforce Duty\n3. BOI',
+      },
+      { id: 'f10096-name-en', key: 'name_en', label: 'Applicant Name English (Page 2)', type: 'person', personProperty: 'name', required: false, defaultValue: '' },
+      { id: 'f10096-rank-en', key: 'rank_en', label: 'Applicant Rank English (Page 2)', type: 'rank', personProperty: 'rank', required: false, defaultValue: '' },
     ],
     bodyHtml: `<div>
   <p style="text-align: right; margin: 0 0 2px 0;">বিএএফ ফরম-১০০৯৬</p>
-  <p style="text-align: center; margin: 0 0 4px 0;"><strong>ছুটির আবেদনপত্র - বিমানসেনা/এমওডিসি (এয়ার)</strong></p>
-  <table class="om-form-grid om-heavy-box" style="width: 100%; border-collapse: collapse;">
+  <p style="text-align: center; margin: 0 0 8px 0;"><u>ছুটির আবেদনপত্র - বিমানসেনা/এমওডিসি (এয়ার)</u></p>
+  <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
     <tbody>
       <tr>
-        <td style="width: 14%;">বিডি/ {{bd_no_bn}}</td>
-        <td style="width: 16%;">পদবী {{rank_bn}}</td>
-        <td style="width: 28%;">নাম {{name_bn}}</td>
-        <td style="width: 20%;">পেশা {{trade_bn}}</td>
-        <td style="width: 22%;">ইউনিট/ঘাঁটি {{unit_bn}}</td>
+        <td class="om-no-left om-10096-top" style="width: 14%; text-align: center;">বিডি/<br>{{bd_no_bn}}</td>
+        <td class="om-10096-top" style="width: 13%; text-align: center;">পদবী<br>{{rank_bn}}</td>
+        <td class="om-10096-top" style="width: 24%; text-align: center;">নাম<br>{{name_bn}}</td>
+        <td class="om-10096-top" style="width: 20%; text-align: center;">পেশা<br>{{trade_bn}}</td>
+        <td class="om-no-right om-10096-top" style="width: 29%; text-align: center;">ইউনিট/ঘাঁটি<br>{{unit_bn}}</td>
       </tr>
       <tr>
-        <td>বাসিন্দা<br>{{resident_bn}}</td>
-        <td colspan="4">ছুটি প্রকৃতিঃ {{leave_nature_bn}} (*বার্ষিক/নৈমিত্তিক/চিকিৎসাজনিত)<br>তারিখ <span class="om-line-fill om-w-md">{{leave_from_bn}}</span> হইতে <span class="om-line-fill om-w-md">{{leave_to_bn}}</span> পর্যন্ত <span class="om-line-fill om-w-sm">{{total_days_bn}}</span> দিন</td>
+        <td class="om-no-left om-10096-bot" style="text-align: center;">বাসিন্দা<br>{{resident_bn}}</td>
+        <td colspan="4" class="om-no-right om-10096-bot" style="padding: 3px 6px;">
+          <p style="margin: 0 0 2px 0;">ছুটি প্রকৃতি *{{leave_nature_bn | strike_opts:বার্ষিক|নৈমিত্তিক|চিকিৎসাজনিত}}</p>
+          <div class="om-295-row" style="margin: 0;"><span class="om-295-lbl">তারিখ</span><span class="om-295-dot">{{leave_from_bn}}</span><span class="om-295-lbl">হইতে</span><span class="om-295-dot">{{leave_to_bn}}</span><span class="om-295-lbl">পর্যন্ত</span><span class="om-295-dot om-295-dot-sm">{{total_days_bn}}</span><span class="om-295-lbl">দিন</span></div>
+        </td>
       </tr>
     </tbody>
   </table>
-  <p style="margin: 3px 0 2px 0;">ছুটির কারণসমূহঃ {{leave_reasons_bn}}</p>
-  <p style="margin: 0 0 10px 0;">&nbsp;</p>
-  <table class="om-form-grid om-heavy-box" style="width: 100%; border-collapse: collapse;">
+  <p style="margin: 4px 0 82px 0;">ছুটির কারণসমূহ {{leave_reasons_bn}}</p>
+  <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
     <tbody>
       <tr>
-        <td style="width: 58%; padding: 3px;">
-          <p style="margin: 0 0 3px 0;">সরকারী/ আধা খরচে ভ্রমণ পত্র/বিমান পথে ভ্রমণ প্রয়োজন</p>
-          <table class="om-form-grid" style="width: 100%; border-collapse: collapse; margin: 0;">
+        <td class="om-no-left om-10096-top om-10096-split" style="width: 57%; padding: 4px 6px 8px 0;">
+          <p style="margin: 0 0 6px 0;">সরকারী/ আধা খরচে ভ্রমণ পত্র/বিমান পথে ভ্রমণ প্রয়োজন</p>
+          <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
             <tbody>
               <tr>
-                <td rowspan="2" style="width: 48%;">
-                  হইতে <span class="om-line-fill om-w-sm">{{travel_from_1}}</span><br>
-                  পর্যন্ত <span class="om-line-fill om-w-sm">{{travel_to_1}}</span><br>
-                  কাহার জন্য <span class="om-line-fill om-w-sm">{{travel_for_1}}</span><br>
-                  হইতে ..................<br>
-                  পর্যন্ত ..................<br>
-                  কাহার জন্য .............
+                <td rowspan="3" class="om-no-left om-no-bottom om-no-right" style="width: 48%; padding: 2px 6px 2px 0;">
+                  <div class="om-295-row"><span class="om-295-dot">{{travel_from_1}}</span><span class="om-295-lbl">হইতে</span></div>
+                  <div class="om-295-row"><span class="om-295-dot">{{travel_to_1}}</span><span class="om-295-lbl">পর্যন্ত</span></div>
+                  <div class="om-295-row"><span class="om-295-dot">{{travel_for_1}}</span><span class="om-295-lbl">কাহার জন্য</span></div>
+                  <div class="om-295-row"><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">হইতে</span></div>
+                  <div class="om-295-row"><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">পর্যন্ত</span></div>
+                  <div class="om-295-row"><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">কাহার জন্য</span></div>
                 </td>
-                <td style="width: 11%; text-align: center;">নিজ</td>
-                <td style="width: 11%; text-align: center;">স্ত্রী</td>
-                <td style="width: 15%; text-align: center;">১২ বছরের উর্দ্ধে</td>
-                <td style="width: 15%; text-align: center;">১২ বছরের নিম্নে</td>
+                <td style="width: 10%; text-align: center;">নিজ</td>
+                <td style="width: 10%; text-align: center;">স্ত্রী</td>
+                <td style="width: 16%; text-align: center;">১২ বছরের উর্দ্ধে</td>
+                <td class="om-no-right" style="width: 16%; text-align: center;">১২ বছরের নিম্নে</td>
               </tr>
               <tr>
-                <td style="text-align: center; height: 46px;">{{travel_self}}</td>
+                <td style="text-align: center; height: 34px;">{{travel_self}}</td>
                 <td style="text-align: center;">{{travel_wife}}</td>
                 <td style="text-align: center;">{{travel_child_o12}}</td>
-                <td style="text-align: center;">{{travel_child_u12}}</td>
+                <td class="om-no-right" style="text-align: center;">{{travel_child_u12}}</td>
+              </tr>
+              <tr>
+                <td class="om-no-bottom" style="height: 34px;">&nbsp;</td>
+                <td class="om-no-bottom">&nbsp;</td>
+                <td class="om-no-bottom">&nbsp;</td>
+                <td class="om-no-bottom om-no-right">&nbsp;</td>
               </tr>
             </tbody>
           </table>
         </td>
-        <td style="width: 42%; padding: 3px;">
-          <p style="text-align: center; margin: 0 0 3px 0;">চলতি বছরের ছুটি উপভোগের বিবরণ</p>
-          <table class="om-form-grid" style="width: 100%; border-collapse: collapse; margin: 0;">
+        <td class="om-no-right om-10096-top" style="width: 43%; padding: 4px 0 8px 6px;">
+          <p style="text-align: center; margin: 0 0 6px 0;">চলতি বছরের ছুটি উপভোগের বিবরণ</p>
+          <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
             <tbody>
               <tr>
-                <td style="width: 24%;">&nbsp;</td>
-                <td style="width: 28%; text-align: center;">হইতে</td>
-                <td style="width: 28%; text-align: center;">পর্যন্ত</td>
-                <td style="width: 20%; text-align: center;">দিন</td>
+                <td class="om-no-left om-no-top" style="width: 22%;">&nbsp;</td>
+                <td class="om-no-top" style="width: 28%; text-align: center;">হইতে</td>
+                <td class="om-no-top" style="width: 28%; text-align: center;">পর্যন্ত</td>
+                <td class="om-no-top om-no-right" style="width: 22%; text-align: center;">দিন</td>
               </tr>
               <tr>
-                <td style="height: 26px;">বার্ষিক</td>
-                <td style="text-align: center;">{{prev_annual_from}}</td>
-                <td style="text-align: center;">{{prev_annual_to}}</td>
-                <td style="text-align: center;">{{prev_annual_days}}</td>
+                <td class="om-no-left" style="height: 36px; text-align: center; vertical-align: middle;">বার্ষিক</td>
+                <td style="text-align: center; vertical-align: middle;">{{prev_annual_from}}</td>
+                <td style="text-align: center; vertical-align: middle;">{{prev_annual_to}}</td>
+                <td class="om-no-right" style="text-align: center; vertical-align: middle;">{{prev_annual_days}}</td>
               </tr>
               <tr>
-                <td style="height: 26px;">নৈমিত্তিক</td>
-                <td style="text-align: center;">{{prev_casual_from}}</td>
-                <td style="text-align: center;">{{prev_casual_to}}</td>
-                <td style="text-align: center;">{{prev_casual_days}}</td>
+                <td class="om-no-left" style="height: 36px; text-align: center; vertical-align: middle;">নৈমিত্তিক</td>
+                <td style="text-align: center; vertical-align: middle;">{{prev_casual_from}}</td>
+                <td style="text-align: center; vertical-align: middle;">{{prev_casual_to}}</td>
+                <td class="om-no-right" style="text-align: center; vertical-align: middle;">{{prev_casual_days}}</td>
               </tr>
             </tbody>
           </table>
         </td>
       </tr>
       <tr>
-        <td style="padding: 4px;">
-          <p style="margin: 0 0 22px 0;">* অনুমোদিত/অননুমোদিত</p>
+        <td class="om-no-left om-10096-split" style="padding: 4px 8px 4px 2px;">
+          <p style="margin: 0 0 54px 0;">*অনুমোদিত/অননুমোদিত</p>
           <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left;">তারিখ</td><td style="width: 65%; text-align: right;">প্রশাখা দপ্তরের অধিনায়ক</td></tr></tbody></table>
         </td>
-        <td style="padding: 4px;">
-          <p style="margin: 0 0 22px 0;">&nbsp;</p>
+        <td class="om-no-right" style="padding: 4px 2px 4px 8px;">
+          <p style="margin: 18px 0 12px 0; text-align: center; padding-left: 70px;">{{name_bn}}<br>{{rank_bn}}</p>
           <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 45%; text-align: left;">তারিখ {{application_date_bn}}</td><td style="width: 55%; text-align: right;">আবেদনকারীর স্বাক্ষর</td></tr></tbody></table>
         </td>
       </tr>
       <tr>
-        <td style="padding: 4px;">
-          <p style="margin: 0 0 20px 0;">* অনুমোদিত/অননুমোদিত</p>
-          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 40%; text-align: left;">তারিখ</td><td style="width: 60%; text-align: right;">শাখা দপ্তরের<br>প্রশাসনিক অধিনায়ক</td></tr></tbody></table>
+        <td class="om-no-left om-10096-split" style="padding: 4px 8px 4px 2px;">
+          <p style="margin: 0 0 44px 0;">*অনুমোদিত/অননুমোদিত</p>
+          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left;">তারিখ</td><td style="width: 65%; text-align: center; padding-left: 40px;">শাখা দপ্তরের<br>প্রশাসনিক অধিনায়ক</td></tr></tbody></table>
         </td>
-        <td style="padding: 4px;">
-          <p style="margin: 0 0 20px 0;">* অনুমোদিত/অননুমোদিত</p>
-          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 40%; text-align: left;">তারিখ</td><td style="width: 60%; text-align: right;">বিভাগীয় প্রশাসনিক<br>অধিনায়ক</td></tr></tbody></table>
+        <td class="om-no-right" style="padding: 4px 2px 4px 8px;">
+          <p style="margin: 0 0 44px 0;">*অনুমোদিত/অননুমোদিত</p>
+          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left;">তারিখ</td><td style="width: 65%; text-align: center; padding-left: 35px;">বিভাগীয় প্রশাসনিক<br>অধিনায়ক</td></tr></tbody></table>
         </td>
       </tr>
       <tr>
-        <td style="padding: 4px;">
-          <table class="om-layout-table" style="width: 100%; margin: 0 0 8px 0;"><tbody><tr><td style="width: 55%; text-align: left;">চলতি বছরের প্রাপ্য ছুটি</td><td style="width: 45%; text-align: right;">সরকারী/নিজ খরচে</td></tr></tbody></table>
-          <p style="margin: 0 0 14px 0;"><span class="om-line-fill om-w-sm">{{entitled_days_bn}}</span> দিন বার্ষিক/নৈমিত্তিক</p>
+        <td class="om-no-left om-10096-split om-10096-bot" style="padding: 4px 8px 4px 2px;">
+          <table class="om-layout-table" style="width: 100%; margin: 0 0 10px 0;"><tbody><tr><td style="width: 55%; text-align: left;">চলতি বছরের প্রাপ্য ছুটি</td><td style="width: 45%; text-align: right;">সরকারী/নিজ খরচে</td></tr></tbody></table>
+          <div class="om-295-row" style="margin: 0 0 24px 0;"><span class="om-295-dot om-295-dot-sm">{{entitled_days_bn}}</span><span class="om-295-lbl">দিন বার্ষিক/নৈমিত্তিক</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
           <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 40%; text-align: left;">তারিখ</td><td style="width: 60%; text-align: right;">ডকুমেন্ট ক্লার্ক</td></tr></tbody></table>
         </td>
-        <td style="padding: 4px;">
-          <p style="margin: 0 0 18px 0;">মঞ্জুর/না মঞ্জুর</p>
-          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 40%; text-align: left;">তারিখ</td><td style="width: 60%; text-align: right;">স্বাক্ষর<br>পদবী</td></tr></tbody></table>
+        <td class="om-no-right om-10096-bot" style="padding: 4px 2px 4px 8px;">
+          <p style="margin: 0 0 36px 0;">মঞ্জুর/না মঞ্জুর</p>
+          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 45%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 55%; text-align: center; padding-left: 30px;">স্বাক্ষর<br>পদবী</td></tr></tbody></table>
         </td>
       </tr>
     </tbody>
   </table>
-  <p style="margin: 4px 0 4px 0;">প্রয়োজনীয় পত্রাদি প্রস্তুত করে হিসাব শাখাতে পাঠানো হইয়াছে সংগ্রহের জন্য বিভাগীয় প্রশাখা দপ্তরের প্রস্তুত আছে।</p>
-  <p style="margin: 0 0 4px 0;">আপনাকে <span class="om-line-fill om-w-md">{{name_bn}}</span> তারিখ <span class="om-line-fill om-w-sm">{{collect_date_bn}}</span> সময় <span class="om-line-fill om-w-sm">{{collect_time_bn}}</span> *টাকা ও দলিল পত্রাদি সংগ্রহের জন্য উপস্থিত হইবে।</p>
-  <p style="text-align: right; margin: 0 0 3px 0;">মুভমেন্ট ক্লার্ক</p>
-  <table class="om-form-grid om-heavy-box" style="width: 100%; border-collapse: collapse;">
+  <p style="margin: 12px 0 12px 0;">প্রয়োজনীয় পত্রাদি প্রস্তুত করে হিসাব শাখাতে পাঠানো হইয়াছে সংগ্রহের জন্য বিভাগীয় প্রশাখা দপ্তরের প্রস্তুত আছে।</p>
+  <div class="om-295-row" style="margin: 0;"><span class="om-295-lbl">আপনাকে</span><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">তারিখ</span><span class="om-295-dot om-295-dot-sm">{{collect_date_bn}}</span><span class="om-295-lbl">সময়</span><span class="om-295-dot om-295-dot-xs">{{collect_time_bn}}</span><span class="om-295-lbl">*টাকা ও দলিল পত্রাদি সংগ্রহের জন্য</span></div>
+  <p style="margin: 2px 0 6px 0;">উপস্থিত হইবে।</p>
+  <p style="text-align: right; padding-right: 42px; margin: 0 0 4px 0;">মুভমেন্ট ক্লার্ক</p>
+  <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
     <tbody>
       <tr>
-        <td style="width: 15%;">নম্বর বিডি/<br>{{bd_no_bn}}</td>
-        <td style="width: 17%;">পদবী<br>{{rank_bn}}</td>
-        <td style="width: 28%;">নাম<br>{{name_bn}}</td>
-        <td style="width: 20%;">পেশা<br>{{trade_bn}}</td>
-        <td style="width: 20%;">প্রশাখা দপ্তর<br>{{section_bn}}</td>
+        <td class="om-no-left om-10096-top om-10096-bot" style="width: 15%; text-align: center;">বিডি/<br>{{bd_no_bn}}</td>
+        <td class="om-10096-top om-10096-bot" style="width: 14%; text-align: center;">পদবী<br>{{rank_bn}}</td>
+        <td class="om-10096-top om-10096-bot" style="width: 26%; text-align: center;">নাম<br>{{name_bn}}</td>
+        <td class="om-10096-top om-10096-bot" style="width: 19%; text-align: center;">পেশা<br>{{trade_bn}}</td>
+        <td class="om-no-right om-10096-top om-10096-bot" style="width: 26%; text-align: center;">প্রশাখা দপ্তর<br>{{section_bn}}</td>
       </tr>
     </tbody>
   </table>
-  <p style="margin: 3px 0 0 0;">*অপ্রয়োজনীয় শব্দগুলি কাটিয়া দিতে হইবে।<br>বিএএফ প্রেস-এ-৩৭২১-৩,০০০ প্যাড-১১-১২-১৩</p>
+  <p style="margin: 6px 0 2px 42px;">*অপ্রয়োজনীয় শব্দগুলি কাটিয়া দিতে হইবে।</p>
+  <p style="margin: 0; font-size: 11pt;">বিএএফ প্রেস-এ-৭৩৯০-২,০০০ প্যাড-১৩-৬-২০২২</p>
+</div>
+<hr class="om-page-break">
+<div>
+  <p style="text-align: center; margin: 14px 0 18px 0;"><strong><u>ADDRESS ON LEAVE</u></strong></p>
+  <p style="margin: 0 0 0 215px; line-height: 1.55;">C/O: {{leave_care_of}}<br>Vill: {{leave_vill}};<br>P/O: {{leave_po}};<br>P/S: {{leave_ps}};<br>Dist: {{leave_dist}}.<br>Mobile No: {{leave_mobile}}</p>
+  <p style="text-align: center; margin: 96px 0 16px 0;"><strong><u>CERTIFICATE</u></strong></p>
+  <p style="text-align: center; margin: 0 0 14px 0;">I am certifying that I am not involved the u/m duties.</p>
+  <p style="margin: 0 0 0 190px; line-height: 1.45;">{{cert_duties}}</p>
+  <p style="margin: 56px 0 0 385px; line-height: 1.35;">{{name_en}}<br>{{rank_en}}</p>
 </div>`,
   },
   {
@@ -1077,13 +1140,13 @@ export const INITIAL_TEMPLATES: Template[] = [
   },
   {
     id: 'tpl-ration-card',
-    name: 'Ration Card Form',
+    name: 'Ration Card',
     category: 'Application',
     description:
       'Application for Ration on Pre-Payment from Service Ration Stand BAF Base with family particulars table.',
     isBuiltIn: true,
     createdAt: '2026-11-25T11:00:00.000Z',
-    updatedAt: '2026-11-25T12:00:00.000Z',
+    updatedAt: '2026-11-26T00:00:00.000Z',
     pageSettings: {
       size: 'A4',
       margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },

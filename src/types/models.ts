@@ -59,7 +59,7 @@ export interface PageMargins {
 }
 
 export interface PageSettings {
-  size: 'A4';
+  size: 'A4' | 'Legal';
   margins: PageMargins;
   fontFamily: string;
   fontSize: number; // in pt

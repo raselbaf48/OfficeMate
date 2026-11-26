@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Lock, Menu, Plus, Shield, UserCheck } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronDown, Download, FileSpreadsheet, FileText, Lock, Menu, Plus, Shield } from 'lucide-react';
 import {
   ConfirmModal,
   GuideModal,
@@ -7,6 +7,7 @@ import {
   ToastContainer,
   ToastMessage,
 } from './components/CommonModals';
+import { OfflineIndicator, PWAInstallButton } from './components/PWAComponents';
 import { Sidebar } from './components/Sidebar';
 import { DEFAULT_SETTINGS } from './data/seedData';
 import { BatchGeneratePage } from './pages/BatchGeneratePage';
@@ -74,6 +75,30 @@ export default function App() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>('tpl-jsi-8-80');
   const [reopenValues, setReopenValues] = useState<Record<string, string> | null>(null);
   const [reopenPersonId, setReopenPersonId] = useState<string | undefined>(undefined);
+
+  // Header Export dropdown state for Generate page
+  const exportTriggerRef = useRef<((kind: 'pdf' | 'docx') => void) | null>(null);
+  const exportMenuRef = useRef<HTMLDivElement | null>(null);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exportingKind, setExportingKind] = useState<'pdf' | 'docx' | null>(null);
+
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExportMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [exportMenuOpen]);
 
   // Confirm delete dialog
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -280,15 +305,6 @@ export default function App() {
     await loadAllData();
   };
 
-  const defaultClerk =
-    signers.find((s) => s.role === 'Document Clerk' && s.isDefault) ??
-    signers.find((s) => s.role === 'Document Clerk') ??
-    signers[0];
-
-  const clerkLabel = defaultClerk
-    ? `${defaultClerk.rank} ${defaultClerk.name}`
-    : 'Document Clerk';
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#060B16] flex items-center justify-center">
@@ -322,7 +338,6 @@ export default function App() {
           setRoute(r);
         }}
         unitName={settings.defaultUnit}
-        clerkLabel={clerkLabel}
         pinEnabled={settings.pinEnabled}
         onLock={() => setUnlocked(false)}
         collapsed={sidebarCollapsed}
@@ -354,17 +369,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            {defaultClerk ? (
-              <div className="hidden md:flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-[#0C1526] border border-slate-800 text-xs">
-                <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <div className="leading-tight">
-                  <div className="font-medium text-slate-100">{clerkLabel}</div>
-                  <div className="text-[10px] font-mono text-emerald-400/80 tabular-nums">
-                    BD/{defaultClerk.bd_no}
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            <PWAInstallButton />
 
             {settings.pinEnabled ? (
               <button
@@ -378,7 +383,67 @@ export default function App() {
               </button>
             ) : null}
 
-            {route !== 'generate' ? (
+            {route === 'generate' ? (
+              <div className="relative" ref={exportMenuRef}>
+                <button
+                  type="button"
+                  disabled={exportingKind !== null}
+                  onClick={() => setExportMenuOpen((prev) => !prev)}
+                  aria-expanded={exportMenuOpen}
+                  aria-haspopup="menu"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-950 bg-emerald-500 rounded-lg hover:bg-emerald-400 disabled:opacity-60 transition-colors whitespace-nowrap"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>
+                    {exportingKind === 'pdf'
+                      ? 'Exporting PDF...'
+                      : exportingKind === 'docx'
+                        ? 'Exporting DOCX...'
+                        : 'Export'}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+
+                {exportMenuOpen ? (
+                  <div
+                    role="menu"
+                    className="absolute right-0 mt-2 w-48 rounded-xl bg-[#0C1526] border border-slate-700 shadow-2xl py-1.5 z-50"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setExportMenuOpen(false);
+                        exportTriggerRef.current?.('pdf');
+                      }}
+                      className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 text-xs font-medium text-slate-100 hover:bg-emerald-500/15 hover:text-emerald-300 transition-colors"
+                    >
+                      <FileText className="w-4 h-4 text-rose-400 shrink-0" />
+                      <div>
+                        <div className="font-semibold">PDF</div>
+                        <div className="text-[10px] text-slate-400">Export A4 PDF document</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setExportMenuOpen(false);
+                        exportTriggerRef.current?.('docx');
+                      }}
+                      className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 text-xs font-medium text-slate-100 hover:bg-emerald-500/15 hover:text-emerald-300 transition-colors"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-sky-400 shrink-0" />
+                      <div>
+                        <div className="font-semibold">DOCX</div>
+                        <div className="text-[10px] text-slate-400">Export editable Word file</div>
+                      </div>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
               <button
                 type="button"
                 onClick={() => setRoute('generate')}
@@ -387,7 +452,7 @@ export default function App() {
                 <Plus className="w-4 h-4" />
                 <span>New Document</span>
               </button>
-            ) : null}
+            )}
           </div>
         </header>
 
@@ -464,6 +529,8 @@ export default function App() {
                 setReopenValues(null);
                 setReopenPersonId(undefined);
               }}
+              exportTriggerRef={exportTriggerRef}
+              onExportingChange={setExportingKind}
               onSaveToHistory={handleSaveDocumentToHistory}
               onNotify={notify}
             />
@@ -546,6 +613,8 @@ export default function App() {
         toasts={toasts}
         onDismiss={(id) => setToasts((p) => p.filter((t) => t.id !== id))}
       />
+
+      <OfflineIndicator />
     </div>
   );
 }

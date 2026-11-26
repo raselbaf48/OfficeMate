@@ -5,15 +5,10 @@ import {
   Building2,
   Calendar,
   CalendarRange,
-  ChevronDown,
   ChevronUp,
-  Download,
   FilePenLine,
   FileText,
-  Printer,
   RotateCcw,
-  Save,
-  SlidersHorizontal,
   User,
   ZoomIn,
   ZoomOut,
@@ -170,6 +165,8 @@ interface GenerateDocumentPageProps {
   initialValues?: Record<string, string> | null;
   initialPersonId?: string;
   onSelectTemplateId: (id: string) => void;
+  exportTriggerRef?: React.MutableRefObject<((kind: 'pdf' | 'docx') => void) | null>;
+  onExportingChange?: (kind: 'pdf' | 'docx' | null) => void;
   onSaveToHistory: (doc: GeneratedDocument) => Promise<void>;
   onNotify: (type: 'success' | 'error' | 'info', msg: string) => void;
 }
@@ -181,6 +178,8 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   selectedTemplateId,
   initialValues,
   initialPersonId,
+  exportTriggerRef,
+  onExportingChange,
   onSaveToHistory,
   onNotify,
 }) => {
@@ -196,11 +195,8 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   const [zoom, setZoom] = useState(0.9);
   const [formExpanded, setFormExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState<InputSectionKey>('applicant');
-  const [exporting, setExporting] = useState<'docx' | 'pdf' | null>(null);
   const [showErrors, setShowErrors] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'docx' | 'pdf' | 'print' | null>(
-    null,
-  );
+  const [pendingAction, setPendingAction] = useState<'docx' | 'pdf' | null>(null);
 
   const getDefaultSectionForTemplate = (tplId: string | undefined): string => {
     switch (tplId) {
@@ -346,25 +342,11 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
     };
   };
 
-  const handleSaveHistory = async () => {
-    const rec = buildHistoryRecord();
-    if (!rec) return;
-    await onSaveToHistory(rec);
-    onNotify('success', 'Document saved to history.');
-  };
-
-  const executeExport = async (kind: 'docx' | 'pdf' | 'print') => {
+  const executeExport = async (kind: 'docx' | 'pdf') => {
     if (!activeTemplate) return;
     setPendingAction(null);
 
-    if (kind === 'print') {
-      const rec = buildHistoryRecord();
-      if (rec) await onSaveToHistory(rec);
-      window.print();
-      return;
-    }
-
-    setExporting(kind);
+    onExportingChange?.(kind);
     try {
       const filename = buildDocumentFilename(
         activeTemplate.name,
@@ -386,11 +368,11 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         err instanceof Error ? err.message : 'Export failed. Please try again.',
       );
     } finally {
-      setExporting(null);
+      onExportingChange?.(null);
     }
   };
 
-  const requestAction = (kind: 'docx' | 'pdf' | 'print') => {
+  const requestAction = (kind: 'docx' | 'pdf') => {
     setShowErrors(true);
     if (Object.keys(validationErrors).length > 0) {
       setFormExpanded(true);
@@ -401,16 +383,9 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
     void executeExport(kind);
   };
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
-        e.preventDefault();
-        requestAction('print');
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  });
+  if (exportTriggerRef) {
+    exportTriggerRef.current = requestAction;
+  }
 
   if (!activeTemplate) {
     return (
@@ -541,8 +516,21 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
           },
           {
             id: 'b10096_mov',
-            title: 'তারিখ ও সংগ্রহ',
-            keys: new Set(['application_date_bn', 'collect_date_bn', 'collect_time_bn']),
+            title: 'ঠিকানা ও সংগ্রহ (পাতা ২)',
+            keys: new Set([
+              'application_date_bn',
+              'collect_date_bn',
+              'collect_time_bn',
+              'leave_care_of',
+              'leave_vill',
+              'leave_po',
+              'leave_ps',
+              'leave_dist',
+              'leave_mobile',
+              'cert_duties',
+              'name_en',
+              'rank_en',
+            ]),
             icon: 'badge',
             subtitle: countFilled,
           },
@@ -848,8 +836,12 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   }
 
   const handleSectionClick = (sec: InputSectionKey) => {
-    setActiveSection(sec);
-    if (!formExpanded) setFormExpanded(true);
+    if (formExpanded && activeSection === sec) {
+      setFormExpanded(false);
+    } else {
+      setActiveSection(sec);
+      setFormExpanded(true);
+    }
   };
 
   const renderStandardField = (field: TemplateField) => {
@@ -1018,210 +1010,138 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   return (
     <>
       <div className="no-print space-y-5">
-        {/* Top Action Strip (Clean title without other template list) */}
-        <div className="bg-[#0C1526] border border-slate-800 rounded-xl px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
-              <FileText className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-sm font-bold text-white truncate">
-                {activeTemplate.name}
-              </h2>
-              <p className="text-[11px] text-slate-400">
-                {TEMPLATE_SUBTITLES[activeTemplate.id] ?? activeTemplate.description}
-              </p>
-            </div>
+        {/* Document Title Strip */}
+        <div className="bg-[#0C1526] border border-slate-800 rounded-xl px-5 py-3.5 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+            <FileText className="w-4 h-4 text-emerald-400" />
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleSaveHistory}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-200 bg-[#111C31] border border-slate-700 rounded-lg hover:bg-slate-800"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => requestAction('print')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-200 bg-[#111C31] border border-slate-700 rounded-lg hover:bg-slate-800"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => requestAction('pdf')}
-              disabled={exporting !== null}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 disabled:opacity-60"
-            >
-              <Download className="w-4 h-4" />
-              <span>{exporting === 'pdf' ? 'Exporting PDF...' : 'Export PDF'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => requestAction('docx')}
-              disabled={exporting !== null}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-950 bg-emerald-500 rounded-lg hover:bg-emerald-400 disabled:opacity-60"
-            >
-              <Download className="w-4 h-4" />
-              <span>{exporting === 'docx' ? 'Exporting DOCX...' : 'Export DOCX'}</span>
-            </button>
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-white truncate">
+              {activeTemplate.name}
+            </h2>
+            <p className="text-[11px] text-slate-400 truncate">
+              {TEMPLATE_SUBTITLES[activeTemplate.id] ?? activeTemplate.description}
+            </p>
           </div>
         </div>
 
         {/* Top-to-Bottom Workspace: Collapsible Categorized Input on Top | Full A4 Preview Below */}
         <div className="space-y-5">
-          {/* Information Input Panel (Collapsed by default, click to unhide) */}
-          <div className="bg-[#0C1526] border border-slate-800 rounded-xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setFormExpanded((v) => !v)}
-              aria-expanded={formExpanded}
-              className="w-full px-5 py-3.5 flex items-center justify-between gap-4 text-left hover:bg-[#101C33] transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                  <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="text-sm font-semibold text-white">
-                      Information Input
-                    </span>
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-[#111C31] border border-slate-700 text-slate-300 tabular-nums">
-                      {activeTemplate.fields.length - rendered.unfilledKeys.length}/
-                      {activeTemplate.fields.length} filled
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 truncate mt-0.5">
-                    {isBanglaTemplate
-                      ? computedValues.name_bn
-                        ? `${computedValues.rank_bn ? `${computedValues.rank_bn} ` : ''}${computedValues.name_bn}${computedValues.bd_no_bn ? ` · বিডি/${computedValues.bd_no_bn}` : ''}`
-                        : `Click to fill ${sectionConfigs.map((c) => c.title).join(', ')}`
-                      : computedValues.name
-                        ? `${computedValues.rank ? `${computedValues.rank} ` : ''}${computedValues.name}${computedValues.bd_no ? ` · BD/${computedValues.bd_no}` : ''}`
-                        : `Click to fill ${sectionConfigs.map((c) => c.title).join(', ')}`}
-                  </p>
-                </div>
+          {/* Directly Visible Fill Information Boxes & Active Fields */}
+          <div className="bg-[#0C1526] border border-slate-800 rounded-xl p-4 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-stretch justify-between gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1">
+                {sectionCards.map((sec) => {
+                  const isActive = formExpanded && activeSection === sec.id;
+                  return (
+                    <button
+                      key={sec.id}
+                      type="button"
+                      onClick={() => handleSectionClick(sec.id)}
+                      aria-expanded={isActive}
+                      className={`px-3.5 py-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
+                        isActive
+                          ? 'bg-emerald-500/15 border-emerald-500/60 text-white shadow-sm'
+                          : sec.hasError
+                            ? 'bg-red-950/20 border-red-500/40 text-slate-200 hover:bg-[#111C31]'
+                            : 'bg-[#111C31] border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                      }`}
+                    >
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                          isActive
+                            ? 'bg-emerald-500 text-slate-950'
+                            : 'bg-[#0C1526] text-emerald-400 border border-slate-700'
+                        }`}
+                      >
+                        {sec.icon}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold leading-tight truncate">
+                          {sec.title}
+                        </p>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5 tabular-nums">
+                          {sec.subtitle}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-medium text-emerald-400">
-                  {formExpanded ? 'Hide Inputs' : 'Fill Information'}
+              <button
+                type="button"
+                onClick={() => {
+                  setRawValues((prev) => {
+                    const next = { ...prev };
+                    for (const f of activeTemplate.fields) {
+                      if (isStatement) {
+                        if (!ST_MEMORY_KEYS.has(f.key)) {
+                          next[f.key] = '';
+                        }
+                      } else if (activeTemplate.id === 'tpl-jsi-8-80') {
+                        if (!CLERK_KEYS.has(f.key) && !CYCLE_KEYS.has(f.key)) {
+                          next[f.key] = '';
+                        }
+                      } else {
+                        next[f.key] = '';
+                      }
+                    }
+                    return next;
+                  });
+                  setShowErrors(false);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-300 bg-[#111C31] border border-slate-700 rounded-xl hover:text-white hover:bg-slate-800 shrink-0"
+                title={
+                  isStatement
+                    ? 'Clears Person & বিবৃতি fields while keeping Unit, Date & প্রতি'
+                    : activeTemplate.id === 'tpl-jsi-8-80'
+                      ? 'Clears Applicant & Leave fields while keeping Cycle & Document Clerk'
+                      : 'Clear all form inputs for blank template printing'
+                }
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>
+                  {isStatement
+                    ? 'Clear Person & বিবৃতি'
+                    : activeTemplate.id === 'tpl-jsi-8-80'
+                      ? 'Clear Applicant & Leave'
+                      : 'Clear All Fields'}
                 </span>
-                {formExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-emerald-400" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-emerald-400" />
-                )}
-              </div>
-            </button>
+              </button>
+            </div>
 
             {formExpanded ? (
-              <div className="p-5 pt-4 border-t border-slate-800 space-y-4">
-                {/* 4 Clickable Section Selector Cards */}
-                <div className="flex flex-col lg:flex-row lg:items-stretch justify-between gap-3">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1">
-                    {sectionCards.map((sec) => {
-                      const isActive = activeSection === sec.id;
-                      return (
-                        <button
-                          key={sec.id}
-                          type="button"
-                          onClick={() => handleSectionClick(sec.id)}
-                          className={`px-3.5 py-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
-                            isActive
-                              ? 'bg-emerald-500/15 border-emerald-500/60 text-white shadow-sm'
-                              : sec.hasError
-                                ? 'bg-red-950/20 border-red-500/40 text-slate-200 hover:bg-[#111C31]'
-                                : 'bg-[#111C31] border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
-                          }`}
-                        >
-                          <div
-                            className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                              isActive
-                                ? 'bg-emerald-500 text-slate-950'
-                                : 'bg-[#0C1526] text-emerald-400 border border-slate-700'
-                            }`}
-                          >
-                            {sec.icon}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold leading-tight truncate">
-                              {sec.title}
-                            </p>
-                            <p className="text-[11px] text-slate-400 truncate mt-0.5 tabular-nums">
-                              {sec.subtitle}
-                            </p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
+              <div className="bg-[#09101E]/70 border border-slate-800/90 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-emerald-400">
+                    {sectionConfigs.find((c) => c.id === activeSection)?.title}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => {
-                      setRawValues((prev) => {
-                        const next = { ...prev };
-                        for (const f of activeTemplate.fields) {
-                          if (isStatement) {
-                            if (!ST_MEMORY_KEYS.has(f.key)) {
-                              next[f.key] = '';
-                            }
-                          } else if (activeTemplate.id === 'tpl-jsi-8-80') {
-                            if (!CLERK_KEYS.has(f.key) && !CYCLE_KEYS.has(f.key)) {
-                              next[f.key] = '';
-                            }
-                          } else {
-                            next[f.key] = '';
-                          }
-                        }
-                        return next;
-                      });
-                      setShowErrors(false);
-                    }}
-                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-300 bg-[#111C31] border border-slate-700 rounded-xl hover:text-white hover:bg-slate-800 shrink-0"
-                    title={
-                      isStatement
-                        ? 'Clears Person & বিবৃতি fields while keeping Unit, Date & প্রতি'
-                        : activeTemplate.id === 'tpl-jsi-8-80'
-                          ? 'Clears Applicant & Leave fields while keeping Cycle & Document Clerk'
-                          : 'Clear all form inputs for blank template printing'
-                    }
+                    onClick={() => setFormExpanded(false)}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-white"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>
-                      {isStatement
-                        ? 'Clear Person & বিবৃতি'
-                        : activeTemplate.id === 'tpl-jsi-8-80'
-                          ? 'Clear Applicant & Leave'
-                          : 'Clear All Fields'}
-                    </span>
+                    <span>Hide</span>
+                    <ChevronUp className="w-3.5 h-3.5" />
                   </button>
                 </div>
-
-                {/* Active Section Fields */}
-                <div className="bg-[#09101E]/70 border border-slate-800/90 rounded-xl p-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {(sectionFields[activeSection] ?? []).map((field) => renderStandardField(field))}
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {(sectionFields[activeSection] ?? []).map((field) => renderStandardField(field))}
                 </div>
               </div>
             ) : null}
           </div>
 
-          {/* Bottom Full A4 Live Preview */}
+          {/* Bottom Full Document Live Preview */}
           <div className="bg-[#080E1B] border border-slate-800 rounded-xl overflow-hidden flex flex-col">
             <div className="bg-[#0C1526] px-4 py-2.5 border-b border-slate-800 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 text-xs">
-                <span className="font-semibold text-white">Full A4 Document Preview</span>
+                <span className="font-semibold text-white">
+                  {activeTemplate.pageSettings.size === 'Legal'
+                    ? 'Full Legal Document Preview'
+                    : 'Full A4 Document Preview'}
+                </span>
                 {rendered.unfilledKeys.length > 0 ? (
                   <span className="text-slate-400 tabular-nums">
                     {rendered.unfilledKeys.length} blank field(s) shown as solid lines
@@ -1257,8 +1177,8 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             <div className="p-6 overflow-x-auto flex justify-center">
               <div
                 style={{
-                  width: `${210 * zoom}mm`,
-                  minHeight: `${297 * zoom}mm`,
+                  width: `${(activeTemplate.pageSettings.size === 'Legal' ? 215.9 : 210) * zoom}mm`,
+                  minHeight: `${(activeTemplate.pageSettings.size === 'Legal' ? 355.6 : 297) * zoom}mm`,
                 }}
               >
                 <A4DocumentPreview

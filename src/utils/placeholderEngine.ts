@@ -332,6 +332,22 @@ export function renderTemplateBody(
 
   const rendered = safeHtml.replace(/\{\{\s*([a-zA-Z0-9_]+)(?:\s*\|\s*([^}]+))?\s*\}\}/g, (_match, key: string, filterExpr?: string) => {
     const raw = (values[key] ?? '').trim();
+
+    if (filterExpr) {
+      const lowerFilter = filterExpr.trim().toLowerCase();
+      const normVal = raw.toLowerCase();
+      if (lowerFilter === 'strike_295_header') {
+        if (normVal === 'leave') return '<strong>LEAVE*<br><s>PASS*</s></strong>';
+        if (normVal === 'pass') return '<strong><s>LEAVE*</s><br>PASS*</strong>';
+        return '<strong>LEAVE*<br>PASS*</strong>';
+      }
+      if (lowerFilter === 'strike_295_stack') {
+        const top = normVal === 'pass' ? '<s>*Leave</s>' : '*Leave';
+        const bot = normVal === 'leave' ? '<s>*Pass</s>' : '*Pass';
+        return `<span class="om-baf295-lp"><span class="om-baf295-lp-top">${top}</span><span class="om-baf295-lp-bot">${bot}</span></span>`;
+      }
+    }
+
     if (!raw) {
       unfilledSet.add(key);
       if (options.blankDotted) {

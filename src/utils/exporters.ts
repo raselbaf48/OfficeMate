@@ -4,6 +4,8 @@ import {
   Document,
   Footer,
   Header,
+  HeightRule,
+  LeaderType,
   LevelFormat,
   Packer,
   PageBreak,
@@ -12,6 +14,7 @@ import {
   Table,
   TableCell,
   TableRow,
+  TextDirection,
   TextRun,
   UnderlineType,
   VerticalAlign,
@@ -62,9 +65,11 @@ interface InlineRunStyle {
   bold?: boolean;
   italics?: boolean;
   underline?: boolean;
+  underlineType?: (typeof UnderlineType)[keyof typeof UnderlineType];
   strike?: boolean;
   fontFamily: string;
   fontSizeHalfPt: number;
+  color?: string;
 }
 
 const BENGALI_CHAR_TEST = /[\u0980-\u09FF\u0964\u0965]/;
@@ -175,17 +180,21 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
   if (!cleanText) return [];
   const safeFallbackFont = style.fontFamily === 'SutonnyMJ' ? 'Arial' : style.fontFamily || 'Arial';
   const englishHalfPt = style.fontFamily === 'SutonnyMJ' ? 24 : style.fontSizeHalfPt;
+  const runColor = style.color || '000000';
+  const underlineSpec = style.underline
+    ? { type: style.underlineType || UnderlineType.SINGLE }
+    : undefined;
   if (!BENGALI_CHAR_TEST.test(cleanText)) {
     return [
       new TextRun({
         text: cleanText,
         bold: style.bold,
         italics: style.italics,
-        underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
+        underline: underlineSpec,
         strike: style.strike || undefined,
         font: safeFallbackFont,
         size: englishHalfPt,
-        color: '000000',
+        color: runColor,
       }),
     ];
   }
@@ -202,11 +211,11 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
           text: enPart,
           bold: style.bold,
           italics: style.italics,
-          underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
+          underline: underlineSpec,
           strike: style.strike || undefined,
           font: safeFallbackFont,
           size: englishHalfPt,
-          color: '000000',
+          color: runColor,
         }),
       );
     }
@@ -215,11 +224,11 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
         text: unicodeToBijoy(match[0]),
         bold: style.bold,
         italics: style.italics,
-        underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
+        underline: underlineSpec,
         strike: style.strike || undefined,
         font: { ascii: 'SutonnyMJ', hAnsi: 'SutonnyMJ', cs: 'SutonnyMJ' },
         size: 28,
-        color: '000000',
+        color: runColor,
       }),
     );
     lastIndex = match.index + match[0].length;
@@ -230,11 +239,11 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
         text: cleanText.slice(lastIndex),
         bold: style.bold,
         italics: style.italics,
-        underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
+        underline: underlineSpec,
         strike: style.strike || undefined,
         font: safeFallbackFont,
         size: englishHalfPt,
-        color: '000000',
+        color: runColor,
       }),
     );
   }
@@ -279,6 +288,10 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
   ) {
     nextStyle.strike = true;
   }
+  const ptSizeMatch = /^(\d+(?:\.\d+)?)pt$/i.exec(el.style.fontSize.trim());
+  if (ptSizeMatch) {
+    nextStyle.fontSizeHalfPt = Math.round(Number(ptSizeMatch[1]) * 2);
+  }
   if (
     el.classList.contains('om-bn') ||
     el.classList.contains('om-bn-sm') ||
@@ -290,10 +303,25 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
     nextStyle.fontSizeHalfPt = 28;
   }
 
+  if (el.classList.contains('om-baf295-lp')) {
+    const topEl = el.querySelector('.om-baf295-lp-top');
+    const botEl = el.querySelector('.om-baf295-lp-bot');
+    runs.push(...createScriptAwareTextRuns(' (', nextStyle));
+    if (topEl) runs.push(...collectTextRuns(topEl, nextStyle));
+    runs.push(...createScriptAwareTextRuns(' / ', nextStyle));
+    if (botEl) runs.push(...collectTextRuns(botEl, nextStyle));
+    runs.push(...createScriptAwareTextRuns(') ', nextStyle));
+    return runs;
+  }
+
   if (el.classList.contains('om-blank-slot') || el.classList.contains('om-line-fill')) {
     const insideLineCell = Boolean(el.closest('.om-line-cell, .om-sig-line'));
     const insideBlankSlot = Boolean(el.parentElement?.closest('.om-blank-slot, .om-line-fill'));
     if (!insideLineCell && !insideBlankSlot) {
+      const isDotted =
+        (el.classList.contains('om-line-fill') && !el.classList.contains('om-solid')) ||
+        el.style.borderBottom.includes('dotted');
+      const lineUnderline = isDotted ? UnderlineType.DOTTED : UnderlineType.SINGLE;
       const cleanText = (el.textContent || '').replace(/\u00A0/g, ' ').trim();
       if (!cleanText) {
         const blankCount = el.classList.contains('om-w-xl')
@@ -310,7 +338,7 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
             text: '\u00A0'.repeat(blankCount),
             bold: nextStyle.bold,
             italics: nextStyle.italics,
-            underline: { type: UnderlineType.SINGLE },
+            underline: { type: lineUnderline },
             font: nextStyle.fontFamily,
             size: nextStyle.fontSizeHalfPt,
             color: '000000',
@@ -319,12 +347,16 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
         return runs;
       }
 
-      const slotStyle: InlineRunStyle = { ...nextStyle, underline: true };
+      const slotStyle: InlineRunStyle = {
+        ...nextStyle,
+        underline: true,
+        underlineType: lineUnderline,
+      };
       const padStr = '\u00A0\u00A0';
       runs.push(
         new TextRun({
           text: padStr,
-          underline: { type: UnderlineType.SINGLE },
+          underline: { type: lineUnderline },
           font: slotStyle.fontFamily,
           size: slotStyle.fontSizeHalfPt,
           color: '000000',
@@ -336,7 +368,7 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
       runs.push(
         new TextRun({
           text: padStr,
-          underline: { type: UnderlineType.SINGLE },
+          underline: { type: lineUnderline },
           font: slotStyle.fontFamily,
           size: slotStyle.fontSizeHalfPt,
           color: '000000',
@@ -387,10 +419,168 @@ function htmlToDocxChildren(
 
   const blocks: Array<Paragraph | Table> = [];
 
-  const buildDocxTable = (tableEl: HTMLElement, activeStyle: InlineRunStyle): Table => {
+  const pageWidthMm = template.pageSettings.size === 'Legal' ? 215.9 : 210;
+  const pageHeightMm = template.pageSettings.size === 'Legal' ? 355.6 : 297;
+  const printableWidthMmGlobal =
+    pageWidthMm -
+    (template.pageSettings.margins.left || 20) -
+    (template.pageSettings.margins.right || 20);
+  const printableTwipsGlobal = convertMillimetersToTwip(printableWidthMmGlobal);
+
+  const buildDocxDottedRowParagraph = (
+    rowEl: HTMLElement,
+    usableTwips: number,
+    activeStyle: InlineRunStyle,
+  ): Paragraph => {
+    const rowChildren = Array.from(rowEl.children) as HTMLElement[];
+    const ptSize = (activeStyle.fontSizeHalfPt || 20) / 2;
+
+    type Segment =
+      | { kind: 'lbl'; text: string; widthTwips: number }
+      | {
+          kind: 'dot';
+          text: string;
+          fixedTwips: number | null;
+          flexWeight: number;
+          isGap: boolean;
+        };
+
+    const segments: Segment[] = rowChildren.map((child) => {
+      const text = (child.textContent || '').replace(/\u00A0/g, ' ').trim();
+      if (child.classList.contains('om-295-dot')) {
+        const isGap = child.classList.contains('om-295-dot-gap');
+        let fixedTwips: number | null = null;
+        let flexWeight = 1;
+        if (child.classList.contains('om-295-dot-xs')) fixedTwips = 460;
+        else if (child.classList.contains('om-295-dot-sm')) fixedTwips = 680;
+        else if (child.classList.contains('om-295-dot-md')) flexWeight = 0.65;
+        else if (isGap) flexWeight = 0.45;
+        return { kind: 'dot', text, fixedTwips, flexWeight, isGap };
+      }
+      const w = text
+        ? measureTextWidthTwips(text, activeStyle.fontFamily, ptSize, activeStyle.bold) + 45
+        : 0;
+      return { kind: 'lbl', text, widthTwips: w };
+    });
+
+    const fixedUsedTwips = segments.reduce(
+      (sum, seg) =>
+        sum + (seg.kind === 'lbl' ? seg.widthTwips : seg.fixedTwips ? seg.fixedTwips : 0),
+      0,
+    );
+    const totalFlexWeight = segments.reduce(
+      (sum, seg) => sum + (seg.kind === 'dot' && seg.fixedTwips === null ? seg.flexWeight : 0),
+      0,
+    );
+    const remainingFlex = Math.max(400, usableTwips - fixedUsedTwips);
+
+    const tabStops: Array<{
+      type: (typeof TabStopType)[keyof typeof TabStopType];
+      position: number;
+      leader?: (typeof LeaderType)[keyof typeof LeaderType];
+    }> = [];
+    const runs: TextRun[] = [];
+    let cursor = 0;
+
+    segments.forEach((seg, idx) => {
+      const isLast = idx === segments.length - 1;
+      if (seg.kind === 'lbl') {
+        const prefix = idx > 0 ? ' ' : '';
+        runs.push(...createScriptAwareTextRuns(`${prefix}${seg.text}`, activeStyle));
+        cursor += seg.widthTwips;
+        return;
+      }
+
+      const slotW =
+        seg.fixedTwips !== null
+          ? seg.fixedTwips
+          : Math.max(300, Math.round((remainingFlex * seg.flexWeight) / Math.max(0.1, totalFlexWeight)));
+      const slotEnd = Math.min(usableTwips, cursor + slotW);
+
+      if (seg.isGap) {
+        tabStops.push({ type: TabStopType.LEFT, position: slotEnd });
+        runs.push(
+          new TextRun({
+            text: '\t',
+            font: activeStyle.fontFamily,
+            size: activeStyle.fontSizeHalfPt,
+          }),
+        );
+        cursor = slotEnd;
+        return;
+      }
+
+      if (!seg.text) {
+        tabStops.push({
+          type: isLast ? TabStopType.RIGHT : TabStopType.LEFT,
+          position: slotEnd,
+          leader: LeaderType.DOT,
+        });
+        runs.push(
+          new TextRun({
+            text: '\t',
+            font: activeStyle.fontFamily,
+            size: activeStyle.fontSizeHalfPt,
+            color: '000000',
+          }),
+        );
+      } else {
+        const slotMid = Math.round(cursor + (slotEnd - cursor) / 2);
+        tabStops.push({
+          type: TabStopType.CENTER,
+          position: slotMid,
+          leader: LeaderType.DOT,
+        });
+        runs.push(
+          new TextRun({
+            text: '\t',
+            font: activeStyle.fontFamily,
+            size: activeStyle.fontSizeHalfPt,
+            color: '000000',
+          }),
+        );
+        runs.push(
+          ...createScriptAwareTextRuns(seg.text, {
+            ...activeStyle,
+            underline: true,
+            underlineType: UnderlineType.DOTTED,
+          }),
+        );
+        tabStops.push({
+          type: isLast ? TabStopType.RIGHT : TabStopType.LEFT,
+          position: slotEnd,
+          leader: LeaderType.DOT,
+        });
+        runs.push(
+          new TextRun({
+            text: '\t',
+            font: activeStyle.fontFamily,
+            size: activeStyle.fontSizeHalfPt,
+            color: '000000',
+          }),
+        );
+      }
+
+      cursor = slotEnd;
+    });
+
+    return new Paragraph({
+      tabStops,
+      spacing: { after: 30, line: lineSpacing },
+      children: runs.length > 0 ? runs : [new TextRun('')],
+    });
+  };
+
+  const buildDocxTable = (
+    tableEl: HTMLElement,
+    activeStyle: InlineRunStyle,
+    parentTwips = printableTwipsGlobal,
+  ): Table => {
     const isLayoutTable = tableEl.classList.contains('om-layout-table');
+    const isBoxGrid10096 = tableEl.classList.contains('om-10096-box');
     const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
     const solidBorder = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
+    const heavySolidBorder = { style: BorderStyle.SINGLE, size: 12, color: '000000' };
     const doubleBorder = { style: BorderStyle.DOUBLE, size: 6, color: '000000' };
 
     const rows: TableRow[] = [];
@@ -419,22 +609,141 @@ function htmlToDocxChildren(
         const isBoxCell = isLayoutTable && htmlCell.classList.contains('om-box-cell');
         const isGapCell = isLayoutTable && htmlCell.classList.contains('om-gap-cell');
         const isTopCell = isLayoutTable && htmlCell.classList.contains('om-top-cell');
+        const isVerticalCell = htmlCell.classList.contains('om-vertical-cell');
+        const isVlineCell = htmlCell.classList.contains('om-vline-cell');
         const hasRightDouble = htmlCell.style.borderRight.includes('double');
         const hasRightSolid = !hasRightDouble && htmlCell.style.borderRight.includes('solid');
+        const boxBorder = htmlCell.style.border.includes('2px') ? heavySolidBorder : solidBorder;
 
         const cellBorders = isLayoutTable
           ? isBoxCell
-            ? { top: solidBorder, bottom: solidBorder, left: solidBorder, right: solidBorder }
+            ? { top: boxBorder, bottom: boxBorder, left: boxBorder, right: boxBorder }
             : {
                 top: noBorder,
                 bottom: isLineCell ? solidBorder : noBorder,
                 left: noBorder,
                 right: hasRightDouble ? doubleBorder : hasRightSolid ? solidBorder : noBorder,
               }
-          : { top: solidBorder, bottom: solidBorder, left: solidBorder, right: solidBorder };
+          : isBoxGrid10096
+            ? {
+                top: htmlCell.classList.contains('om-no-top')
+                  ? noBorder
+                  : htmlCell.classList.contains('om-10096-top')
+                    ? heavySolidBorder
+                    : solidBorder,
+                bottom: htmlCell.classList.contains('om-no-bottom')
+                  ? noBorder
+                  : htmlCell.classList.contains('om-10096-bot')
+                    ? heavySolidBorder
+                    : solidBorder,
+                left: htmlCell.classList.contains('om-no-left') ? noBorder : solidBorder,
+                right: htmlCell.classList.contains('om-no-right')
+                  ? noBorder
+                  : htmlCell.classList.contains('om-10096-split')
+                    ? heavySolidBorder
+                    : solidBorder,
+              }
+            : { top: solidBorder, bottom: solidBorder, left: solidBorder, right: solidBorder };
 
         const widthStyle = htmlCell.style.width;
         const pctMatch = /^(\d+(?:\.\d+)?)%$/.exec(widthStyle);
+        const cellTwipsEst = Math.round(
+          parentTwips * ((pctMatch ? Number(pctMatch[1]) : 100 / cellEls.length) / 100),
+        );
+        const padLeftPx = parseFloat(htmlCell.style.paddingLeft || '0') || 0;
+        const padRightPx = parseFloat(htmlCell.style.paddingRight || '0') || 0;
+        const usableCellTwips = Math.max(
+          800,
+          cellTwipsEst - Math.round((padLeftPx + padRightPx) * 15) - 90,
+        );
+
+        const cellStyle: InlineRunStyle = { ...activeStyle };
+        if (
+          htmlCell.style.fontWeight === 'bold' ||
+          Number(htmlCell.style.fontWeight) >= 600
+        ) {
+          cellStyle.bold = true;
+        }
+        const cellPtMatch = /^(\d+(?:\.\d+)?)pt$/i.exec(htmlCell.style.fontSize.trim());
+        if (cellPtMatch) {
+          cellStyle.fontSizeHalfPt = Math.round(Number(cellPtMatch[1]) * 2);
+        }
+
+        if (isVlineCell) {
+          const wrapEl = htmlCell.querySelector('.om-295-vline-wrap') as HTMLElement | null;
+          const topPx = parseFloat(wrapEl?.style.paddingTop || '0') || 0;
+          const heightPx = parseFloat(wrapEl?.style.height || '360') || 360;
+          const addrText = (wrapEl?.textContent || '').replace(/\u00A0/g, ' ').trim();
+          const nestedRows: TableRow[] = [];
+
+          if (topPx > 0) {
+            nestedRows.push(
+              new TableRow({
+                height: { value: Math.round(topPx * 15), rule: HeightRule.EXACT },
+                children: [
+                  new TableCell({
+                    borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder },
+                    children: [new Paragraph('')],
+                  }),
+                ],
+              }),
+            );
+          }
+
+          nestedRows.push(
+            new TableRow({
+              height: { value: Math.round(heightPx * 15), rule: HeightRule.ATLEAST },
+              children: [
+                new TableCell({
+                  textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
+                  verticalAlign: VerticalAlign.BOTTOM,
+                  borders: {
+                    top: noBorder,
+                    bottom: noBorder,
+                    left: solidBorder,
+                    right: noBorder,
+                  },
+                  margins: { top: 40, bottom: 40, left: 60, right: 20 },
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.LEFT,
+                      children: addrText
+                        ? createScriptAwareTextRuns(addrText, {
+                            ...cellStyle,
+                            fontSizeHalfPt: 19,
+                          })
+                        : [new TextRun('')],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          );
+
+          const vTable = new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+              top: noBorder,
+              bottom: noBorder,
+              left: noBorder,
+              right: noBorder,
+              insideHorizontal: noBorder,
+              insideVertical: noBorder,
+            },
+            rows: nestedRows,
+          });
+
+          return new TableCell({
+            width: pctMatch
+              ? { size: Number(pctMatch[1]), type: WidthType.PERCENTAGE }
+              : undefined,
+            verticalAlign: VerticalAlign.TOP,
+            borders: cellBorders,
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
+            children: [vTable],
+          });
+        }
+
         const directSigBlock = Array.from(htmlCell.children).find((c) =>
           (c as HTMLElement).classList?.contains('om-sig-block'),
         ) as HTMLElement | undefined;
@@ -444,7 +753,7 @@ function htmlToDocxChildren(
 
         if (sigRows.length > 0 && Array.from(htmlCell.children).length === 1) {
           const printableWidthMm =
-            210 -
+            pageWidthMm -
             (template.pageSettings.margins.left || 20) -
             (template.pageSettings.margins.right || 20);
           const cellPct = pctMatch ? Number(pctMatch[1]) : 50;
@@ -463,11 +772,11 @@ function htmlToDocxChildren(
             const centerPos = Math.round(labelTwips + (endPos - labelTwips) / 2);
 
             const rowRuns: TextRun[] = [
-              ...createScriptAwareTextRuns(`${labelText} `, activeStyle),
+              ...createScriptAwareTextRuns(`${labelText} `, cellStyle),
               new TextRun({
                 text: '\t',
-                font: activeStyle.fontFamily,
-                size: activeStyle.fontSizeHalfPt,
+                font: cellStyle.fontFamily,
+                size: cellStyle.fontSizeHalfPt,
                 underline: { type: UnderlineType.SINGLE },
                 color: '000000',
               }),
@@ -476,7 +785,7 @@ function htmlToDocxChildren(
             if (valueText) {
               rowRuns.push(
                 ...createScriptAwareTextRuns(valueText, {
-                  ...activeStyle,
+                  ...cellStyle,
                   underline: true,
                 }),
               );
@@ -485,8 +794,8 @@ function htmlToDocxChildren(
             rowRuns.push(
               new TextRun({
                 text: '\t',
-                font: activeStyle.fontFamily,
-                size: activeStyle.fontSizeHalfPt,
+                font: cellStyle.fontFamily,
+                size: cellStyle.fontSizeHalfPt,
                 underline: { type: UnderlineType.SINGLE },
                 color: '000000',
               }),
@@ -522,14 +831,26 @@ function htmlToDocxChildren(
           for (const child of blockChildren) {
             const cTag = child.tagName.toLowerCase();
             if (cTag === 'table') {
-              cellChildren.push(buildDocxTable(child as HTMLElement, activeStyle));
+              cellChildren.push(buildDocxTable(child as HTMLElement, cellStyle, usableCellTwips));
+            } else if ((child as HTMLElement).classList.contains('om-295-row')) {
+              cellChildren.push(
+                buildDocxDottedRowParagraph(child as HTMLElement, usableCellTwips, cellStyle),
+              );
             } else {
               const pHtml = child as HTMLElement;
-              const pRuns = collectTextRuns(pHtml, {
-                ...activeStyle,
-                bold: isTh || undefined,
-              });
+              const pStyle: InlineRunStyle = { ...cellStyle, bold: isTh || cellStyle.bold };
+              const pPtMatch = /^(\d+(?:\.\d+)?)pt$/i.exec(pHtml.style.fontSize.trim());
+              if (pPtMatch) {
+                pStyle.fontSizeHalfPt = Math.round(Number(pPtMatch[1]) * 2);
+              }
+              const pRuns = collectTextRuns(pHtml, pStyle);
               const marginTopPx = parseFloat(pHtml.style.marginTop || '0') || 0;
+              const marginBottomPx = parseFloat(pHtml.style.marginBottom || '0') || 0;
+              const pLeftPx = parseFloat(pHtml.style.marginLeft || pHtml.style.paddingLeft || '0') || 0;
+              const pTextIndentPx = parseFloat(pHtml.style.textIndent || '0') || 0;
+              const indentLeftTwips = pLeftPx > 0 ? Math.round(pLeftPx * 15) : undefined;
+              const hangingTwips =
+                pTextIndentPx < 0 ? Math.round(Math.abs(pTextIndentPx) * 15) : undefined;
               cellChildren.push(
                 new Paragraph({
                   alignment: mapAlignment(
@@ -537,9 +858,17 @@ function htmlToDocxChildren(
                       htmlCell.style.textAlign ||
                       (isLineCell ? 'center' : undefined),
                   ),
+                  indent: indentLeftTwips
+                    ? { left: indentLeftTwips, hanging: hangingTwips }
+                    : undefined,
                   spacing: {
                     before: marginTopPx > 0 ? Math.round(marginTopPx * 15) : 0,
-                    after: isLayoutTable ? 10 : 40,
+                    after:
+                      marginBottomPx > 0
+                        ? Math.round(marginBottomPx * 15)
+                        : isLayoutTable
+                          ? 10
+                          : 40,
                     line: lineSpacing,
                   },
                   children: pRuns.length > 0 ? pRuns : [new TextRun('')],
@@ -549,8 +878,8 @@ function htmlToDocxChildren(
           }
         } else {
           const cellRuns = collectTextRuns(cellEl, {
-            ...activeStyle,
-            bold: isTh || undefined,
+            ...cellStyle,
+            bold: isTh || cellStyle.bold,
           });
           cellChildren.push(
             new Paragraph({
@@ -567,26 +896,36 @@ function htmlToDocxChildren(
           cellChildren.push(new Paragraph(''));
         }
 
+        const resolvedVerticalAlign = isLayoutTable
+          ? htmlCell.style.verticalAlign === 'middle' || isBoxCell
+            ? VerticalAlign.CENTER
+            : htmlCell.style.verticalAlign === 'bottom'
+              ? VerticalAlign.BOTTOM
+              : htmlCell.style.verticalAlign === 'top' || isTopCell
+                ? VerticalAlign.TOP
+                : VerticalAlign.BOTTOM
+          : undefined;
+
         return new TableCell({
           width: pctMatch
             ? { size: Number(pctMatch[1]), type: WidthType.PERCENTAGE }
             : undefined,
           columnSpan: colSpanAttr > 1 ? colSpanAttr : undefined,
           rowSpan: rowSpanAttr > 1 ? rowSpanAttr : undefined,
-          verticalAlign: isLayoutTable
-            ? isBoxCell
-              ? VerticalAlign.CENTER
-              : isTopCell
-                ? VerticalAlign.TOP
-                : VerticalAlign.BOTTOM
-            : undefined,
+          textDirection: isVerticalCell ? TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT : undefined,
+          verticalAlign: resolvedVerticalAlign,
           borders: cellBorders,
           margins: isLayoutTable
             ? isBoxCell
               ? { top: 45, bottom: 45, left: 60, right: 60 }
               : isGapCell
                 ? { top: 0, bottom: 0, left: 0, right: 0 }
-                : { top: isTopCell ? 20 : 70, bottom: 25, left: isLineCell ? 40 : 0, right: isLineCell ? 40 : 60 }
+                : {
+                    top: isTopCell ? 20 : 70,
+                    bottom: 25,
+                    left: padLeftPx > 0 ? Math.round(padLeftPx * 15) : isLineCell ? 40 : 0,
+                    right: padRightPx > 0 ? Math.round(padRightPx * 15) : isLineCell ? 40 : 60,
+                  }
             : { top: 60, bottom: 60, left: 95, right: 95 },
           children: cellChildren,
         });
@@ -649,7 +988,7 @@ function htmlToDocxChildren(
         const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
         const noCellBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
         const printableWidthMm =
-          210 -
+          pageWidthMm -
           (template.pageSettings.margins.left || 20) -
           (template.pageSettings.margins.right || 20);
         const printableTwips = convertMillimetersToTwip(printableWidthMm);
@@ -803,7 +1142,7 @@ function htmlToDocxChildren(
         : el.querySelector('.om-st-right-block')) as HTMLElement | null;
       const targetEl = blockEl || el;
       const printableWidthMm =
-        210 -
+        pageWidthMm -
         (template.pageSettings.margins.left || 20) -
         (template.pageSettings.margins.right || 20);
       const printableTwips = convertMillimetersToTwip(printableWidthMm);
@@ -907,7 +1246,12 @@ function htmlToDocxChildren(
       return;
     }
 
-    if (tag === 'div' && el.querySelector('p, ol, ul, table, h1, h2, h3, h4, hr')) {
+    if (el.classList.contains('om-295-row')) {
+      blocks.push(buildDocxDottedRowParagraph(el, printableTwipsGlobal, activeStyle));
+      return;
+    }
+
+    if (tag === 'div' && el.querySelector('p, ol, ul, table, h1, h2, h3, h4, hr, .om-295-row')) {
       for (const child of Array.from(el.children)) {
         processBlockElement(child as HTMLElement, activeStyle);
       }
@@ -1033,16 +1377,16 @@ export async function buildDocxBlob(
         properties: {
           page: {
             size: {
-              width: convertMillimetersToTwip(210),
-              height: convertMillimetersToTwip(297),
+              width: convertMillimetersToTwip(template.pageSettings.size === 'Legal' ? 215.9 : 210),
+              height: convertMillimetersToTwip(template.pageSettings.size === 'Legal' ? 355.6 : 297),
             },
             margin: {
               top: convertMillimetersToTwip(margins.top || 25.4),
               right: convertMillimetersToTwip(margins.right || 25.4),
               bottom: convertMillimetersToTwip(margins.bottom || 25.4),
               left: convertMillimetersToTwip(margins.left || 25.4),
-              header: convertMillimetersToTwip(Math.min(12.7, (margins.top || 25.4) / 2)),
-              footer: convertMillimetersToTwip(Math.min(12.7, (margins.bottom || 25.4) / 2)),
+              header: convertMillimetersToTwip(Math.min(5, Math.max(2, (margins.top || 25.4) * 0.25))),
+              footer: convertMillimetersToTwip(Math.min(5, Math.max(2, (margins.bottom || 25.4) * 0.25))),
             },
           },
         },
@@ -1052,10 +1396,12 @@ export async function buildDocxBlob(
                 children: [
                   new Paragraph({
                     alignment: AlignmentType.CENTER,
+                    spacing: { before: 0, after: 0 },
                     children: createScriptAwareTextRuns(headerText, {
                       fontFamily:
                         fontFamily && fontFamily !== 'SutonnyMJ' ? fontFamily : 'Arial',
                       fontSizeHalfPt: (fontFamily === 'SutonnyMJ' ? 12 : fontSize || 12) * 2,
+                      color: '737373',
                     }),
                   }),
                 ],
@@ -1068,10 +1414,12 @@ export async function buildDocxBlob(
                 children: [
                   new Paragraph({
                     alignment: AlignmentType.CENTER,
+                    spacing: { before: 0, after: 0 },
                     children: createScriptAwareTextRuns(footerText, {
                       fontFamily:
                         fontFamily && fontFamily !== 'SutonnyMJ' ? fontFamily : 'Arial',
                       fontSizeHalfPt: (fontFamily === 'SutonnyMJ' ? 12 : fontSize || 12) * 2,
+                      color: '737373',
                     }),
                   }),
                 ],
@@ -1129,17 +1477,25 @@ export async function exportHtmlItemsToPdf(
   const { margins, fontFamily, fontSize, lineHeight, headerText, footerText } =
     template.pageSettings;
 
+  const isLegal = template.pageSettings.size === 'Legal';
+  const pdfWidthMm = isLegal ? 215.9 : 210;
+  const pdfHeightMm = isLegal ? 355.6 : 297;
+
   const host = document.createElement('div');
   host.style.position = 'fixed';
   host.style.left = '-10000px';
   host.style.top = '0';
-  host.style.width = '210mm';
+  host.style.width = `${pdfWidthMm}mm`;
   host.style.background = '#ffffff';
   host.style.zIndex = '-1';
   document.body.appendChild(host);
 
   try {
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: isLegal ? 'legal' : 'a4',
+    });
     let isFirstPdfPage = true;
 
     for (const html of renderedHtmlItems) {
@@ -1148,31 +1504,36 @@ export async function exportHtmlItemsToPdf(
 
       for (const subHtml of subPages) {
         const sheet = document.createElement('div');
-        sheet.className = 'a4-paper';
-        sheet.style.width = '210mm';
-        sheet.style.minHeight = '297mm';
+        sheet.className = `a4-paper ${isLegal ? 'om-page-legal' : ''}`;
+        sheet.style.width = `${pdfWidthMm}mm`;
+        sheet.style.minHeight = `${pdfHeightMm}mm`;
         sheet.style.padding = `${margins.top}mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm`;
         sheet.style.backgroundColor = '#ffffff';
         sheet.style.color = '#000000';
         const resolvedPdfFont =
           fontFamily && fontFamily !== 'SutonnyMJ' ? fontFamily : 'Arial';
         const resolvedPdfEnglishPt = fontFamily === 'SutonnyMJ' ? 12 : fontSize || 12;
-        sheet.style.fontFamily = `"${resolvedPdfFont}", "Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", sans-serif`;
+        const isSerifPdf = /times|georgia|serif|tinos|garamond/i.test(resolvedPdfFont);
+        sheet.style.fontFamily = isSerifPdf
+          ? `"${resolvedPdfFont}", "Tinos", "Tiro Bangla", "Noto Serif Bengali", Georgia, serif`
+          : `"${resolvedPdfFont}", "Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", sans-serif`;
         sheet.style.fontSize = `${resolvedPdfEnglishPt}pt`;
         sheet.style.lineHeight = String(lineHeight);
-        sheet.style.display = 'flex';
-        sheet.style.flexDirection = 'column';
-        sheet.style.justifyContent = 'space-between';
+        sheet.style.position = 'relative';
+
+        const headerOffsetMm = Math.min(5, Math.max(2, (margins.top || 25.4) * 0.25));
+        const footerOffsetMm = Math.min(5, Math.max(2, (margins.bottom || 25.4) * 0.25));
 
         const headerEl = headerText
-          ? `<div style="text-align:center;font-size:${resolvedPdfEnglishPt}pt;color:#000000;letter-spacing:0.02em;margin-bottom:2mm;">${decorateMixedScriptHtml(headerText)}</div>`
+          ? `<div style="position:absolute;top:${headerOffsetMm}mm;left:${margins.left}mm;right:${margins.right}mm;text-align:center;font-size:${resolvedPdfEnglishPt}pt;line-height:1.15;color:#737373;letter-spacing:0.02em;">${decorateMixedScriptHtml(headerText)}</div>`
           : '';
         const footerEl = footerText
-          ? `<div style="text-align:center;font-size:${resolvedPdfEnglishPt}pt;color:#000000;letter-spacing:0.02em;margin-top:2mm;">${decorateMixedScriptHtml(footerText)}</div>`
+          ? `<div style="position:absolute;bottom:${footerOffsetMm}mm;left:${margins.left}mm;right:${margins.right}mm;text-align:center;font-size:${resolvedPdfEnglishPt}pt;line-height:1.15;color:#737373;letter-spacing:0.02em;">${decorateMixedScriptHtml(footerText)}</div>`
           : '';
 
         sheet.innerHTML = `
-          <div>${headerEl}<div>${decorateMixedScriptHtml(sanitizeDocumentHtml(subHtml))}</div></div>
+          ${headerEl}
+          <div>${decorateMixedScriptHtml(sanitizeDocumentHtml(subHtml))}</div>
           ${footerEl}
         `;
 
@@ -1195,8 +1556,8 @@ export async function exportHtmlItemsToPdf(
         });
 
         const imgData = canvas.toDataURL('image/jpeg', 0.96);
-        const pageWidth = 210;
-        const pageHeight = 297;
+        const pageWidth = pdfWidthMm;
+        const pageHeight = pdfHeightMm;
         const imgWidth = pageWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
 

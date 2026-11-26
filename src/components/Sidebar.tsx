@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   CalendarCheck,
+  CalendarDays,
   Car,
   ChevronDown,
   ChevronRight,
@@ -16,7 +17,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
-  Shield,
   X,
 } from 'lucide-react';
 import { NavRoute } from '../types/models';
@@ -27,7 +27,6 @@ interface SidebarProps {
   onSelectDocument: (templateId: string) => void;
   onNavigate: (route: NavRoute) => void;
   unitName: string;
-  clerkLabel: string;
   pinEnabled: boolean;
   onLock: () => void;
   collapsed: boolean;
@@ -36,7 +35,32 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
+const LEAVE_SUB_ITEMS = [
+  {
+    id: 'tpl-jsi-8-80',
+    label: 'R/L Allowance Certificate',
+    icon: FileCheck2,
+  },
+  {
+    id: 'tpl-baf-10096',
+    label: 'Leave Application',
+    icon: CalendarCheck,
+  },
+  {
+    id: 'tpl-baf-295',
+    label: 'BAF Form-295',
+    icon: ClipboardCheck,
+  },
+];
+
+const LEAVE_SUB_IDS = new Set(LEAVE_SUB_ITEMS.map((item) => item.id));
+
 const RATION_SUB_ITEMS = [
+  {
+    id: 'tpl-ration-card',
+    label: 'Ration Card',
+    icon: ClipboardList,
+  },
   {
     id: 'tpl-ration-cert',
     label: 'Ration Certificate',
@@ -62,7 +86,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectDocument,
   onNavigate,
   unitName,
-  clerkLabel,
   pinEnabled,
   onLock,
   collapsed,
@@ -70,9 +93,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen,
   onCloseMobile,
 }) => {
+  const isLeaveChildActive =
+    activeRoute === 'generate' && Boolean(activeTemplateId && LEAVE_SUB_IDS.has(activeTemplateId));
+  const [leaveOpen, setLeaveOpen] = useState<boolean>(true);
+
   const isRationChildActive =
     activeRoute === 'generate' && Boolean(activeTemplateId && RATION_SUB_IDS.has(activeTemplateId));
   const [rationOpen, setRationOpen] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (isLeaveChildActive) {
+      setLeaveOpen(true);
+    }
+  }, [isLeaveChildActive]);
 
   useEffect(() => {
     if (isRationChildActive) {
@@ -92,24 +125,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const docItems = [
     {
-      id: 'tpl-jsi-8-80',
-      label: 'Recreation Allowance Certificate',
-      icon: FileCheck2,
-    },
-    {
       id: 'tpl-statement-bn',
       label: 'Statement (বিবৃতি)',
       icon: FileText,
-    },
-    {
-      id: 'tpl-baf-295',
-      label: 'BAF Form 295 (Leave / Pass)',
-      icon: ClipboardCheck,
-    },
-    {
-      id: 'tpl-baf-10096',
-      label: 'Leave Application (10096)',
-      icon: CalendarCheck,
     },
     {
       id: 'tpl-td-cert-bn',
@@ -120,11 +138,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'tpl-vehicle-pass-bn',
       label: 'Vehicle Pass (গাড়ীর পাশ)',
       icon: Car,
-    },
-    {
-      id: 'tpl-ration-card',
-      label: 'Ration Card Form',
-      icon: ClipboardList,
     },
   ];
 
@@ -152,8 +165,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <>
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0">
-                <Shield className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-white p-0.5 flex items-center justify-center shrink-0 shadow-sm">
+                <img
+                  src="/logo.png"
+                  alt="OfficeMate"
+                  className="w-full h-full object-contain rounded-md"
+                />
               </div>
               <div className="min-w-0">
                 <div className="text-base font-bold tracking-tight text-white truncate">
@@ -222,7 +239,76 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
 
-        {/* Expandable Ration Group with 3 Sub-Options */}
+        {/* Expandable Leave Group with 3 Sub-Options */}
+        <div className="pt-0.5 space-y-1">
+          <button
+            type="button"
+            onClick={() => {
+              if (isCollapsed) {
+                onToggleCollapse();
+                setLeaveOpen(true);
+              } else {
+                setLeaveOpen((prev) => !prev);
+              }
+            }}
+            aria-expanded={leaveOpen}
+            title="Leave"
+            className={`w-full flex items-center rounded-lg text-[13px] font-medium transition-colors ${
+              isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2.5'
+            } ${
+              isLeaveChildActive
+                ? 'bg-emerald-900/70 text-emerald-300 border border-emerald-700/60 font-semibold'
+                : 'text-emerald-100/85 hover:bg-emerald-900/45 hover:text-white border border-transparent hover:border-emerald-800/50'
+            }`}
+          >
+            <span className={`flex items-center ${isCollapsed ? '' : 'gap-2.5 min-w-0'}`}>
+              <CalendarDays
+                className={`w-4 h-4 shrink-0 ${
+                  isLeaveChildActive ? 'text-emerald-400' : 'text-emerald-400/75'
+                }`}
+              />
+              {!isCollapsed ? <span className="truncate">Leave</span> : null}
+            </span>
+            {!isCollapsed ? (
+              leaveOpen ? (
+                <ChevronDown className="w-4 h-4 shrink-0 text-emerald-300/80" />
+              ) : (
+                <ChevronRight className="w-4 h-4 shrink-0 text-emerald-300/80" />
+              )
+            ) : null}
+          </button>
+
+          {!isCollapsed && leaveOpen ? (
+            <div className="ml-3.5 pl-2.5 border-l border-emerald-800/70 space-y-1">
+              {LEAVE_SUB_ITEMS.map((sub) => {
+                const SubIcon = sub.icon;
+                const isSubActive = activeRoute === 'generate' && activeTemplateId === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => handleSelectDoc(sub.id)}
+                    title={sub.label}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12.5px] font-medium transition-colors ${
+                      isSubActive
+                        ? 'bg-emerald-500 text-slate-950 shadow-sm font-semibold'
+                        : 'text-emerald-100/80 hover:bg-emerald-900/45 hover:text-white border border-transparent hover:border-emerald-800/50'
+                    }`}
+                  >
+                    <SubIcon
+                      className={`w-3.5 h-3.5 shrink-0 ${
+                        isSubActive ? 'text-slate-950' : 'text-emerald-400/75'
+                      }`}
+                    />
+                    <span className="truncate">{sub.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+
+        {/* Expandable Ration Group with 4 Sub-Options */}
         <div className="pt-0.5 space-y-1">
           <button
             type="button"
@@ -292,38 +378,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </nav>
 
-      {/* FIXED BOTTOM: Clerk Info & Settings */}
+      {/* FIXED BOTTOM: Lock & Settings */}
       <div className="shrink-0 border-t border-emerald-900/60 bg-[#031911]">
         <div className="p-3 space-y-2">
-          {!isCollapsed ? (
-            <div className="px-3 py-2 rounded-lg bg-emerald-950/70 border border-emerald-800/50 flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-xs font-semibold text-emerald-50 truncate">
-                  {clerkLabel}
-                </div>
-                <div className="text-[11px] text-emerald-400/75 truncate">
-                  {unitName} · Clerk
-                </div>
-              </div>
-              {pinEnabled ? (
-                <button
-                  type="button"
-                  onClick={onLock}
-                  title="Lock OfficeMate"
-                  className="p-1.5 rounded-md text-emerald-300/80 hover:text-white hover:bg-emerald-900/60 shrink-0"
-                >
-                  <Lock className="w-4 h-4" />
-                </button>
-              ) : null}
-            </div>
-          ) : pinEnabled ? (
+          {pinEnabled ? (
             <button
               type="button"
               onClick={onLock}
               title="Lock OfficeMate"
-              className="w-full flex items-center justify-center p-2.5 rounded-lg text-emerald-300/80 hover:text-white hover:bg-emerald-900/60"
+              className={`w-full flex items-center rounded-lg text-[13px] font-medium text-emerald-200/85 hover:text-white hover:bg-emerald-900/50 border border-emerald-800/40 transition-colors ${
+                isCollapsed ? 'justify-center p-2.5' : 'gap-2.5 px-3 py-2'
+              }`}
             >
-              <Lock className="w-4 h-4" />
+              <Lock className="w-4 h-4 shrink-0 text-emerald-400" />
+              {!isCollapsed ? <span>Lock Workspace</span> : null}
             </button>
           ) : null}
 

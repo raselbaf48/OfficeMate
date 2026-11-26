@@ -56,6 +56,11 @@
   word-wrap: break-word;
 }
 
+.a4-paper.om-page-legal {
+  width: 215.9mm;
+  min-height: 355.6mm;
+}
+
 .a4-paper .om-bn,
 .om-bn {
   font-family: "SutonnyMJ", "Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", serif;
@@ -195,22 +200,111 @@
 }
 
 .a4-paper .om-baf295-stamp {
-  border: 1.5px solid #000000;
-  padding: 4px 10px;
+  border: 2px solid #000000;
+  padding: 3px 10px;
   text-align: center;
-  font-size: 12pt;
-  line-height: 1.2;
+  font-size: 10pt;
+  line-height: 1.15;
   display: inline-block;
-  min-width: 95px;
+  min-width: 105px;
+}
+
+.a4-paper .om-295-row {
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  margin: 0 0 2px 0;
+  gap: 2px;
+  line-height: 1.28;
+}
+
+.a4-paper .om-295-lbl {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.a4-paper .om-295-dot {
+  flex: 1 1 0%;
+  min-width: 14px;
+  border-bottom: 1px dotted #000000;
+  text-align: center;
+  padding: 0 3px 1px 3px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.a4-paper .om-295-dot-xs {
+  flex: 0 0 32px;
+  min-width: 28px;
+}
+
+.a4-paper .om-295-dot-sm {
+  flex: 0 0 46px;
+  min-width: 40px;
+}
+
+.a4-paper .om-295-dot-md {
+  flex: 0.65 1 0%;
+}
+
+.a4-paper .om-295-dot-gap {
+  flex: 0.45 0 0%;
+}
+
+.a4-paper .om-baf295-lp {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 1.05;
+  margin: 0 10px;
+  font-size: 9.5pt;
+}
+
+.a4-paper .om-baf295-lp-top {
+  display: block;
+  padding: 0 4px 1px 4px;
+  border-bottom: 1px solid #000000;
+  white-space: nowrap;
+}
+
+.a4-paper .om-baf295-lp-bot {
+  display: block;
+  padding: 1px 4px 0 4px;
+  white-space: nowrap;
 }
 
 .a4-paper .om-baf295-vertical {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   font-size: 12pt;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
-  padding: 6px 0;
+  padding: 0;
+  margin: 0 auto;
+}
+
+.a4-paper .om-295-vline-wrap {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.a4-paper .om-295-vline-rule {
+  border-left: 1px solid #000000;
+  height: 100%;
+  padding-left: 4px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.a4-paper .om-295-vtext {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  font-size: 9.5pt;
+  line-height: 1.1;
 }
 
 .a4-paper table.om-form-grid {
@@ -228,6 +322,47 @@
 
 .a4-paper table.om-form-grid.om-heavy-box {
   border: 2px solid #000000;
+}
+
+.a4-paper table.om-10096-box {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.a4-paper table.om-10096-box td,
+.a4-paper table.om-10096-box th {
+  border: 1px solid #000000;
+  padding: 3px 6px;
+  vertical-align: top;
+}
+
+.a4-paper table.om-10096-box td.om-no-left {
+  border-left: none !important;
+}
+
+.a4-paper table.om-10096-box td.om-no-right {
+  border-right: none !important;
+}
+
+.a4-paper table.om-10096-box td.om-no-bottom {
+  border-bottom: none !important;
+}
+
+.a4-paper table.om-10096-box td.om-no-top {
+  border-top: none !important;
+}
+
+.a4-paper table.om-10096-box td.om-10096-top {
+  border-top: 2px solid #000000 !important;
+}
+
+.a4-paper table.om-10096-box td.om-10096-bot {
+  border-bottom: 2px solid #000000 !important;
+}
+
+.a4-paper table.om-10096-box td.om-10096-split {
+  border-right: 2px solid #000000 !important;
 }
 
 .a4-paper .om-sig-align-right {
@@ -446,6 +581,11 @@
     border: none !important;
     margin: 0 !important;
     page-break-after: always;
+  }
+
+  .a4-paper.om-page-legal {
+    width: 215.9mm !important;
+    min-height: 355.6mm !important;
   }
 
   .a4-paper:last-child {

@@ -24,6 +24,14 @@ export const A4DocumentPreview: React.FC<A4DocumentPreviewProps> = ({
   const pages = cleanHtml.split(/<hr[^>]*class="[^"]*om-page-break[^"]*"[^>]*\/?>/gi);
   const resolvedFont = fontFamily && fontFamily !== 'SutonnyMJ' ? fontFamily : 'Arial';
   const resolvedSize = fontFamily === 'SutonnyMJ' ? 12 : fontSize || 12;
+  const isSerifFont = /times|georgia|serif|tinos|garamond/i.test(resolvedFont);
+  const resolvedFontStack = isSerifFont
+    ? `"${resolvedFont}", "Tinos", "Tiro Bangla", "Noto Serif Bengali", Georgia, serif`
+    : `"${resolvedFont}", "Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", sans-serif`;
+
+  const isLegal = pageSettings.size === 'Legal';
+  const headerOffsetMm = Math.min(5, Math.max(2, (margins.top || 25.4) * 0.25));
+  const footerOffsetMm = Math.min(5, Math.max(2, (margins.bottom || 25.4) * 0.25));
 
   return (
     <div
@@ -36,38 +44,49 @@ export const A4DocumentPreview: React.FC<A4DocumentPreviewProps> = ({
       {pages.map((pageHtml, index) => (
         <div
           key={index}
-          className="a4-paper border border-slate-300 shadow-sm flex flex-col justify-between"
+          className={`a4-paper ${isLegal ? 'om-page-legal' : ''} relative border border-slate-300 shadow-sm`}
           style={{
+            width: isLegal ? '215.9mm' : '210mm',
+            minHeight: isLegal ? '355.6mm' : '297mm',
             padding: `${margins.top}mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm`,
-            fontFamily: `"${resolvedFont}", "Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", sans-serif`,
+            fontFamily: resolvedFontStack,
             fontSize: `${resolvedSize}pt`,
             lineHeight: String(lineHeight),
           }}
         >
-          <div>
-            {cleanHeader ? (
-              <div
-                style={{
-                  textAlign: 'center',
-                  fontSize: `${resolvedSize}pt`,
-                  color: '#000000',
-                  marginBottom: '2mm',
-                  letterSpacing: '0.02em',
-                }}
-                dangerouslySetInnerHTML={{ __html: cleanHeader }}
-              />
-            ) : null}
-            <div dangerouslySetInnerHTML={{ __html: pageHtml }} />
-          </div>
+          {cleanHeader ? (
+            <div
+              style={{
+                position: 'absolute',
+                top: `${headerOffsetMm}mm`,
+                left: `${margins.left}mm`,
+                right: `${margins.right}mm`,
+                textAlign: 'center',
+                fontSize: `${resolvedSize}pt`,
+                lineHeight: '1.15',
+                color: '#737373',
+                letterSpacing: '0.02em',
+                pointerEvents: 'none',
+              }}
+              dangerouslySetInnerHTML={{ __html: cleanHeader }}
+            />
+          ) : null}
+
+          <div dangerouslySetInnerHTML={{ __html: pageHtml }} />
 
           {cleanFooter ? (
             <div
               style={{
+                position: 'absolute',
+                bottom: `${footerOffsetMm}mm`,
+                left: `${margins.left}mm`,
+                right: `${margins.right}mm`,
                 textAlign: 'center',
                 fontSize: `${resolvedSize}pt`,
-                color: '#000000',
-                marginTop: '2mm',
+                lineHeight: '1.15',
+                color: '#737373',
                 letterSpacing: '0.02em',
+                pointerEvents: 'none',
               }}
               dangerouslySetInnerHTML={{ __html: cleanFooter }}
             />
