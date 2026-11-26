@@ -365,6 +365,35 @@
   border-right: 2px solid #000000 !important;
 }
 
+.a4-paper table.om-10096-box table.om-layout-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 !important;
+}
+
+.a4-paper table.om-10096-box table.om-layout-table td {
+  border: none !important;
+  padding: 0 !important;
+  vertical-align: bottom !important;
+  line-height: 1.15;
+}
+
+.a4-paper .om-10096-sigcell {
+  display: flex;
+  flex-direction: column;
+  min-height: 76px;
+  margin: 0;
+  padding: 0;
+}
+
+.a4-paper .om-10096-sigcell > p {
+  margin: 0;
+}
+
+.a4-paper .om-10096-sigcell > :last-child {
+  margin-top: auto !important;
+}
+
 .a4-paper .om-sig-align-right {
   display: flex;
   justify-content: flex-end;

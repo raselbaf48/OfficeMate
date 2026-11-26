@@ -16,12 +16,71 @@ const MONTHS_SHORT = [
   'Dec',
 ];
 
+const BANGLA_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+
+export const BANGLA_MONTHS = [
+  'জানুয়ারি',
+  'ফেব্রুয়ারি',
+  'মার্চ',
+  'এপ্রিল',
+  'মে',
+  'জুন',
+  'জুলাই',
+  'আগস্ট',
+  'সেপ্টেম্বর',
+  'অক্টোবর',
+  'নভেম্বর',
+  'ডিসেম্বর',
+];
+
+const BANGLA_MONTH_ALIASES: Record<string, number> = {
+  'জানুয়ারি': 0,
+  'জানুয়ারি': 0,
+  'জানু': 0,
+  'ফেব্রুয়ারি': 1,
+  'ফেব্রুয়ারি': 1,
+  'ফেব': 1,
+  'মার্চ': 2,
+  'এপ্রিল': 3,
+  'মে': 4,
+  'জুন': 5,
+  'জুলাই': 6,
+  'আগস্ট': 7,
+  'অগাস্ট': 7,
+  'সেপ্টেম্বর': 8,
+  'অক্টোবর': 9,
+  'নভেম্বর': 10,
+  'ডিসেম্বর': 11,
+};
+
+export function toBanglaDigits(input: string | number): string {
+  return String(input).replace(/\d/g, (d) => BANGLA_DIGITS[Number(d)] ?? d);
+}
+
+export function fromBanglaDigits(input: string): string {
+  return input.replace(/[০-৯]/g, (ch) => {
+    const idx = BANGLA_DIGITS.indexOf(ch);
+    return idx === -1 ? ch : String(idx);
+  });
+}
+
+export function formatBanglaDate(dateInput: Date | string): string {
+  const date = typeof dateInput === 'string' ? parseFlexibleDate(dateInput) : dateInput;
+  if (!date || Number.isNaN(date.getTime())) {
+    return typeof dateInput === 'string' ? dateInput : '';
+  }
+  const dd = toBanglaDigits(String(date.getDate()).padStart(2, '0'));
+  const mon = BANGLA_MONTHS[date.getMonth()] ?? '';
+  const yy = toBanglaDigits(String(date.getFullYear()).slice(-2));
+  return `${dd} ${mon} ${yy}`;
+}
+
 /**
- * Parses common military/ISO date strings (e.g. "16 Oct 26", "2026-10-16", "16/10/2026")
+ * Parses common military/ISO/Bangla date strings (e.g. "16 Oct 26", "১২ ডিসেম্বর ২৬", "2026-10-16", "16/10/2026")
  */
 export function parseFlexibleDate(input: string): Date | null {
   if (!input) return null;
-  const trimmed = input.trim();
+  const trimmed = fromBanglaDigits(input).trim();
   if (!trimmed) return null;
 
   // YYYY-MM-DD
@@ -53,6 +112,19 @@ export function parseFlexibleDate(input: string): Date | null {
     const month = MONTHS_SHORT.findIndex((m) => m.toLowerCase() === monStr);
     if (month !== -1) {
       let year = Number(dmyText[3]);
+      if (year < 100) year += 2000;
+      const d = new Date(year, month, day);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+  }
+
+  // DD <Bangla Month> YY/YYYY (e.g. "১২ ডিসেম্বর ২৬")
+  const dmyBangla = /^(\d{1,2})\s+([\u0980-\u09FF]+)\s+(\d{2,4})$/.exec(trimmed);
+  if (dmyBangla) {
+    const day = Number(dmyBangla[1]);
+    const month = BANGLA_MONTH_ALIASES[dmyBangla[2]];
+    if (month !== undefined) {
+      let year = Number(dmyBangla[3]);
       if (year < 100) year += 2000;
       const d = new Date(year, month, day);
       return Number.isNaN(d.getTime()) ? null : d;
@@ -345,6 +417,11 @@ export function renderTemplateBody(
         const top = normVal === 'pass' ? '<s>*Leave</s>' : '*Leave';
         const bot = normVal === 'leave' ? '<s>*Pass</s>' : '*Pass';
         return `<span class="om-baf295-lp"><span class="om-baf295-lp-top">${top}</span><span class="om-baf295-lp-bot">${bot}</span></span>`;
+      }
+      if (lowerFilter === 'strike_10096_nature') {
+        const opts = 'বার্ষিক|নৈমিত্তিক|চিকিৎসাজনিত';
+        if (!raw) return 'বার্ষিক/নৈমিত্তিক/চিকিৎসাজনিত';
+        return renderStrikeChoice(raw, opts, false);
       }
     }
 

@@ -31,7 +31,9 @@ import {
 } from '../utils/exporters';
 import {
   computeAutoFields,
+  formatBanglaDate,
   formatDateByPattern,
+  fromBanglaDigits,
   parseFlexibleDate,
   renderTemplateBody,
   validateFieldValues,
@@ -40,6 +42,7 @@ import {
 const CLERK_MEMORY_KEY = 'officemate_clerk_memory_v1';
 const CYCLE_MEMORY_KEY = 'officemate_cycle_start_memory_v1';
 const STATEMENT_MEMORY_KEY = 'officemate_statement_memory_v1';
+const TPL_MEMORY_KEY = 'officemate_tpl_memory_v1';
 
 const CLERK_KEYS = new Set(['clerk_bd_no', 'clerk_rank', 'clerk_name', 'unit']);
 const CYCLE_KEYS = new Set(['cycle_start', 'cycle_end']);
@@ -156,6 +159,33 @@ function writeStoredCycleStart(val: string): void {
   }
 }
 
+function readAllTemplateMemory(): Record<string, Record<string, string>> {
+  try {
+    const raw = localStorage.getItem(TPL_MEMORY_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function readStoredTemplateMemory(templateId: string): Record<string, string> {
+  const all = readAllTemplateMemory();
+  const entry = all[templateId];
+  return entry && typeof entry === 'object' ? entry : {};
+}
+
+function writeStoredTemplateMemory(templateId: string, values: Record<string, string>): void {
+  try {
+    const all = readAllTemplateMemory();
+    all[templateId] = { ...values };
+    localStorage.setItem(TPL_MEMORY_KEY, JSON.stringify(all));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
 interface GenerateDocumentPageProps {
   templates: Template[];
   personnel: Person[];
@@ -228,6 +258,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
     const savedClerk = readStoredClerkMemory();
     const savedCycleStart = readStoredCycleStart();
     const savedStatement = readStoredStatementMemory();
+    const savedTemplate = readStoredTemplateMemory(activeTemplate.id);
     const defaults: Record<string, string> = {};
 
     for (const f of activeTemplate.fields) {
@@ -254,6 +285,8 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         } else {
           defaults[f.key] = f.defaultValue || '';
         }
+      } else if (savedTemplate[f.key] !== undefined && savedTemplate[f.key] !== '') {
+        defaults[f.key] = savedTemplate[f.key];
       } else if (f.type === 'signer' && f.signerRole && f.signerProperty) {
         const signer =
           signers.find((s) => s.role === f.signerRole && s.isDefault) ??
@@ -277,6 +310,25 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   const updateFieldValue = (key: string, val: string) => {
     setRawValues((prev) => {
       const next = { ...prev, [key]: val };
+      if (
+        activeTemplate?.id === 'tpl-baf-10096' &&
+        (key === 'leave_from_bn' || key === 'total_days_bn')
+      ) {
+        if (key === 'leave_from_bn' && !val) {
+          next.leave_to_bn = '';
+        } else {
+          const startDate = parseFlexibleDate(next.leave_from_bn ?? '');
+          const daysNum = Number.parseInt(fromBanglaDigits(next.total_days_bn ?? ''), 10);
+          if (startDate && !Number.isNaN(daysNum) && daysNum >= 1) {
+            const endDate = new Date(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              startDate.getDate() + (daysNum - 1),
+            );
+            next.leave_to_bn = formatBanglaDate(endDate);
+          }
+        }
+      }
       if (CLERK_KEYS.has(key)) {
         writeStoredClerkMemory(next);
       }
@@ -285,6 +337,9 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
       }
       if (isStatement && ST_MEMORY_KEYS.has(key)) {
         writeStoredStatementMemory(next);
+      }
+      if (activeTemplate) {
+        writeStoredTemplateMemory(activeTemplate.id, next);
       }
       return next;
     });
@@ -951,7 +1006,8 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             id={`field-${field.key}`}
             value={value}
             onChange={(e) => updateFieldValue(field.key, e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            style={banglaInputStyle}
+            className={`w-full px-3 py-2 ${isBanglaField ? 'text-[15px]' : 'text-sm'} bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500`}
           >
             <option value="">Select option...</option>
             {(field.options ?? []).map((opt) => (
@@ -972,8 +1028,14 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         ) : field.type === 'date' ? (
           <DatePickerField
             value={value}
-            onChange={(formatted) => updateFieldValue(field.key, formatted)}
-            placeholder={settings.dateFormat}
+            onChange={(formatted, iso) => {
+              if (field.key.endsWith('_bn')) {
+                updateFieldValue(field.key, iso ? formatBanglaDate(iso) : '');
+              } else {
+                updateFieldValue(field.key, formatted);
+              }
+            }}
+            placeholder={field.key.endsWith('_bn') ? 'তারিখ নির্বাচন করুন' : settings.dateFormat}
             dateFormat={settings.dateFormat}
             ariaLabel={field.label}
           />
@@ -1087,6 +1149,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
                         next[f.key] = '';
                       }
                     }
+                    writeStoredTemplateMemory(activeTemplate.id, next);
                     return next;
                   });
                   setShowErrors(false);

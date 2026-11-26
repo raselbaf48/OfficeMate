@@ -739,7 +739,7 @@ export const INITIAL_TEMPLATES: Template[] = [
       'Official 2-page Legal Bangla Leave Application form (বিএএফ ফরম-১০০৯৬) with reverse Address On Leave & Certificate.',
     isBuiltIn: true,
     createdAt: '2026-11-25T11:00:00.000Z',
-    updatedAt: '2026-11-26T02:00:00.000Z',
+    updatedAt: '2026-11-26T03:00:00.000Z',
     pageSettings: {
       size: 'Legal',
       margins: { top: 16, right: 17, bottom: 14, left: 17 },
@@ -756,9 +756,9 @@ export const INITIAL_TEMPLATES: Template[] = [
       { id: 'f10096-rank', key: 'rank_bn', label: 'পদবী', type: 'text', required: true, defaultValue: '' },
       { id: 'f10096-name', key: 'name_bn', label: 'নাম', type: 'text', required: true, defaultValue: '' },
       { id: 'f10096-trade', key: 'trade_bn', label: 'পেশা', type: 'text', required: true, defaultValue: '' },
-      { id: 'f10096-unit', key: 'unit_bn', label: 'ইউনিট/ঘাঁটি', type: 'text', required: true, defaultValue: '১৫৫ ইউএএসইউ, বাবিবা জহুর' },
-      { id: 'f10096-sec', key: 'section_bn', label: 'প্রশাখা দপ্তর', type: 'text', required: false, defaultValue: '১৫৫ ইউএএসইউ' },
-      { id: 'f10096-res', key: 'resident_bn', label: 'বাসিন্দা', type: 'text', required: false, defaultValue: 'বাংলাদেশী' },
+      { id: 'f10096-unit', key: 'unit_bn', label: 'ইউনিট/ঘাঁটি', type: 'text', required: true, defaultValue: '' },
+      { id: 'f10096-sec', key: 'section_bn', label: 'প্রশাখা দপ্তর', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10096-res', key: 'resident_bn', label: 'বাসিন্দা', type: 'text', required: false, defaultValue: '' },
       {
         id: 'f10096-nature',
         key: 'leave_nature_bn',
@@ -766,13 +766,28 @@ export const INITIAL_TEMPLATES: Template[] = [
         type: 'select',
         options: ['বার্ষিক', 'নৈমিত্তিক', 'চিকিৎসাজনিত'],
         required: true,
-        defaultValue: 'বার্ষিক',
+        defaultValue: '',
       },
-      { id: 'f10096-from', key: 'leave_from_bn', label: 'তারিখ হইতে', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10096-from', key: 'leave_from_bn', label: 'তারিখ হইতে', type: 'date', required: false, defaultValue: '' },
+      {
+        id: 'f10096-days',
+        key: 'total_days_bn',
+        label: 'কত দিন',
+        type: 'select',
+        options: [
+          '০১', '০২', '০৩', '০৪', '০৫', '০৬', '০৭', '০৮', '০৯', '১০',
+          '১১', '১২', '১৩', '১৪', '১৫', '১৬', '১৭', '১৮', '১৯', '২০',
+          '২১', '২২', '২৩', '২৪', '২৫', '২৬', '২৭', '২৮', '২৯', '৩০',
+          '৩১', '৩২', '৩৩', '৩৪', '৩৫', '৩৬', '৩৭', '৩৮', '৩৯', '৪০',
+          '৪১', '৪২', '৪৩', '৪৪', '৪৫', '৪৬', '৪৭', '৪৮', '৪৯', '৫০',
+          '৫১', '৫২', '৫৩', '৫৪', '৫৫', '৫৬', '৫৭', '৫৮', '৫৯', '৬০',
+        ],
+        required: false,
+        defaultValue: '',
+      },
       { id: 'f10096-to', key: 'leave_to_bn', label: 'পর্যন্ত', type: 'text', required: false, defaultValue: '' },
-      { id: 'f10096-days', key: 'total_days_bn', label: 'মোট দিন', type: 'text', required: false, defaultValue: '' },
-      { id: 'f10096-reasons', key: 'leave_reasons_bn', label: 'ছুটির কারণসমূহ', type: 'textarea', required: false, defaultValue: '' },
       { id: 'f10096-entitled', key: 'entitled_days_bn', label: 'চলতি বছরের প্রাপ্য ছুটি (দিন)', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10096-reasons', key: 'leave_reasons_bn', label: 'ছুটির কারণসমূহ', type: 'textarea', required: false, defaultValue: '' },
       { id: 'f10096-tr-from', key: 'travel_from_1', label: 'ভ্রমণ হইতে', type: 'text', required: false, defaultValue: '' },
       { id: 'f10096-tr-to', key: 'travel_to_1', label: 'ভ্রমণ পর্যন্ত', type: 'text', required: false, defaultValue: '' },
       { id: 'f10096-tr-for', key: 'travel_for_1', label: 'কাহার জন্য', type: 'text', required: false, defaultValue: '' },
@@ -801,7 +816,7 @@ export const INITIAL_TEMPLATES: Template[] = [
         label: 'Not Involved Duties (Page 2)',
         type: 'textarea',
         required: false,
-        defaultValue: '1. Base Security Duty\n2. Base Taskforce Duty\n3. BOI',
+        defaultValue: '',
       },
       { id: 'f10096-name-en', key: 'name_en', label: 'Applicant Name English (Page 2)', type: 'person', personProperty: 'name', required: false, defaultValue: '' },
       { id: 'f10096-rank-en', key: 'rank_en', label: 'Applicant Rank English (Page 2)', type: 'rank', personProperty: 'rank', required: false, defaultValue: '' },
@@ -821,13 +836,14 @@ export const INITIAL_TEMPLATES: Template[] = [
       <tr>
         <td class="om-no-left om-10096-bot" style="text-align: center;">বাসিন্দা<br>{{resident_bn}}</td>
         <td colspan="4" class="om-no-right om-10096-bot" style="padding: 3px 6px;">
-          <p style="margin: 0 0 2px 0;">ছুটি প্রকৃতি *{{leave_nature_bn | strike_opts:বার্ষিক|নৈমিত্তিক|চিকিৎসাজনিত}}</p>
+          <p style="margin: 0 0 2px 0;">ছুটি প্রকৃতি *{{leave_nature_bn | strike_10096_nature}}</p>
           <div class="om-295-row" style="margin: 0;"><span class="om-295-lbl">তারিখ</span><span class="om-295-dot">{{leave_from_bn}}</span><span class="om-295-lbl">হইতে</span><span class="om-295-dot">{{leave_to_bn}}</span><span class="om-295-lbl">পর্যন্ত</span><span class="om-295-dot om-295-dot-sm">{{total_days_bn}}</span><span class="om-295-lbl">দিন</span></div>
         </td>
       </tr>
     </tbody>
   </table>
-  <p style="margin: 4px 0 82px 0;">ছুটির কারণসমূহ {{leave_reasons_bn}}</p>
+  <p style="margin: 4px 0 0 0;">ছুটির কারণসমূহ</p>
+  <p style="margin: 2px 0 58px 0; min-height: 22px;">{{leave_reasons_bn}}</p>
   <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
     <tbody>
       <tr>
@@ -891,34 +907,46 @@ export const INITIAL_TEMPLATES: Template[] = [
         </td>
       </tr>
       <tr>
-        <td class="om-no-left om-10096-split" style="padding: 4px 8px 4px 2px;">
-          <p style="margin: 0 0 54px 0;">*অনুমোদিত/অননুমোদিত</p>
-          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left;">তারিখ</td><td style="width: 65%; text-align: right;">প্রশাখা দপ্তরের অধিনায়ক</td></tr></tbody></table>
+        <td class="om-no-left om-10096-split" style="padding: 3px 8px 1px 2px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>*অনুমোদিত/অননুমোদিত</p>
+            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 65%; text-align: right; vertical-align: bottom;">প্রশাখা দপ্তরের অধিনায়ক</td></tr></tbody></table>
+          </div>
         </td>
-        <td class="om-no-right" style="padding: 4px 2px 4px 8px;">
-          <p style="margin: 18px 0 12px 0; text-align: center; padding-left: 70px;">{{name_bn}}<br>{{rank_bn}}</p>
-          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 45%; text-align: left;">তারিখ {{application_date_bn}}</td><td style="width: 55%; text-align: right;">আবেদনকারীর স্বাক্ষর</td></tr></tbody></table>
-        </td>
-      </tr>
-      <tr>
-        <td class="om-no-left om-10096-split" style="padding: 4px 8px 4px 2px;">
-          <p style="margin: 0 0 44px 0;">*অনুমোদিত/অননুমোদিত</p>
-          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left;">তারিখ</td><td style="width: 65%; text-align: center; padding-left: 40px;">শাখা দপ্তরের<br>প্রশাসনিক অধিনায়ক</td></tr></tbody></table>
-        </td>
-        <td class="om-no-right" style="padding: 4px 2px 4px 8px;">
-          <p style="margin: 0 0 44px 0;">*অনুমোদিত/অননুমোদিত</p>
-          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left;">তারিখ</td><td style="width: 65%; text-align: center; padding-left: 35px;">বিভাগীয় প্রশাসনিক<br>অধিনায়ক</td></tr></tbody></table>
+        <td class="om-no-right" style="padding: 3px 2px 1px 8px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p style="padding: 16px 0 6px 70px; text-align: center;">{{name_bn}}<br>{{rank_bn}}</p>
+            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 45%; text-align: left; vertical-align: bottom;">তারিখ {{application_date_bn}}</td><td style="width: 55%; text-align: right; vertical-align: bottom;">আবেদনকারীর স্বাক্ষর</td></tr></tbody></table>
+          </div>
         </td>
       </tr>
       <tr>
-        <td class="om-no-left om-10096-split om-10096-bot" style="padding: 4px 8px 4px 2px;">
-          <table class="om-layout-table" style="width: 100%; margin: 0 0 10px 0;"><tbody><tr><td style="width: 55%; text-align: left;">চলতি বছরের প্রাপ্য ছুটি</td><td style="width: 45%; text-align: right;">সরকারী/নিজ খরচে</td></tr></tbody></table>
-          <div class="om-295-row" style="margin: 0 0 24px 0;"><span class="om-295-dot om-295-dot-sm">{{entitled_days_bn}}</span><span class="om-295-lbl">দিন বার্ষিক/নৈমিত্তিক</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
-          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 40%; text-align: left;">তারিখ</td><td style="width: 60%; text-align: right;">ডকুমেন্ট ক্লার্ক</td></tr></tbody></table>
+        <td class="om-no-left om-10096-split" style="padding: 3px 8px 1px 2px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>*অনুমোদিত/অননুমোদিত</p>
+            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 65%; text-align: center; padding-left: 40px; vertical-align: bottom;">শাখা দপ্তরের<br>প্রশাসনিক অধিনায়ক</td></tr></tbody></table>
+          </div>
         </td>
-        <td class="om-no-right om-10096-bot" style="padding: 4px 2px 4px 8px;">
-          <p style="margin: 0 0 36px 0;">মঞ্জুর/না মঞ্জুর</p>
-          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 45%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 55%; text-align: center; padding-left: 30px;">স্বাক্ষর<br>পদবী</td></tr></tbody></table>
+        <td class="om-no-right" style="padding: 3px 2px 1px 8px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>*অনুমোদিত/অননুমোদিত</p>
+            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 65%; text-align: center; padding-left: 35px; vertical-align: bottom;">বিভাগীয় প্রশাসনিক<br>অধিনায়ক</td></tr></tbody></table>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="om-no-left om-10096-split om-10096-bot" style="padding: 3px 8px 1px 2px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <table class="om-layout-table" style="width: 100%; margin: 0 0 6px 0;"><tbody><tr><td style="width: 55%; text-align: left;">চলতি বছরের প্রাপ্য ছুটি</td><td style="width: 45%; text-align: right;">সরকারী/নিজ খরচে</td></tr></tbody></table>
+            <div class="om-295-row" style="margin: 0 0 14px 0;"><span class="om-295-dot om-295-dot-sm">{{entitled_days_bn}}</span><span class="om-295-lbl">দিন বার্ষিক/নৈমিত্তিক</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
+            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 40%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 60%; text-align: right; vertical-align: bottom;">ডকুমেন্ট ক্লার্ক</td></tr></tbody></table>
+          </div>
+        </td>
+        <td class="om-no-right om-10096-bot" style="padding: 3px 2px 1px 8px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>মঞ্জুর/না মঞ্জুর</p>
+            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 45%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 55%; text-align: center; padding-left: 30px; vertical-align: bottom;">স্বাক্ষর<br>পদবী</td></tr></tbody></table>
+          </div>
         </td>
       </tr>
     </tbody>

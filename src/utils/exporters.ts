@@ -821,14 +821,32 @@ function htmlToDocxChildren(
           });
         }
 
-        const blockChildren = Array.from(htmlCell.children).filter((c) => {
+        const rawBlockChildren = Array.from(htmlCell.children).filter((c) => {
           const childTag = c.tagName.toLowerCase();
           return childTag === 'p' || childTag === 'div' || childTag === 'table';
         });
+        const blockChildren: Element[] = [];
+        for (const child of rawBlockChildren) {
+          if (
+            child.tagName.toLowerCase() === 'div' &&
+            (child as HTMLElement).classList.contains('om-10096-sigcell')
+          ) {
+            const inner = Array.from(child.children).filter((ic) => {
+              const t = ic.tagName.toLowerCase();
+              return t === 'p' || t === 'div' || t === 'table';
+            });
+            blockChildren.push(...inner);
+          } else {
+            blockChildren.push(child);
+          }
+        }
+        const hasSigCell = Boolean(htmlCell.querySelector(':scope > .om-10096-sigcell'));
+        const isInside10096 = Boolean(htmlCell.closest('.om-10096-box'));
 
         const cellChildren: Array<Paragraph | Table> = [];
         if (blockChildren.length > 0) {
-          for (const child of blockChildren) {
+          for (let idx = 0; idx < blockChildren.length; idx++) {
+            const child = blockChildren[idx];
             const cTag = child.tagName.toLowerCase();
             if (cTag === 'table') {
               cellChildren.push(buildDocxTable(child as HTMLElement, cellStyle, usableCellTwips));
@@ -866,9 +884,13 @@ function htmlToDocxChildren(
                     after:
                       marginBottomPx > 0
                         ? Math.round(marginBottomPx * 15)
-                        : isLayoutTable
-                          ? 10
-                          : 40,
+                        : hasSigCell && blockChildren[idx + 1]?.tagName.toLowerCase() === 'table'
+                          ? 360
+                          : hasSigCell || (isLayoutTable && isInside10096)
+                            ? 0
+                            : isLayoutTable
+                              ? 10
+                              : 40,
                     line: lineSpacing,
                   },
                   children: pRuns.length > 0 ? pRuns : [new TextRun('')],
@@ -886,7 +908,10 @@ function htmlToDocxChildren(
               alignment: mapAlignment(
                 htmlCell.style.textAlign || (isLineCell || isBoxCell ? 'center' : undefined),
               ),
-              spacing: { after: isLayoutTable ? 10 : 40, line: lineSpacing },
+              spacing: {
+                after: hasSigCell || (isLayoutTable && isInside10096) ? 0 : isLayoutTable ? 10 : 40,
+                line: lineSpacing,
+              },
               children: cellRuns.length > 0 ? cellRuns : [new TextRun('')],
             }),
           );
@@ -904,7 +929,9 @@ function htmlToDocxChildren(
               : htmlCell.style.verticalAlign === 'top' || isTopCell
                 ? VerticalAlign.TOP
                 : VerticalAlign.BOTTOM
-          : undefined;
+          : hasSigCell || htmlCell.style.verticalAlign === 'bottom'
+            ? VerticalAlign.BOTTOM
+            : undefined;
 
         return new TableCell({
           width: pctMatch
@@ -918,7 +945,7 @@ function htmlToDocxChildren(
           margins: isLayoutTable
             ? isBoxCell
               ? { top: 45, bottom: 45, left: 60, right: 60 }
-              : isGapCell
+              : isGapCell || isInside10096
                 ? { top: 0, bottom: 0, left: 0, right: 0 }
                 : {
                     top: isTopCell ? 20 : 70,
@@ -926,7 +953,9 @@ function htmlToDocxChildren(
                     left: padLeftPx > 0 ? Math.round(padLeftPx * 15) : isLineCell ? 40 : 0,
                     right: padRightPx > 0 ? Math.round(padRightPx * 15) : isLineCell ? 40 : 60,
                   }
-            : { top: 60, bottom: 60, left: 95, right: 95 },
+            : hasSigCell
+              ? { top: 45, bottom: 10, left: 60, right: 60 }
+              : { top: 60, bottom: 60, left: 95, right: 95 },
           children: cellChildren,
         });
       });
