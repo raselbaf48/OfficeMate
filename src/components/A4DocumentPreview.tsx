@@ -35,10 +35,10 @@ export const A4DocumentPreview: React.FC<A4DocumentPreviewProps> = ({
 
   return (
     <div
-      className={`w-fit mx-auto flex flex-col items-center gap-6 ${className}`}
+      className={`w-fit flex flex-col items-center gap-6 ${className}`}
       style={{
         transform: zoom !== 1 ? `scale(${zoom})` : undefined,
-        transformOrigin: 'top center',
+        transformOrigin: 'top left',
       }}
     >
       {pages.map((pageHtml, index) => (

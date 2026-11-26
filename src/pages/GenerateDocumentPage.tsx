@@ -9,7 +9,10 @@ import {
   FilePenLine,
   FileText,
   RotateCcw,
+  SlidersHorizontal,
   User,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import { A4DocumentPreview } from '../components/A4DocumentPreview';
 import { ConfirmModal } from '../components/CommonModals';
@@ -17,6 +20,7 @@ import { DatePickerField } from '../components/DatePickerModal';
 import {
   AppSettings,
   GeneratedDocument,
+  PageSettings,
   Person,
   Signer,
   Template,
@@ -225,10 +229,70 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   const isBanglaTemplate = activeTemplate?.pageSettings.fontFamily === 'SutonnyMJ';
 
   const [rawValues, setRawValues] = useState<Record<string, string>>({});
+  const [zoom, setZoom] = useState(0.9);
+  const [pageSetupOpen, setPageSetupOpen] = useState(false);
+  const [pageOverrides, setPageOverrides] = useState<Record<string, Partial<PageSettings>>>({});
   const [formExpanded, setFormExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState<InputSectionKey>('applicant');
   const [showErrors, setShowErrors] = useState(false);
   const [pendingAction, setPendingAction] = useState<'docx' | 'pdf' | null>(null);
+
+  const effectivePageSettings: PageSettings = useMemo(() => {
+    if (!activeTemplate) {
+      return {
+        size: 'A4',
+        orientation: 'portrait',
+        margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
+        fontFamily: 'Arial',
+        fontSize: 12,
+        lineHeight: 1.45,
+        headerText: '',
+        footerText: '',
+        showSignatureBlock: false,
+        showCountersigned: false,
+      };
+    }
+    const ov = pageOverrides[activeTemplate.id];
+    if (!ov) return activeTemplate.pageSettings;
+    return {
+      ...activeTemplate.pageSettings,
+      ...ov,
+      margins: {
+        ...activeTemplate.pageSettings.margins,
+        ...(ov.margins ?? {}),
+      },
+    };
+  }, [activeTemplate, pageOverrides]);
+
+  const updateActivePageOverride = (patch: Partial<PageSettings>) => {
+    if (!activeTemplate) return;
+    setPageOverrides((prev) => {
+      const curr = prev[activeTemplate.id] ?? {};
+      return {
+        ...prev,
+        [activeTemplate.id]: {
+          ...curr,
+          ...patch,
+          margins: patch.margins
+            ? {
+                ...activeTemplate.pageSettings.margins,
+                ...(curr.margins ?? {}),
+                ...patch.margins,
+              }
+            : curr.margins,
+        },
+      };
+    });
+  };
+
+  const resetActivePageOverride = () => {
+    if (!activeTemplate) return;
+    setPageOverrides((prev) => {
+      const next = { ...prev };
+      delete next[activeTemplate.id];
+      return next;
+    });
+  };
 
   const getDefaultSectionForTemplate = (tplId: string | undefined): string => {
     switch (tplId) {
@@ -460,11 +524,15 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         computedValues,
         kind,
       );
+      const exportTemplate: Template = {
+        ...activeTemplate,
+        pageSettings: effectivePageSettings,
+      };
       if (kind === 'docx') {
-        await exportSingleDocx(activeTemplate, renderedClean.html, filename);
+        await exportSingleDocx(exportTemplate, renderedClean.html, filename);
         onNotify('success', `Exported ${filename}`);
       } else {
-        await exportHtmlItemsToPdf(activeTemplate, [renderedClean.html], filename);
+        await exportHtmlItemsToPdf(exportTemplate, [renderedClean.html], filename);
         onNotify('success', `Exported ${filename}`);
       }
       const rec = buildHistoryRecord();
@@ -1512,13 +1580,165 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
           </div>
 
           {/* Bottom Full Document Live Preview */}
-          <div className="bg-[#080E1B] border border-slate-800 rounded-xl overflow-hidden">
+          <div className="bg-[#080E1B] border border-slate-800 rounded-xl overflow-hidden flex flex-col">
+            <div className="bg-[#0C1526] px-4 py-2.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3 text-xs">
+                <span className="font-semibold text-white">
+                  {effectivePageSettings.size === 'Legal'
+                    ? 'Full Legal Document Preview'
+                    : 'Full A4 Document Preview'}
+                </span>
+                {rendered.unfilledKeys.length > 0 ? (
+                  <span className="text-slate-400 tabular-nums">
+                    {rendered.unfilledKeys.length} blank field(s) shown as solid lines
+                  </span>
+                ) : (
+                  <span className="text-emerald-400 font-medium">All fields filled</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPageSetupOpen((v) => !v)}
+                  aria-expanded={pageSetupOpen}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                    pageSetupOpen
+                      ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-300'
+                      : 'bg-[#111C31] border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
+                  }`}
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>Page Setup</span>
+                </button>
+
+                <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
+                  <button
+                    type="button"
+                    onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.1).toFixed(2))))}
+                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
+                    title="Zoom out"
+                    aria-label="Zoom out"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs font-mono text-slate-300 w-11 text-center tabular-nums">
+                    {Math.round(zoom * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setZoom((z) => Math.min(1.2, Number((z + 0.1).toFixed(2))))}
+                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
+                    title="Zoom in"
+                    aria-label="Zoom in"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {pageSetupOpen ? (
+              <div className="bg-[#0F1A2E] border-b border-slate-800 px-4 py-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 items-end text-xs">
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Paper Size</label>
+                  <select
+                    value={effectivePageSettings.size}
+                    onChange={(e) =>
+                      updateActivePageOverride({ size: e.target.value as 'A4' | 'Legal' })
+                    }
+                    className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="A4">A4</option>
+                    <option value="Legal">Legal</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Font (pt)</label>
+                  <input
+                    type="number"
+                    min={9}
+                    max={18}
+                    value={effectivePageSettings.fontSize}
+                    onChange={(e) =>
+                      updateActivePageOverride({
+                        fontSize: Math.min(18, Math.max(9, Number(e.target.value) || 12)),
+                      })
+                    }
+                    className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg tabular-nums focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Line Spacing</label>
+                  <select
+                    value={effectivePageSettings.lineHeight}
+                    onChange={(e) =>
+                      updateActivePageOverride({ lineHeight: Number(e.target.value) })
+                    }
+                    className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value={1.15}>1.15</option>
+                    <option value={1.25}>1.25</option>
+                    <option value={1.35}>1.35</option>
+                    <option value={1.45}>1.45</option>
+                    <option value={1.6}>1.60</option>
+                    <option value={1.8}>1.80</option>
+                  </select>
+                </div>
+
+                {(['top', 'bottom', 'left', 'right'] as const).map((side) => (
+                  <div key={side}>
+                    <label className="block text-[11px] text-slate-400 capitalize mb-1">
+                      {side} (mm)
+                    </label>
+                    <input
+                      type="number"
+                      step={0.5}
+                      min={5}
+                      max={45}
+                      value={effectivePageSettings.margins[side]}
+                      onChange={(e) =>
+                        updateActivePageOverride({
+                          margins: {
+                            ...effectivePageSettings.margins,
+                            [side]: Math.min(45, Math.max(5, Number(e.target.value) || 10)),
+                          },
+                        })
+                      }
+                      className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg tabular-nums focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                ))}
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={resetActivePageOverride}
+                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-[#111C31] border border-slate-700 rounded-lg hover:text-white hover:border-slate-600 transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reset</span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             <div className="w-full overflow-x-auto p-3 sm:p-6">
               <div className="w-max min-w-full flex flex-col items-center">
-                <A4DocumentPreview
-                  renderedHtml={rendered.html}
-                  pageSettings={activeTemplate.pageSettings}
-                />
+                <div
+                  style={{
+                    width: `${(effectivePageSettings.size === 'Legal' ? 215.9 : 210) * zoom}mm`,
+                    minHeight: `${(effectivePageSettings.size === 'Legal' ? 355.6 : 297) * zoom}mm`,
+                  }}
+                >
+                  <A4DocumentPreview
+                    renderedHtml={rendered.html}
+                    pageSettings={effectivePageSettings}
+                    zoom={zoom}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1529,7 +1749,8 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
       <div className="hidden print-only-container">
         <A4DocumentPreview
           renderedHtml={renderedClean.html}
-          pageSettings={activeTemplate.pageSettings}
+          pageSettings={effectivePageSettings}
+          zoom={1}
         />
       </div>
 
