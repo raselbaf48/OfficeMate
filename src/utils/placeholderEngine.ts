@@ -33,12 +33,28 @@ export const BANGLA_MONTHS = [
   'ডিসেম্বর',
 ];
 
+export const BANGLA_MONTHS_SHORT = [
+  'জানু',
+  'ফেব্রু',
+  'মার্চ',
+  'এপ্রিল',
+  'মে',
+  'জুন',
+  'জুলাই',
+  'আগস্ট',
+  'সেপ্টে',
+  'অক্টো',
+  'নভে',
+  'ডিসে',
+];
+
 const BANGLA_MONTH_ALIASES: Record<string, number> = {
   'জানুয়ারি': 0,
   'জানুয়ারি': 0,
   'জানু': 0,
   'ফেব্রুয়ারি': 1,
   'ফেব্রুয়ারি': 1,
+  'ফেব্রু': 1,
   'ফেব': 1,
   'মার্চ': 2,
   'এপ্রিল': 3,
@@ -47,10 +63,15 @@ const BANGLA_MONTH_ALIASES: Record<string, number> = {
   'জুলাই': 6,
   'আগস্ট': 7,
   'অগাস্ট': 7,
+  'আগ': 7,
   'সেপ্টেম্বর': 8,
+  'সেপ্টে': 8,
   'অক্টোবর': 9,
+  'অক্টো': 9,
   'নভেম্বর': 10,
+  'নভে': 10,
   'ডিসেম্বর': 11,
+  'ডিসে': 11,
 };
 
 export function toBanglaDigits(input: string | number): string {
@@ -73,6 +94,16 @@ export function formatBanglaDate(dateInput: Date | string): string {
   const mon = BANGLA_MONTHS[date.getMonth()] ?? '';
   const yy = toBanglaDigits(String(date.getFullYear()).slice(-2));
   return `${dd} ${mon} ${yy}`;
+}
+
+export function formatBanglaMonthYear(dateInput: Date | string): string {
+  const date = typeof dateInput === 'string' ? parseFlexibleDate(dateInput) : dateInput;
+  if (!date || Number.isNaN(date.getTime())) {
+    return typeof dateInput === 'string' ? dateInput : '';
+  }
+  const mon = BANGLA_MONTHS_SHORT[date.getMonth()] ?? '';
+  const yy = toBanglaDigits(String(date.getFullYear()).slice(-2));
+  return `${mon} ${yy}`;
 }
 
 /**
@@ -127,6 +158,18 @@ export function parseFlexibleDate(input: string): Date | null {
       let year = Number(dmyBangla[3]);
       if (year < 100) year += 2000;
       const d = new Date(year, month, day);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+  }
+
+  // <Bangla Month> YY/YYYY (e.g. "নভে ২৬", "জুলাই ২৪")
+  const myBangla = /^([\u0980-\u09FF]+)\s+(\d{2,4})$/.exec(trimmed);
+  if (myBangla) {
+    const month = BANGLA_MONTH_ALIASES[myBangla[1]];
+    if (month !== undefined) {
+      let year = Number(myBangla[2]);
+      if (year < 100) year += 2000;
+      const d = new Date(year, month, 1);
       return Number.isNaN(d.getTime()) ? null : d;
     }
   }
@@ -245,6 +288,9 @@ export function applyPlaceholderFilter(
   }
   if (lowerExpr === 'title') {
     return rawValue.replace(/\w\S*/g, (txt) => txt[0].toUpperCase() + txt.slice(1).toLowerCase());
+  }
+  if (lowerExpr === 'bn_mon_yr') {
+    return formatBanglaMonthYear(rawValue);
   }
   if (lowerExpr.startsWith('date')) {
     const colonIdx = trimmed.indexOf(':');
@@ -423,6 +469,21 @@ export function renderTemplateBody(
         if (!raw) return 'বার্ষিক/নৈমিত্তিক/চিকিৎসাজনিত';
         return renderStrikeChoice(raw, opts, false);
       }
+      if (lowerFilter === 'strike_10097_cooc') {
+        if (normVal === 'co') return 'CO/<s>OC</s>';
+        if (normVal === 'oc') return '<s>CO</s>/OC';
+        return 'CO/OC';
+      }
+      if (lowerFilter === 'strike_yn') {
+        const opts = 'হ্যাঁ|না';
+        if (!raw) return 'হ্যাঁ/না';
+        return renderStrikeChoice(raw, opts, false);
+      }
+      if (lowerFilter === 'strike_co_decision') {
+        const opts = 'মঞ্জুর|না মঞ্জুর';
+        if (!raw) return 'মঞ্জুর/ না মঞ্জুর';
+        return renderStrikeChoice(raw, opts, true);
+      }
     }
 
     if (!raw) {
@@ -447,12 +508,36 @@ export function renderTemplateBody(
         const optsPart = trimmedFilter.slice(trimmedFilter.indexOf(':') + 1);
         return renderStrikeChoice(raw, optsPart, false);
       }
+      if (lowerFilter === 'lo_subject_split') {
+        const idx = Math.max(raw.lastIndexOf('ঃ'), raw.lastIndexOf(':'));
+        if (idx > 0) {
+          const leftPart = raw.slice(0, idx).trim();
+          const rightPart = raw.slice(idx).trim();
+          return `<span>${escapeHtml(leftPart)}</span><span>${escapeHtml(rightPart)}</span>`;
+        }
+        const lastSpace = raw.lastIndexOf(' ');
+        if (lastSpace > 0) {
+          const leftPart = raw.slice(0, lastSpace).trim();
+          const rightPart = raw.slice(lastSpace + 1).trim();
+          return `<span>${escapeHtml(leftPart)}</span><span>${escapeHtml(rightPart)}</span>`;
+        }
+        return `<span>${escapeHtml(raw)}</span><span></span>`;
+      }
     }
 
     let formatted = raw;
     const fieldDef = fieldMap.get(key);
     if (!filterExpr && fieldDef?.type === 'date') {
-      formatted = formatDateByPattern(raw, dateFormat);
+      const isMonYrBn =
+        (template.id === 'tpl-living-out-bn' ||
+          template.id === 'tpl-baf-10097' ||
+          template.id === 'tpl-baf-10097-marriage') &&
+        fieldDef.key === 'date_bn';
+      formatted = fieldDef.key.endsWith('_bn')
+        ? isMonYrBn
+          ? formatBanglaMonthYear(raw)
+          : formatBanglaDate(raw)
+        : formatDateByPattern(raw, dateFormat);
     } else if (filterExpr) {
       formatted = applyPlaceholderFilter(raw, filterExpr, dateFormat);
     }

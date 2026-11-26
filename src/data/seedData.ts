@@ -739,10 +739,10 @@ export const INITIAL_TEMPLATES: Template[] = [
       'Official 2-page Legal Bangla Leave Application form (বিএএফ ফরম-১০০৯৬) with reverse Address On Leave & Certificate.',
     isBuiltIn: true,
     createdAt: '2026-11-25T11:00:00.000Z',
-    updatedAt: '2026-11-26T03:00:00.000Z',
+    updatedAt: '2026-11-26T08:15:00.000Z',
     pageSettings: {
       size: 'Legal',
-      margins: { top: 16, right: 17, bottom: 14, left: 17 },
+      margins: { top: 12, right: 16, bottom: 10, left: 16 },
       fontFamily: 'SutonnyMJ',
       fontSize: 14,
       lineHeight: 1.22,
@@ -821,9 +821,9 @@ export const INITIAL_TEMPLATES: Template[] = [
       { id: 'f10096-name-en', key: 'name_en', label: 'Applicant Name English (Page 2)', type: 'person', personProperty: 'name', required: false, defaultValue: '' },
       { id: 'f10096-rank-en', key: 'rank_en', label: 'Applicant Rank English (Page 2)', type: 'rank', personProperty: 'rank', required: false, defaultValue: '' },
     ],
-    bodyHtml: `<div>
+    bodyHtml: `<div class="om-10096-page1">
   <p style="text-align: right; margin: 0 0 2px 0;">বিএএফ ফরম-১০০৯৬</p>
-  <p style="text-align: center; margin: 0 0 8px 0;"><u>ছুটির আবেদনপত্র - বিমানসেনা/এমওডিসি (এয়ার)</u></p>
+  <p class="om-10096-heading" style="text-align: center; margin: 0 0 6px 0; font-size: 20pt;">ছুটির আবেদনপত্র - বিমানসেনা/এমওডিসি (এয়ার)</p>
   <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
     <tbody>
       <tr>
@@ -834,16 +834,16 @@ export const INITIAL_TEMPLATES: Template[] = [
         <td class="om-no-right om-10096-top" style="width: 29%; text-align: center;">ইউনিট/ঘাঁটি<br>{{unit_bn}}</td>
       </tr>
       <tr>
-        <td class="om-no-left om-10096-bot" style="text-align: center;">বাসিন্দা<br>{{resident_bn}}</td>
-        <td colspan="4" class="om-no-right om-10096-bot" style="padding: 3px 6px;">
+        <td class="om-no-left om-10096-bot" style="width: 14%; text-align: center;">বাসিন্দা<br>{{resident_bn}}</td>
+        <td colspan="4" class="om-no-right om-10096-bot" style="width: 86%; padding: 3px 6px;">
           <p style="margin: 0 0 2px 0;">ছুটি প্রকৃতি *{{leave_nature_bn | strike_10096_nature}}</p>
           <div class="om-295-row" style="margin: 0;"><span class="om-295-lbl">তারিখ</span><span class="om-295-dot">{{leave_from_bn}}</span><span class="om-295-lbl">হইতে</span><span class="om-295-dot">{{leave_to_bn}}</span><span class="om-295-lbl">পর্যন্ত</span><span class="om-295-dot om-295-dot-sm">{{total_days_bn}}</span><span class="om-295-lbl">দিন</span></div>
         </td>
       </tr>
     </tbody>
   </table>
-  <p style="margin: 4px 0 0 0;">ছুটির কারণসমূহ</p>
-  <p style="margin: 2px 0 58px 0; min-height: 22px;">{{leave_reasons_bn}}</p>
+  <p style="margin: 4px 0 0 0; line-height: 1.15;">ছুটির কারণসমূহ</p>
+  <p style="margin: 2px 0 68px 88px; min-height: 22px;">{{leave_reasons_bn}}</p>
   <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
     <tbody>
       <tr>
@@ -852,7 +852,7 @@ export const INITIAL_TEMPLATES: Template[] = [
           <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
             <tbody>
               <tr>
-                <td rowspan="3" class="om-no-left om-no-bottom om-no-right" style="width: 48%; padding: 2px 6px 2px 0;">
+                <td rowspan="3" class="om-no-left om-no-bottom om-no-right" style="width: 46%; padding: 2px 6px 2px 0;">
                   <div class="om-295-row"><span class="om-295-dot">{{travel_from_1}}</span><span class="om-295-lbl">হইতে</span></div>
                   <div class="om-295-row"><span class="om-295-dot">{{travel_to_1}}</span><span class="om-295-lbl">পর্যন্ত</span></div>
                   <div class="om-295-row"><span class="om-295-dot">{{travel_for_1}}</span><span class="om-295-lbl">কাহার জন্য</span></div>
@@ -860,19 +860,19 @@ export const INITIAL_TEMPLATES: Template[] = [
                   <div class="om-295-row"><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">পর্যন্ত</span></div>
                   <div class="om-295-row"><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">কাহার জন্য</span></div>
                 </td>
-                <td style="width: 10%; text-align: center;">নিজ</td>
-                <td style="width: 10%; text-align: center;">স্ত্রী</td>
-                <td style="width: 16%; text-align: center;">১২ বছরের উর্দ্ধে</td>
-                <td class="om-no-right" style="width: 16%; text-align: center;">১২ বছরের নিম্নে</td>
+                <td style="width: 9%; text-align: center;">নিজ</td>
+                <td style="width: 9%; text-align: center;">স্ত্রী</td>
+                <td style="width: 18%; text-align: center;">১২ বছরের উর্দ্ধে</td>
+                <td class="om-no-right" style="width: 18%; text-align: center;">১২ বছরের নিম্নে</td>
               </tr>
               <tr>
-                <td style="text-align: center; height: 34px;">{{travel_self}}</td>
+                <td style="text-align: center; height: 30px;">{{travel_self}}</td>
                 <td style="text-align: center;">{{travel_wife}}</td>
                 <td style="text-align: center;">{{travel_child_o12}}</td>
                 <td class="om-no-right" style="text-align: center;">{{travel_child_u12}}</td>
               </tr>
               <tr>
-                <td class="om-no-bottom" style="height: 34px;">&nbsp;</td>
+                <td class="om-no-bottom" style="height: 30px;">&nbsp;</td>
                 <td class="om-no-bottom">&nbsp;</td>
                 <td class="om-no-bottom">&nbsp;</td>
                 <td class="om-no-bottom om-no-right">&nbsp;</td>
@@ -891,13 +891,13 @@ export const INITIAL_TEMPLATES: Template[] = [
                 <td class="om-no-top om-no-right" style="width: 22%; text-align: center;">দিন</td>
               </tr>
               <tr>
-                <td class="om-no-left" style="height: 36px; text-align: center; vertical-align: middle;">বার্ষিক</td>
+                <td class="om-no-left" style="height: 32px; text-align: center; vertical-align: middle;">বার্ষিক</td>
                 <td style="text-align: center; vertical-align: middle;">{{prev_annual_from}}</td>
                 <td style="text-align: center; vertical-align: middle;">{{prev_annual_to}}</td>
                 <td class="om-no-right" style="text-align: center; vertical-align: middle;">{{prev_annual_days}}</td>
               </tr>
               <tr>
-                <td class="om-no-left" style="height: 36px; text-align: center; vertical-align: middle;">নৈমিত্তিক</td>
+                <td class="om-no-left" style="height: 32px; text-align: center; vertical-align: middle;">নৈমিত্তিক</td>
                 <td style="text-align: center; vertical-align: middle;">{{prev_casual_from}}</td>
                 <td style="text-align: center; vertical-align: middle;">{{prev_casual_to}}</td>
                 <td class="om-no-right" style="text-align: center; vertical-align: middle;">{{prev_casual_days}}</td>
@@ -907,67 +907,70 @@ export const INITIAL_TEMPLATES: Template[] = [
         </td>
       </tr>
       <tr>
-        <td class="om-no-left om-10096-split" style="padding: 3px 8px 1px 2px; vertical-align: bottom;">
+        <td class="om-no-left om-10096-split" style="padding: 1px 8px 0 2px; vertical-align: bottom;">
           <div class="om-10096-sigcell">
             <p>*অনুমোদিত/অননুমোদিত</p>
-            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 65%; text-align: right; vertical-align: bottom;">প্রশাখা দপ্তরের অধিনায়ক</td></tr></tbody></table>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left; vertical-align: bottom;">তারিখ</td><td class="om-sig-pr" style="width: 65%; text-align: right; padding-right: 30px; vertical-align: bottom;">প্রশাখা দপ্তরের অধিনায়ক</td></tr></tbody></table>
           </div>
         </td>
-        <td class="om-no-right" style="padding: 3px 2px 1px 8px; vertical-align: bottom;">
+        <td class="om-no-right" style="padding: 1px 2px 0 8px; vertical-align: bottom;">
           <div class="om-10096-sigcell">
-            <p style="padding: 16px 0 6px 70px; text-align: center;">{{name_bn}}<br>{{rank_bn}}</p>
-            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 45%; text-align: left; vertical-align: bottom;">তারিখ {{application_date_bn}}</td><td style="width: 55%; text-align: right; vertical-align: bottom;">আবেদনকারীর স্বাক্ষর</td></tr></tbody></table>
+            <p style="margin: 24px 0 4px 0; padding-left: 132px; text-align: left;">{{name_bn}}<br>{{rank_bn}}</p>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 47%; text-align: left; vertical-align: bottom;">তারিখ {{application_date_bn}}</td><td class="om-sig-pr" style="width: 53%; text-align: left; padding-right: 26px; vertical-align: bottom;">আবেদনকারীর স্বাক্ষর</td></tr></tbody></table>
           </div>
         </td>
       </tr>
       <tr>
-        <td class="om-no-left om-10096-split" style="padding: 3px 8px 1px 2px; vertical-align: bottom;">
+        <td class="om-no-left om-10096-split" style="padding: 1px 8px 0 2px; vertical-align: bottom;">
           <div class="om-10096-sigcell">
             <p>*অনুমোদিত/অননুমোদিত</p>
-            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 65%; text-align: center; padding-left: 40px; vertical-align: bottom;">শাখা দপ্তরের<br>প্রশাসনিক অধিনায়ক</td></tr></tbody></table>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 53%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 43%; text-align: center; vertical-align: bottom;">শাখা দপ্তরের<br>প্রশাসনিক অধিনায়ক</td><td style="width: 4%;">&nbsp;</td></tr></tbody></table>
           </div>
         </td>
-        <td class="om-no-right" style="padding: 3px 2px 1px 8px; vertical-align: bottom;">
+        <td class="om-no-right" style="padding: 1px 2px 0 8px; vertical-align: bottom;">
           <div class="om-10096-sigcell">
             <p>*অনুমোদিত/অননুমোদিত</p>
-            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 35%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 65%; text-align: center; padding-left: 35px; vertical-align: bottom;">বিভাগীয় প্রশাসনিক<br>অধিনায়ক</td></tr></tbody></table>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 44%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 46%; text-align: center; vertical-align: bottom;">বিভাগীয় প্রশাসনিক<br>অধিনায়ক</td><td style="width: 10%;">&nbsp;</td></tr></tbody></table>
           </div>
         </td>
       </tr>
       <tr>
-        <td class="om-no-left om-10096-split om-10096-bot" style="padding: 3px 8px 1px 2px; vertical-align: bottom;">
+        <td class="om-no-left om-10096-split om-10096-bot" style="padding: 1px 8px 0 2px; vertical-align: bottom;">
           <div class="om-10096-sigcell">
-            <table class="om-layout-table" style="width: 100%; margin: 0 0 6px 0;"><tbody><tr><td style="width: 55%; text-align: left;">চলতি বছরের প্রাপ্য ছুটি</td><td style="width: 45%; text-align: right;">সরকারী/নিজ খরচে</td></tr></tbody></table>
-            <div class="om-295-row" style="margin: 0 0 14px 0;"><span class="om-295-dot om-295-dot-sm">{{entitled_days_bn}}</span><span class="om-295-lbl">দিন বার্ষিক/নৈমিত্তিক</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
-            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 40%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 60%; text-align: right; vertical-align: bottom;">ডকুমেন্ট ক্লার্ক</td></tr></tbody></table>
+            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 55%; text-align: left;">চলতি বছরের প্রাপ্য ছুটি</td><td style="width: 45%; text-align: right;">সরকারী/নিজ খরচে</td></tr></tbody></table>
+            <div class="om-295-row" style="margin: 24px 0 88px 0;"><span class="om-295-lbl">দিন</span><span class="om-295-dot om-295-dot-sm">{{entitled_days_bn}}</span><span class="om-295-lbl">বার্ষিক/নৈমিত্তিক</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 40%; text-align: left; vertical-align: bottom;">তারিখ</td><td class="om-sig-pr" style="width: 60%; text-align: right; padding-right: 30px; vertical-align: bottom;">ডকুমেন্ট ক্লার্ক</td></tr></tbody></table>
           </div>
         </td>
-        <td class="om-no-right om-10096-bot" style="padding: 3px 2px 1px 8px; vertical-align: bottom;">
+        <td class="om-no-right om-10096-bot" style="padding: 1px 2px 0 8px; vertical-align: bottom;">
           <div class="om-10096-sigcell">
             <p>মঞ্জুর/না মঞ্জুর</p>
-            <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 45%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 55%; text-align: center; padding-left: 30px; vertical-align: bottom;">স্বাক্ষর<br>পদবী</td></tr></tbody></table>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 58%; text-align: left; vertical-align: bottom;">তারিখ</td><td style="width: 42%; text-align: left; vertical-align: bottom;">স্বাক্ষর<br>পদবী</td></tr></tbody></table>
           </div>
         </td>
       </tr>
     </tbody>
   </table>
-  <p style="margin: 12px 0 12px 0;">প্রয়োজনীয় পত্রাদি প্রস্তুত করে হিসাব শাখাতে পাঠানো হইয়াছে সংগ্রহের জন্য বিভাগীয় প্রশাখা দপ্তরের প্রস্তুত আছে।</p>
-  <div class="om-295-row" style="margin: 0;"><span class="om-295-lbl">আপনাকে</span><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">তারিখ</span><span class="om-295-dot om-295-dot-sm">{{collect_date_bn}}</span><span class="om-295-lbl">সময়</span><span class="om-295-dot om-295-dot-xs">{{collect_time_bn}}</span><span class="om-295-lbl">*টাকা ও দলিল পত্রাদি সংগ্রহের জন্য</span></div>
-  <p style="margin: 2px 0 6px 0;">উপস্থিত হইবে।</p>
-  <p style="text-align: right; padding-right: 42px; margin: 0 0 4px 0;">মুভমেন্ট ক্লার্ক</p>
-  <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
-    <tbody>
-      <tr>
-        <td class="om-no-left om-10096-top om-10096-bot" style="width: 15%; text-align: center;">বিডি/<br>{{bd_no_bn}}</td>
-        <td class="om-10096-top om-10096-bot" style="width: 14%; text-align: center;">পদবী<br>{{rank_bn}}</td>
-        <td class="om-10096-top om-10096-bot" style="width: 26%; text-align: center;">নাম<br>{{name_bn}}</td>
-        <td class="om-10096-top om-10096-bot" style="width: 19%; text-align: center;">পেশা<br>{{trade_bn}}</td>
-        <td class="om-no-right om-10096-top om-10096-bot" style="width: 26%; text-align: center;">প্রশাখা দপ্তর<br>{{section_bn}}</td>
-      </tr>
-    </tbody>
-  </table>
-  <p style="margin: 6px 0 2px 42px;">*অপ্রয়োজনীয় শব্দগুলি কাটিয়া দিতে হইবে।</p>
-  <p style="margin: 0; font-size: 11pt;">বিএএফ প্রেস-এ-৭৩৯০-২,০০০ প্যাড-১৩-৬-২০২২</p>
+  <div class="om-10096-bottom">
+    <hr class="om-10096-cutline">
+    <p style="margin: 0 0 12px 0;">প্রয়োজনীয় পত্রাদি প্রস্তুত করে হিসাব শাখাতে পাঠানো হইয়াছে সংগ্রহের জন্য বিভাগীয় প্রশাখা দপ্তরের প্রস্তুত আছে।</p>
+    <div class="om-295-row" style="margin: 0;"><span class="om-295-lbl">আপনাকে</span><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">তারিখ</span><span class="om-295-dot om-295-dot-sm">{{collect_date_bn}}</span><span class="om-295-lbl">সময়</span><span class="om-295-dot om-295-dot-xs">{{collect_time_bn}}</span><span class="om-295-lbl">*টাকা ও দলিল পত্রাদি সংগ্রহের জন্য</span></div>
+    <p style="margin: 2px 0 6px 0;">উপস্থিত হইবে।</p>
+    <p style="text-align: right; padding-right: 42px; margin: 0 0 4px 0;">মুভমেন্ট ক্লার্ক</p>
+    <table class="om-10096-box" style="width: 100%; border-collapse: collapse;">
+      <tbody>
+        <tr>
+          <td class="om-no-left om-10096-top om-10096-bot" style="width: 15%; text-align: center;">বিডি/<br>{{bd_no_bn}}</td>
+          <td class="om-10096-top om-10096-bot" style="width: 14%; text-align: center;">পদবী<br>{{rank_bn}}</td>
+          <td class="om-10096-top om-10096-bot" style="width: 26%; text-align: center;">নাম<br>{{name_bn}}</td>
+          <td class="om-10096-top om-10096-bot" style="width: 19%; text-align: center;">পেশা<br>{{trade_bn}}</td>
+          <td class="om-no-right om-10096-top om-10096-bot" style="width: 26%; text-align: center;">প্রশাখা দপ্তর<br>{{section_bn}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin: 6px 0 2px 42px;">*অপ্রয়োজনীয় শব্দগুলি কাটিয়া দিতে হইবে।</p>
+    <p style="margin: 0; font-size: 11pt;">বিএএফ প্রেস-এ-৭৩৯০-২,০০০ প্যাড-১৩-৬-২০২২</p>
+  </div>
 </div>
 <hr class="om-page-break">
 <div>
@@ -1541,7 +1544,7 @@ export const INITIAL_TEMPLATES: Template[] = [
     bodyHtml: `<p style="text-align: center; margin: 0 0 18px 0;"><strong><u>FOR FUEL</u></strong></p>
 <p style="margin: 0 0 18px 0;">{{fuel_statement}}</p>
 <p style="margin: 0 0 28px 0;"><strong><u>Address:</u></strong><br>{{address_full}}</p>
-<table class="om-layout-table" style="width: 100%; margin: 0 0 22px 0;">
+    <table class="om-layout-table" style="width: 100%; margin: 0 0 22px 0;">
   <tbody>
     <tr>
       <td style="width: 64%;"></td>
@@ -1550,5 +1553,850 @@ export const INITIAL_TEMPLATES: Template[] = [
   </tbody>
 </table>
 <p style="text-align: center; margin: 0;"><u>COUNTERSIGN</u></p>`,
+  },
+  {
+    id: 'tpl-baf-10097',
+    name: 'BAF F-10097 (Living Out)',
+    category: 'Application',
+    description:
+      'General Application – Airmen (BAF F-10097) formatted for temporary self-arranged Living Out with family.',
+    isBuiltIn: true,
+    createdAt: '2026-11-26T04:00:00.000Z',
+    updatedAt: '2026-11-26T04:50:00.000Z',
+    pageSettings: {
+      size: 'A4',
+      margins: { top: 15, right: 18, bottom: 14, left: 18 },
+      fontFamily: 'SutonnyMJ',
+      fontSize: 14,
+      lineHeight: 1.24,
+      headerText: '',
+      footerText: '',
+      showSignatureBlock: false,
+      showCountersigned: false,
+    },
+    fields: [
+      { id: 'f10097-bd', key: 'bd_no_bn', label: 'BD/', type: 'text', required: true, defaultValue: '' },
+      { id: 'f10097-rank', key: 'rank_bn', label: 'Rank', type: 'text', required: true, defaultValue: '' },
+      { id: 'f10097-name', key: 'name_bn', label: 'Name in full', type: 'text', required: true, defaultValue: '' },
+      { id: 'f10097-trade', key: 'trade_bn', label: 'Trade', type: 'text', required: true, defaultValue: '' },
+      { id: 'f10097-sec', key: 'section_bn', label: 'Section', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-unit', key: 'base_unit_bn', label: 'Base/Unit', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-date', key: 'date_bn', label: 'Date', type: 'date', required: false, defaultValue: '' },
+      {
+        id: 'f10097-ref',
+        key: 'ref_bn',
+        label: 'Ref:',
+        type: 'textarea',
+        required: false,
+        defaultValue: 'নিজ ব্যবস্থায় স্ব-পরিবারে অস্থায়ী বহির্বাসের জন্য আবেদন।',
+      },
+      {
+        id: 'f10097-case',
+        key: 'statement_case_bn',
+        label: 'Statement of Case',
+        type: 'textarea',
+        required: false,
+        defaultValue:
+          'যথাবিহীত সম্মান প্রদর্শন পূর্বক বিনীত নিবেদন এই যে, আমার সংযুক্ত আবেদনপত্র খানা সহানুভূতির সহিত সুবিবেচনার জন্য মহোদয়ের নিকট উপস্থাপন করিলামঃ',
+      },
+      {
+        id: 'f10097-enc',
+        key: 'enclosure_bn',
+        label: 'সংযুক্তঃ (Enclosure)',
+        type: 'textarea',
+        required: false,
+        defaultValue: '১।   বহির্বাসের জন্য স্ব-ব্যাখ্যায়িত আবেদনপত্র - ০১ কপি।',
+      },
+      { id: 'f10097-rem1dt', key: 'rem1_date', label: 'JCO i/c Date', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-rem2dt', key: 'rem2_date', label: 'Officer i/c Date', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-rem3by', key: 'rem3_by', label: 'Remarks by (3rd Box)', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-rem3dt', key: 'rem3_date', label: '3rd Box Date', type: 'text', required: false, defaultValue: '' },
+      {
+        id: 'f10097-cooc',
+        key: 'co_oc_choice',
+        label: 'CO / OC',
+        type: 'select',
+        options: ['OC', 'CO'],
+        required: false,
+        defaultValue: '',
+      },
+      { id: 'f10097-rem4dt', key: 'rem4_date', label: 'CO/OC Date', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-actref', key: 'action_ref_app', label: 'Ref Application', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-actpor', key: 'action_por', label: '(a) Promulgated vide P O R', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-actlet', key: 'action_letter_no', label: '(b) Action taken vide letter No', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-actdated', key: 'action_dated', label: 'Dated', type: 'text', required: false, defaultValue: '' },
+      { id: 'f10097-actdt', key: 'action_date', label: 'Action Date', type: 'text', required: false, defaultValue: '' },
+    ],
+    bodyHtml: `<div style="font-family: 'Times New Roman', Tinos, Georgia, serif;">
+  <p style="text-align: right; margin: 0 0 2px 0; font-size: 11pt;">BAF F-10097</p>
+  <p style="text-align: center; margin: 0 0 8px 0; font-size: 16pt;"><u>GENERAL APPLICATION – AIRMEN</u></p>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-10096-top om-10097-left" style="width: 23%;">BD/<br>{{bd_no_bn}}</td>
+        <td class="om-10096-top" style="width: 18%;">Rank<br>{{rank_bn}}</td>
+        <td class="om-10096-top" style="width: 39%;">Name in full (Block Capitals)<br>{{name_bn}}</td>
+        <td class="om-10096-top om-10097-right" style="width: 20%;">Trade<br>{{trade_bn}}</td>
+      </tr>
+      <tr>
+        <td class="om-10097-left" style="width: 23%;">Section<br>{{section_bn}}</td>
+        <td style="width: 18%;">Base/Unit<br>{{base_unit_bn}}</td>
+        <td style="width: 39%;">Ref:<br>{{ref_bn}}</td>
+        <td class="om-10097-right" style="width: 20%;">Date<br><p style="margin: 0; text-align: center;">{{date_bn | bn_mon_yr}}</p></td>
+      </tr>
+    </tbody>
+  </table>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-no-top om-10097-left om-10097-right" style="padding: 4px 10px 6px 8px;">
+          <p style="margin: 0 0 8px 0;">Statement of Case,</p>
+          <p style="margin: 0 0 14px 36px; line-height: 1.3;">{{statement_case_bn}}</p>
+          <p style="margin: 0 0 2px 0;">সংযুক্তঃ</p>
+          <p style="margin: 0 0 18px 0;">{{enclosure_bn}}</p>
+          <table class="om-layout-table" style="width: 100%; margin: 0;">
+            <tbody>
+              <tr>
+                <td style="width: 73%;"></td>
+                <td style="width: 27%; text-align: left; line-height: 1.25;">{{name_bn}}<br>{{rank_bn}}<br>Applicant's Signature</td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-no-top om-10097-left" style="width: 48%; padding: 2px 10px 2px 6px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>Remarks by jco i/c</p>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 22%; text-align: left;">Date</td><td style="width: 34%; text-align: center;">{{rem1_date}}</td><td style="width: 44%; text-align: center;">Signature</td></tr></tbody></table>
+          </div>
+        </td>
+        <td class="om-no-top om-10097-right" style="width: 52%; padding: 2px 10px 2px 8px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>Remarks by officer i/c</p>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 22%; text-align: left;">Date</td><td style="width: 34%; text-align: center;">{{rem2_date}}</td><td style="width: 44%; text-align: center;">Signature</td></tr></tbody></table>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="om-10097-left" style="width: 48%; padding: 2px 10px 2px 6px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>Remarks by {{rem3_by}}</p>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 22%; text-align: left;">Date</td><td style="width: 34%; text-align: center;">{{rem3_date}}</td><td style="width: 44%; text-align: center;">Signature</td></tr></tbody></table>
+          </div>
+        </td>
+        <td class="om-10097-right" style="width: 52%; padding: 2px 10px 2px 8px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>Remarks by {{co_oc_choice | strike_10097_cooc}}</p>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 22%; text-align: left;">Date</td><td style="width: 34%; text-align: center;">{{rem4_date}}</td><td style="width: 44%; text-align: center;">Signature</td></tr></tbody></table>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-no-top om-10097-left om-10097-right" style="padding: 3px 10px 2px 14px;">
+          <p style="margin: 0 0 6px 0;">Action taken</p>
+          <div class="om-295-row" style="margin: 0 0 1px 0;"><span class="om-295-lbl">Ref&nbsp;&nbsp;&nbsp;&nbsp;Application</span><span class="om-295-dot">{{action_ref_app}}</span></div>
+          <div class="om-295-row" style="margin: 0 0 1px 0; padding-left: 52px;"><span class="om-295-lbl">(a)&nbsp;&nbsp;&nbsp;&nbsp;Promulgated vide P O R</span><span class="om-295-dot">{{action_por}}</span></div>
+          <div class="om-295-row" style="margin: 0 0 1px 0; padding-left: 52px;"><span class="om-295-lbl">(b)&nbsp;&nbsp;&nbsp;&nbsp;Action taken vide letter No</span><span class="om-295-dot">{{action_letter_no}}</span></div>
+          <div class="om-295-row" style="margin: 0 0 10px 0; padding-left: 32px;"><span class="om-295-lbl">Dated</span><span class="om-295-dot om-295-dot-lg">{{action_dated}}</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
+          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 15%; text-align: left;">Date</td><td style="width: 28%; text-align: left;">{{action_date}}</td><td style="width: 57%; text-align: right;">Signature of NCO i/c P Flt</td></tr></tbody></table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-no-top om-10096-bot om-10097-left" style="width: 16%;">BD/<br>{{bd_no_bn}}</td>
+        <td class="om-no-top om-10096-bot" style="width: 14%;">Rank<br>{{rank_bn}}</td>
+        <td class="om-no-top om-10096-bot" style="width: 37%;">Name<br>{{name_bn}}</td>
+        <td class="om-no-top om-10096-bot om-10097-right" style="width: 33%;">Section<br>{{section_bn}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>`,
+  },
+  {
+    id: 'tpl-living-out-bn',
+    name: 'Living Out Application',
+    category: 'Application',
+    description:
+      'Self-explanatory Bangla Living Out application (নিজ ব্যবস্থায় স্ব-পরিবারে অস্থায়ী বহির্বাসের জন্য আবেদন) with family & distance particulars.',
+    isBuiltIn: true,
+    createdAt: '2026-11-26T04:00:00.000Z',
+    updatedAt: '2026-11-26T04:40:00.000Z',
+    pageSettings: {
+      size: 'A4',
+      margins: { top: 22, right: 25, bottom: 22, left: 25 },
+      fontFamily: 'SutonnyMJ',
+      fontSize: 14,
+      lineHeight: 1.28,
+      headerText: '',
+      footerText: '',
+      showSignatureBlock: false,
+      showCountersigned: false,
+    },
+    fields: [
+      { id: 'flo-u1', key: 'unit_line1_bn', label: 'ইউনিট লাইন ১', type: 'text', required: true, defaultValue: '' },
+      { id: 'flo-u2', key: 'unit_line2_bn', label: 'ইউনিট লাইন ২ (স্থান)', type: 'text', required: false, defaultValue: '' },
+      { id: 'flo-ph', key: 'phone_line_bn', label: 'দূরাঃ / ফোন লাইন', type: 'text', required: false, defaultValue: '' },
+      { id: 'flo-dt', key: 'date_bn', label: 'তারিখ', type: 'date', required: false, defaultValue: '' },
+      {
+        id: 'flo-sub',
+        key: 'subject_bn',
+        label: 'বিষয় (Subject)',
+        type: 'text',
+        required: true,
+        defaultValue: 'নিজ ব্যবস্থায় স্ব-পরিবারে অস্থায়ী বহির্বাসের জন্য আবেদন ঃ বিমানসেনা',
+      },
+      { id: 'flo-bd', key: 'bd_no_bn', label: 'বিডি/', type: 'text', required: true, defaultValue: '' },
+      { id: 'flo-rank', key: 'rank_bn', label: 'পদবী', type: 'text', required: true, defaultValue: '' },
+      { id: 'flo-name', key: 'name_bn', label: 'নাম', type: 'text', required: true, defaultValue: '' },
+      { id: 'flo-trade', key: 'trade_bn', label: 'পেশা / ট্রেড', type: 'text', required: true, defaultValue: '' },
+      { id: 'flo-jdt', key: 'join_date_bn', label: 'যোগদানের তারিখ', type: 'text', required: true, defaultValue: '' },
+      { id: 'flo-cunit', key: 'current_unit_bn', label: 'বর্তমান কর্মস্থল / ইউনিট', type: 'text', required: true, defaultValue: '' },
+      { id: 'flo-rk', key: 'reason_k_bn', label: 'কারণ (ক)', type: 'textarea', required: true, defaultValue: '' },
+      { id: 'flo-rkh', key: 'reason_kh_bn', label: 'কারণ (খ)', type: 'textarea', required: false, defaultValue: '' },
+      {
+        id: 'flo-p2',
+        key: 'closing_para_bn',
+        label: '২। সমাপনী অনুচ্ছেদ',
+        type: 'textarea',
+        required: true,
+        defaultValue:
+          'অতএব, মহোদয়ের নিকট বিনীত প্রার্থনা এই যে, আমার উপরোল্লিখিত সমস্যাগুলো সদয় সুবিবেচনায় নিয়ে আমাকে নিজ ব্যবস্থায় স্ব-পরিবারে নিম্নে উল্লিখিত ঠিকানায় বহির্বাসের অনুমতিদানে জনাবের একান্ত মর্জি হয়।',
+      },
+      { id: 'flo-addr', key: 'living_address_bn', label: 'বাসার সম্ভাব্য ঠিকানা', type: 'textarea', required: true, defaultValue: '' },
+      { id: 'flo-tod', key: 'to_designation_bn', label: 'প্রতিঃ (পদবী)', type: 'text', required: true, defaultValue: '' },
+      { id: 'flo-tou', key: 'to_unit_bn', label: 'প্রতিঃ (ইউনিট)', type: 'text', required: true, defaultValue: '' },
+    ],
+    bodyHtml: `<div class="om-lo-top-header">
+  <div class="om-lo-janab">জনাব,</div>
+  <div class="om-lo-unit-block">
+    <p style="margin: 0;">{{unit_line1_bn}}<br>{{unit_line2_bn}}</p>
+    <p style="margin: 2px 0 0 0; white-space: nowrap;">{{phone_line_bn}}</p>
+    <p style="margin: 8px 0 0 0;">{{date_bn | bn_mon_yr}}</p>
+  </div>
+</div>
+<div class="om-lo-heading">
+  <div class="om-lo-heading-row1">{{subject_bn | lo_subject_split}}</div>
+  <div class="om-lo-heading-row2"><span>বিডি/{{bd_no_bn}} {{rank_bn}} {{name_bn}},</span><span>{{trade_bn}}</span></div>
+</div>
+<div class="om-st-item"><span class="om-st-num">১।</span><span class="om-st-text">যথাবিহীত সম্মান প্রদর্শন পূর্বক বিনীত নিবেদন এই যে, আমি গত {{join_date_bn}} ইং তারিখে বাংলাদেশ বিমান বাহিনীতে যোগদান করে বর্তমানে {{current_unit_bn}} এ কর্মরত আছি। বহির্বাসের নিমিত্তে আমার নিম্নে উল্লিখিত সমস্যাগুলো মহোদয়ের সদয় সুবিবেচনার জন্য উপস্থাপন করিলামঃ</span></div>
+<div class="om-lo-subitem"><span class="om-st-num">ক।</span><span class="om-st-text">{{reason_k_bn}}</span></div>
+<div class="om-lo-subitem"><span class="om-st-num">খ।</span><span class="om-st-text">{{reason_kh_bn}}</span></div>
+<div class="om-st-item"><span class="om-st-num">২।</span><span class="om-st-text">{{closing_para_bn}}</span></div>
+<div class="om-lo-sign-section">
+  <div class="om-lo-addr-col">
+    <p style="margin: 26px 0 0 0; line-height: 1.3;"><strong><u>বাসার সম্ভাব্য ঠিকানা ঃ</u></strong><br>{{living_address_bn}}</p>
+  </div>
+  <div class="om-lo-sign-col">
+    <p style="margin: 0;">বিনীত নিবেদক,</p>
+    <p style="margin: 44px 0 0 0; line-height: 1.3;"><strong style="white-space: nowrap;">{{name_bn}}</strong><br>{{rank_bn}}</p>
+  </div>
+</div>
+<p style="margin: 44px 0 12px 0;">প্রতিঃ</p>
+<p style="margin: 0; line-height: 1.3;">{{to_designation_bn}}<br>{{to_unit_bn}}</p>`,
+  },
+  {
+    id: 'tpl-baf-10097-marriage',
+    name: 'BAF F-10097 (Marriage)',
+    category: 'Application',
+    description:
+      'General Application – Airmen (BAF F-10097) format for Marriage permission under BAF Order 113-20.',
+    isBuiltIn: true,
+    createdAt: '2026-11-26T08:30:00.000Z',
+    updatedAt: '2026-11-26T08:30:00.000Z',
+    pageSettings: {
+      size: 'Legal',
+      margins: { top: 14, right: 18, bottom: 14, left: 18 },
+      fontFamily: 'SutonnyMJ',
+      fontSize: 14,
+      lineHeight: 1.24,
+      headerText: '',
+      footerText: '',
+      showSignatureBlock: false,
+      showCountersigned: false,
+    },
+    fields: [
+      { id: 'fm97-bd', key: 'bd_no_bn', label: 'BD/', type: 'text', required: true, defaultValue: '' },
+      { id: 'fm97-rank', key: 'rank_bn', label: 'Rank', type: 'text', required: true, defaultValue: '' },
+      { id: 'fm97-name', key: 'name_bn', label: 'Name in full (Block Capital)', type: 'text', required: true, defaultValue: '' },
+      { id: 'fm97-trade', key: 'trade_bn', label: 'Trade', type: 'text', required: true, defaultValue: '' },
+      { id: 'fm97-sec', key: 'section_bn', label: 'Section/Flight', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-unit', key: 'base_unit_bn', label: 'Base/Unit', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-ref', key: 'ref_bn', label: 'Ref-', type: 'text', required: false, defaultValue: 'বিবাহের অনুমতি প্রদানের জন্য আবেদন।' },
+      { id: 'fm97-dt', key: 'date_bn', label: 'Date', type: 'date', required: false, defaultValue: '' },
+      { id: 'fm97-jdt', key: 'join_date_bn', label: 'যোগদানের তারিখ', type: 'date', required: true, defaultValue: '' },
+      { id: 'fm97-edt', key: 'eligibility_date_bn', label: 'শর্তপূরণের তারিখ', type: 'date', required: true, defaultValue: '' },
+      {
+        id: 'fm97-close',
+        key: 'closing_para_bn',
+        label: 'সমাপনী অনুচ্ছেদ',
+        type: 'textarea',
+        required: true,
+        defaultValue: 'অতএব, মহোদয়ের নিকট আকুল আবেদন এই যে, আমাকে বিবাহের অনুমতি দানে জনাবের একান্ত মর্জি হয়।',
+      },
+      {
+        id: 'fm97-enc',
+        key: 'enclosure_bn',
+        label: 'সংযুক্তিঃ',
+        type: 'textarea',
+        required: false,
+        defaultValue: '১। বিবাহের অনুমতি প্রদানের আবেদন পত্র  - ০২ কপি।\n২। বিবাহের অনুমতি প্রাপ্তির যোগ্যতা সংক্রান্ত তথ্যাবলী - ০১ কপি।\n৩। জন্ম সনদের সত্যায়িত ফটোকপি  - ০১ কপি।',
+      },
+      { id: 'fm97-rem1dt', key: 'rem1_date', label: 'JCO i/c Date', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-rem2dt', key: 'rem2_date', label: 'Officer i/c Date', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-rem3by', key: 'rem3_by', label: 'Remarks by (3rd Box)', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-rem3dt', key: 'rem3_date', label: '3rd Box Date', type: 'text', required: false, defaultValue: '' },
+      {
+        id: 'fm97-cooc',
+        key: 'co_oc_choice',
+        label: 'CO / OC',
+        type: 'select',
+        options: ['OC', 'CO'],
+        required: false,
+        defaultValue: '',
+      },
+      { id: 'fm97-rem4dt', key: 'rem4_date', label: 'CO/OC Date', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-actref', key: 'action_ref_app', label: 'Ref Application', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-actpor', key: 'action_por', label: '(a) Promulgated vide POR', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-actlet', key: 'action_letter_no', label: '(b) Action taken vide letter No', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-actdated', key: 'action_dated', label: 'Dated', type: 'text', required: false, defaultValue: '' },
+      { id: 'fm97-actdt', key: 'action_date', label: 'Action Date', type: 'text', required: false, defaultValue: '' },
+    ],
+    bodyHtml: `<div style="font-family: 'Times New Roman', Tinos, Georgia, serif;">
+  <p style="text-align: right; margin: 0 0 2px 0; font-size: 11pt;">BAF F-10097</p>
+  <p style="text-align: center; margin: 0 0 8px 0; font-size: 16pt; font-weight: bold;"><u>GENERAL APPLICATION - AIRMEN</u></p>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-10096-top om-10097-left" style="width: 23%;">BD/<br>{{bd_no_bn}}</td>
+        <td class="om-10096-top" style="width: 18%;">Rank<br>{{rank_bn}}</td>
+        <td class="om-10096-top" style="width: 39%;">Name in full (Block Capital)<br>{{name_bn}}</td>
+        <td class="om-10096-top om-10097-right" style="width: 20%;">Trade<br>{{trade_bn}}</td>
+      </tr>
+      <tr>
+        <td class="om-10097-left" style="width: 23%;">Section/Flight<br>{{section_bn}}</td>
+        <td style="width: 18%;">Base/Unit<br>{{base_unit_bn}}</td>
+        <td style="width: 39%;">Ref- {{ref_bn}}</td>
+        <td class="om-10097-right" style="width: 20%;">Date &nbsp;&nbsp;{{date_bn | bn_mon_yr}}</td>
+      </tr>
+    </tbody>
+  </table>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-no-top om-10097-left om-10097-right" style="padding: 4px 10px 6px 8px;">
+          <p style="margin: 0 0 4px 0;">Statement of Case</p>
+          <p style="margin: 0 0 6px 0;">জনাব,</p>
+          <p style="margin: 0 0 8px 0; text-indent: 36px; text-align: justify; line-height: 1.28;">বিনীত নিবেদন এই যে, বাবিবা আদেশ নং ১১৩-২০ (সংশোধিত) আমি গত {{join_date_bn}} বাংলাদেশ বিমান বাহিনীতে যোগদান করে সততা ও নিষ্ঠার সহিত চাকুরী করে আসছি। এখন আমি ধর্মীয় রীতিনীতি মোতাবেক বিবাহ বন্ধনে আবদ্ধ হতে ইচ্ছুক। উল্লেখ্য যে, আমি বি বা আদেশ নং ১১৩-২০ তারিখ ০৭ অক্টো ২০০৮ মোতাবেক {{eligibility_date_bn}} তারিখ হতে বিবাহের সকল শর্তাবলী পূরণ করেছি।</p>
+          <p style="margin: 0 0 8px 0; text-indent: 36px; text-align: justify; line-height: 1.28;">{{closing_para_bn}}</p>
+          <p style="margin: 0 0 2px 0;">সংযুক্তিঃ</p>
+          <table class="om-layout-table" style="width: 100%; margin: 0;">
+            <tbody>
+              <tr>
+                <td style="width: 71%; vertical-align: top; line-height: 1.25;">{{enclosure_bn}}</td>
+                <td style="width: 29%; text-align: left; vertical-align: bottom; line-height: 1.25; padding-top: 8px;">{{name_bn}}<br>{{rank_bn}}<br>Applicant's Signature</td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-no-top om-10097-left" style="width: 48%; padding: 2px 10px 2px 6px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>Remarks by JCO i/c</p>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 22%; text-align: left;">Date</td><td style="width: 34%; text-align: center;">{{rem1_date}}</td><td style="width: 44%; text-align: center;">Signature</td></tr></tbody></table>
+          </div>
+        </td>
+        <td class="om-no-top om-10097-right" style="width: 52%; padding: 2px 10px 2px 8px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>Remarks by Officer i/c</p>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 22%; text-align: left;">Date</td><td style="width: 34%; text-align: center;">{{rem2_date}}</td><td style="width: 44%; text-align: center;">Signature</td></tr></tbody></table>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="om-10097-left" style="width: 48%; padding: 2px 10px 2px 6px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>Remarks by {{rem3_by}}</p>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 22%; text-align: left;">Date</td><td style="width: 34%; text-align: center;">{{rem3_date}}</td><td style="width: 44%; text-align: center;">Signature</td></tr></tbody></table>
+          </div>
+        </td>
+        <td class="om-10097-right" style="width: 52%; padding: 2px 10px 2px 8px; vertical-align: bottom;">
+          <div class="om-10096-sigcell">
+            <p>Remarks by {{co_oc_choice | strike_10097_cooc}}</p>
+            <table class="om-layout-table om-10096-sigbot" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 22%; text-align: left;">Date</td><td style="width: 34%; text-align: center;">{{rem4_date}}</td><td style="width: 44%; text-align: center;">Signature</td></tr></tbody></table>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-no-top om-10097-left om-10097-right" style="padding: 3px 10px 2px 14px;">
+          <p style="margin: 0 0 6px 0;">Action taken</p>
+          <div class="om-295-row" style="margin: 0 0 1px 0;"><span class="om-295-lbl"><em>Ref</em> Application</span><span class="om-295-dot">{{action_ref_app}}</span></div>
+          <div class="om-295-row" style="margin: 0 0 1px 0; padding-left: 52px;"><span class="om-295-lbl">(a)&nbsp;&nbsp;&nbsp;&nbsp;Promulgated vide POR</span><span class="om-295-dot">{{action_por}}</span></div>
+          <div class="om-295-row" style="margin: 0 0 1px 0; padding-left: 52px;"><span class="om-295-lbl">(b)&nbsp;&nbsp;&nbsp;&nbsp;Action taken vide letter No</span><span class="om-295-dot">{{action_letter_no}}</span></div>
+          <div class="om-295-row" style="margin: 0 0 10px 0; padding-left: 32px;"><span class="om-295-lbl">Dated</span><span class="om-295-dot om-295-dot-lg">{{action_dated}}</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
+          <table class="om-layout-table" style="width: 100%; margin: 0;"><tbody><tr><td style="width: 15%; text-align: left;">Dated</td><td style="width: 28%; text-align: left;">{{action_date}}</td><td style="width: 57%; text-align: right;">Signature of NCO i/c P Flt</td></tr></tbody></table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <table class="om-10097-box" style="width: 100%; border-collapse: collapse;">
+    <tbody>
+      <tr>
+        <td class="om-no-top om-10096-bot om-10097-left" style="width: 16%;">BD/<br>{{bd_no_bn}}</td>
+        <td class="om-no-top om-10096-bot" style="width: 14%;">Rank<br>{{rank_bn}}</td>
+        <td class="om-no-top om-10096-bot" style="width: 37%;">Name<br>{{name_bn}}</td>
+        <td class="om-no-top om-10096-bot om-10097-right" style="width: 33%;">Section<br>{{section_bn}}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin: 4px 0 0 0; font-size: 10pt;">BAF Press A-844-3,000 pads 04-02-99</p>
+</div>`,
+  },
+  {
+    id: 'tpl-marriage-form-bn',
+    name: "Marriage Form (ক্রোড়পত্র 'ক')",
+    category: 'Application',
+    description:
+      'Official 2-page Bangla Marriage Permission Form (ক্রোড়পত্র ‘ক’, বি বা আ নং ১১৩-২০) with oath & CO decision.',
+    isBuiltIn: true,
+    createdAt: '2026-11-26T08:30:00.000Z',
+    updatedAt: '2026-11-26T08:30:00.000Z',
+    pageSettings: {
+      size: 'A4',
+      margins: { top: 11, right: 16, bottom: 10, left: 16 },
+      fontFamily: 'SutonnyMJ',
+      fontSize: 14,
+      lineHeight: 1.18,
+      headerText: '',
+      footerText: '',
+      showSignatureBlock: false,
+      showCountersigned: false,
+    },
+    fields: [
+      { id: 'fmf-dt', key: 'app_date_bn', label: 'তারিখ', type: 'date', required: false, defaultValue: '' },
+      { id: 'fmf-bd', key: 'bd_no_bn', label: 'বিডি নং', type: 'text', required: true, defaultValue: '' },
+      { id: 'fmf-rank', key: 'rank_bn', label: 'পদবী', type: 'text', required: true, defaultValue: '' },
+      { id: 'fmf-name', key: 'name_bn', label: 'নাম', type: 'text', required: true, defaultValue: '' },
+      { id: 'fmf-trade', key: 'trade_bn', label: 'পেশা', type: 'text', required: true, defaultValue: '' },
+      { id: 'fmf-unit', key: 'unit_bn', label: 'ঘাঁটি/ইউনিট', type: 'text', required: true, defaultValue: '' },
+      { id: 'fmf-dob', key: 'dob_bn', label: 'জন্ম তারিখ', type: 'date', required: false, defaultValue: '' },
+      { id: 'fmf-agey', key: 'age_years_bn', label: 'বয়স (বছর)', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-agem', key: 'age_months_bn', label: 'বয়স (মাস)', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-aged', key: 'age_days_bn', label: 'বয়স (দিন)', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-jdt', key: 'join_date_bn', label: 'চাকুরীতে ভর্তির তারিখ', type: 'date', required: false, defaultValue: '' },
+      {
+        id: 'fmf-eligyn',
+        key: 'eligible_yn',
+        label: 'শর্তপূরণ/যোগ্যতা অর্জন',
+        type: 'select',
+        options: ['হ্যাঁ', 'না'],
+        required: false,
+        defaultValue: 'হ্যাঁ',
+      },
+      { id: 'fmf-eligdt', key: 'eligibility_date_bn', label: 'যোগ্যতা অর্জনের তারিখ', type: 'date', required: false, defaultValue: '' },
+      {
+        id: 'fmf-pmyn',
+        key: 'prev_married_yn',
+        label: 'পূর্বে বিবাহ করিয়াছে কিনা?',
+        type: 'select',
+        options: ['না', 'হ্যাঁ'],
+        required: false,
+        defaultValue: 'না',
+      },
+      { id: 'fmf-pmtxt', key: 'prev_married_text', label: 'পূর্ব বিবাহ (উত্তর)', type: 'text', required: false, defaultValue: 'না' },
+      { id: 'fmf-pmdt', key: 'prev_married_date_bn', label: 'পূর্ব বিবাহের তারিখ', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-rmr', key: 'remarriage_reason_bn', label: 'পুনঃ বিবাহের কারণ', type: 'text', required: false, defaultValue: 'প্রযোজ্য নহে' },
+      { id: 'fmf-mob', key: 'mobile_bn', label: 'মোবাইল নং', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-nid', key: 'nid_birth_bn', label: 'জাতীয় পরিচয়পত্র/জন্ম সনদ নং', type: 'text', required: false, defaultValue: '' },
+
+      { id: 'fmf-s2app', key: 'sec2_applicable_bn', label: 'সেকশন ২ (যদি প্রযোজ্য হয়)', type: 'text', required: false, defaultValue: 'প্রযোজ্য নহে' },
+      { id: 'fmf-psinfo', key: 'prev_spouse_info_bn', label: 'পূর্ববর্তী স্ত্রী/স্বামীর নাম, পেশা ও ঠিকানা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-pmdt2', key: 'prev_marriage_dt_bn', label: 'পূর্ববর্তী বিবাহের তারিখ', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-pmpor', key: 'prev_marriage_por', label: 'পিওআর নং (বিবাহ)', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-mregno', key: 'marriage_reg_no', label: 'বিবাহ রেজিস্ট্রেশন নং', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-mregdt', key: 'marriage_reg_dt', label: 'রেজিস্ট্রেশন তারিখ', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-divdt', key: 'divorce_dt_bn', label: 'তালাকের তারিখ', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-divpor', key: 'divorce_por', label: 'পিওআর নং (তালাক)', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-pchnote', key: 'prev_children_note_bn', label: 'সন্তানাদির বিবরণ', type: 'text', required: false, defaultValue: 'প্রযোজ্য নহে' },
+      { id: 'fmf-pc1n', key: 'prev_child1_name', label: 'সন্তান (১) নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-pc1a', key: 'prev_child1_age', label: 'সন্তান (১) বয়স', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-pc1o', key: 'prev_child1_occ', label: 'সন্তান (১) পেশা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-pc2n', key: 'prev_child2_name', label: 'সন্তান (২) নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-pc2a', key: 'prev_child2_age', label: 'সন্তান (২) বয়স', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-pc2o', key: 'prev_child2_occ', label: 'সন্তান (২) পেশা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-unres', key: 'unresolved_matter_bn', label: 'অমীমাংসিত বিষয়', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-psnid', key: 'prev_spouse_nid_bn', label: 'পূর্ব স্ত্রীর/স্বামীর এনআইডি/জন্ম সনদ', type: 'text', required: false, defaultValue: '' },
+
+      { id: 'fmf-bname', key: 'bride_name_bn', label: 'পাত্র/পাত্রীর নাম', type: 'text', required: true, defaultValue: '' },
+      { id: 'fmf-bnick', key: 'bride_nickname_bn', label: 'ডাক নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bmar', key: 'bride_marital_bn', label: 'বৈবাহিক অবস্থা', type: 'text', required: false, defaultValue: 'অবিবাহিতা' },
+      { id: 'fmf-bnat', key: 'bride_nationality_bn', label: 'জাতীয়তা', type: 'text', required: false, defaultValue: 'বাংলাদেশী' },
+      { id: 'fmf-bnid', key: 'bride_nid_bn', label: 'জাতীয় পরিচয়পত্র/জন্ম সনদ নং', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-brel', key: 'bride_religion_bn', label: 'ধর্ম', type: 'text', required: false, defaultValue: 'ইসলাম' },
+      { id: 'fmf-bsec', key: 'bride_sect_bn', label: 'সম্প্রদায়', type: 'text', required: false, defaultValue: 'সুন্নী' },
+      { id: 'fmf-bdob', key: 'bride_dob_bn', label: 'জন্ম তারিখ', type: 'date', required: false, defaultValue: '' },
+      { id: 'fmf-bedu', key: 'bride_edu_bn', label: 'শিক্ষাগত যোগ্যতা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpres', key: 'bride_present_addr_bn', label: 'বর্তমান আবাসিক ঠিকানা', type: 'textarea', required: false, defaultValue: '' },
+      { id: 'fmf-bocc', key: 'bride_occ_bn', label: 'পেশা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bperm', key: 'bride_perm_addr_bn', label: 'স্থায়ী ঠিকানা', type: 'textarea', required: false, defaultValue: '' },
+      { id: 'fmf-bfname', key: 'bride_father_name_bn', label: 'পিতার নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bfocc', key: 'bride_father_occ_bn', label: 'পিতার পেশা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bfnat', key: 'bride_father_nat_bn', label: 'পিতার জাতীয়তা', type: 'text', required: false, defaultValue: 'বাংলাদেশী' },
+      { id: 'fmf-bmname', key: 'bride_mother_name_bn', label: 'মাতার নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bmocc', key: 'bride_mother_occ_bn', label: 'মাতার পেশা', type: 'text', required: false, defaultValue: 'গৃহিণী' },
+      { id: 'fmf-bmnat', key: 'bride_mother_nat_bn', label: 'মাতার জাতীয়তা', type: 'text', required: false, defaultValue: 'বাংলাদেশী' },
+      { id: 'fmf-bpaddr', key: 'bride_parents_addr_bn', label: 'পিতা/মাতার স্থায়ী ঠিকানা', type: 'textarea', required: false, defaultValue: '' },
+      { id: 'fmf-frel', key: 'family_relation_bn', label: 'পারিবারিক আত্মীয়তা', type: 'text', required: false, defaultValue: 'প্রযোজ্য নহে' },
+
+      { id: 'fmf-s4app', key: 'sec4_applicable_bn', label: 'সেকশন ৪ (যদি প্রযোজ্য হয়)', type: 'text', required: false, defaultValue: 'প্রযোজ্য নহে' },
+      { id: 'fmf-bpname', key: 'bprev_name_bn', label: 'পূর্বের স্ত্রী/স্বামীর নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpocc', key: 'bprev_occ_bn', label: 'পেশা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpage', key: 'bprev_age_bn', label: 'বয়স', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpnat', key: 'bprev_nat_bn', label: 'জাতীয়তা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bprel', key: 'bprev_rel_bn', label: 'ধর্ম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpsec', key: 'bprev_sect_bn', label: 'সম্প্রদায়', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bppres', key: 'bprev_pres_addr_bn', label: 'বর্তমান আবাসিক ঠিকানা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpperm', key: 'bprev_perm_addr_bn', label: 'স্থায়ী ঠিকানা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpnid', key: 'bprev_nid_bn', label: 'এনআইডি/জন্ম সনদ নং', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpf', key: 'bprev_father_bn', label: 'পিতার নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpfo', key: 'bprev_father_occ_bn', label: 'পিতার পেশা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpfn', key: 'bprev_father_nat_bn', label: 'পিতার জাতীয়তা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpcnote', key: 'bprev_children_note_bn', label: 'সন্তানাদির সংখ্যা ও বিবরণ', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpc1n', key: 'bprev_c1_name', label: 'সন্তান (১) নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpc1a', key: 'bprev_c1_age', label: 'সন্তান (১) বয়স', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpc1o', key: 'bprev_c1_occ', label: 'সন্তান (১) পেশা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpc2n', key: 'bprev_c2_name', label: 'সন্তান (২) নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpc2a', key: 'bprev_c2_age', label: 'সন্তান (২) বয়স', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpc2o', key: 'bprev_c2_occ', label: 'সন্তান (২) পেশা', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpc3n', key: 'bprev_c3_name', label: 'সন্তান (৩) নাম', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpc3a', key: 'bprev_c3_age', label: 'সন্তান (৩) বয়স', type: 'text', required: false, defaultValue: '' },
+      { id: 'fmf-bpc3o', key: 'bprev_c3_occ', label: 'সন্তান (৩) পেশা', type: 'text', required: false, defaultValue: '' },
+
+      { id: 'fmf-expdt', key: 'expected_marriage_date_bn', label: 'বিবাহের সম্ভাব্য তারিখ', type: 'date', required: false, defaultValue: '' },
+      {
+        id: 'fmf-codec',
+        key: 'co_decision',
+        label: 'ঘাঁটি/ইউনিট অধিনায়কের সিদ্ধান্ত',
+        type: 'select',
+        options: ['', 'মঞ্জুর', 'না মঞ্জুর'],
+        required: false,
+        defaultValue: '',
+      },
+    ],
+    bodyHtml: `<div class="om-mf-page">
+  <p style="text-align: center; margin: 0 0 2px 0;">সীমিত</p>
+  <div class="om-st-right-wrap" style="margin-bottom: 4px;">
+    <div class="om-st-right-block">
+      <p style="margin: 0;">ক্রোড়পত্র ‘ক’</p>
+      <p style="margin: 0;">বি বা আ নং ১১৩-২০</p>
+      <p style="margin: 0;">তারিখঃ {{app_date_bn}}</p>
+    </div>
+  </div>
+  <p style="text-align: center; margin: 2px 0 8px 0;"><strong><u>বিবাহ/দ্বিতীয় বিবাহ/পুনঃবিবাহের অনুমতি প্রদানের আবেদন পত্র ঃ বিমানসেনা/এমওডিসি(এয়ার) (পুরুষ/মহিলা)</u></strong></p>
+
+  <div class="om-mf-sec">
+    <span class="om-mf-sec-num">১।</span>
+    <div class="om-mf-sec-body">
+      <p style="margin: 0 0 2px 0;">বিবাহে ইচ্ছুক বিমানসেনা/এমওডিসি(বিমান) এর বিবরণ ঃ</p>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ক।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">বিডি নং ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bd_no_bn}}</span><span class="om-295-lbl">পদবী ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{rank_bn}}</span><span class="om-295-lbl">নাম ঃ</span><span class="om-295-dot om-295-solid">{{name_bn}}</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">পেশা ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{trade_bn}}</span><span class="om-295-lbl">ঘাঁটি/ইউনিট ঃ</span><span class="om-295-dot om-295-solid">{{unit_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">খ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">জন্ম তারিখ ঃ</span><span class="om-295-dot om-295-solid">{{dob_bn}}</span><span class="om-295-lbl">বয়স ঃ</span><span class="om-295-dot om-295-solid om-295-dot-xs">{{age_years_bn}}</span><span class="om-295-lbl">বছর</span><span class="om-295-dot om-295-solid om-295-dot-xs">{{age_months_bn}}</span><span class="om-295-lbl">মাস</span><span class="om-295-dot om-295-solid om-295-dot-xs">{{age_days_bn}}</span><span class="om-295-lbl">দিন</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">গ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">চাকুরীতে ভর্তির তারিখ ঃ</span><span class="om-295-dot om-295-solid">{{join_date_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঘ।</span>
+    <div class="om-mf-sub-body">
+      <p style="margin: 0;">বি বা আদেশ মোতাবেক বিবাহের শর্তপূরণ/যোগ্যতা অর্জন করিয়াছে কিনা? &nbsp;&nbsp;{{eligible_yn | strike_yn}}</p>
+      <div class="om-295-row"><span class="om-295-lbl">তারিখ ঃ</span><span class="om-295-dot om-295-solid">{{eligibility_date_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঙ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">পূর্বে বিবাহ করিয়াছে কিনা? {{prev_married_yn | strike_yn}}</span><span class="om-295-dot om-295-solid om-295-dot-md">{{prev_married_text}}</span><span class="om-295-lbl">তারিখ ঃ</span><span class="om-295-dot om-295-solid">{{prev_married_date_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">চ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">হ্যাঁ হইলে পুনঃ বিবাহের কারণ</span><span class="om-295-dot om-295-solid">{{remarriage_reason_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ছ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">মোবাইল নং ঃ</span><span class="om-295-dot om-295-solid">{{mobile_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">জ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">জাতীয় পরিচয়পত্র/জন্ম সনদ নং ঃ</span><span class="om-295-dot om-295-solid">{{nid_birth_bn}}</span></div>
+    </div>
+  </div>
+
+  <div class="om-mf-sec" style="margin-top: 6px;">
+    <span class="om-mf-sec-num">২।</span>
+    <div class="om-mf-sec-body">
+      <div class="om-295-row"><span class="om-295-lbl">পুনঃবিবাহ/দ্বিতীয় বিবাহের ক্ষেত্রে পূর্ববর্তী বিবাহ/তালাক সংক্রান্ত তথ্যাবলী (যদি প্রযোজ্য হয়) ঃ</span><span class="om-295-dot om-295-solid">{{sec2_applicable_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ক।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">পূর্ববর্তী স্ত্রী/স্বামীর নাম, পেশা ও ঠিকানাঃ</span><span class="om-295-dot om-295-solid">{{prev_spouse_info_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">খ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">পূর্ববর্তী বিবাহের তারিখঃ</span><span class="om-295-dot om-295-solid">{{prev_marriage_dt_bn}}</span><span class="om-295-lbl">পিওআর নং</span><span class="om-295-dot om-295-solid om-295-dot-md">{{prev_marriage_por}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">গ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">বিবাহ রেজিস্ট্রেশন নং</span><span class="om-295-dot om-295-solid">{{marriage_reg_no}}</span><span class="om-295-lbl">তারিখ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{marriage_reg_dt}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঘ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">তালাকের তারিখ</span><span class="om-295-dot om-295-solid">{{divorce_dt_bn}}</span><span class="om-295-lbl">পিওআর নং</span><span class="om-295-dot om-295-solid om-295-dot-md">{{divorce_por}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঙ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">পূর্ববর্তী স্ত্রী/স্বামীর সন্তানাদির বিবরণ ঃ</span><span class="om-295-dot om-295-solid">{{prev_children_note_bn}}</span></div>
+      <div class="om-295-row" style="padding-left: 24px;"><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span><span class="om-295-lbl">নাম ঃ</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span><span class="om-295-lbl">বয়স ঃ</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span><span class="om-295-lbl">পেশা ঃ</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">(১)</span><span class="om-295-dot om-295-solid">{{prev_child1_name}}</span><span class="om-295-dot om-295-solid om-295-dot-md">{{prev_child1_age}}</span><span class="om-295-dot om-295-solid">{{prev_child1_occ}}</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">(২)</span><span class="om-295-dot om-295-solid">{{prev_child2_name}}</span><span class="om-295-dot om-295-solid om-295-dot-md">{{prev_child2_age}}</span><span class="om-295-dot om-295-solid">{{prev_child2_occ}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">চ।</span>
+    <div class="om-mf-sub-body">
+      <p style="margin: 0;">পূর্বের বিবাহ/স্ত্রীর সঙ্গে অমীমাংসিত কোন বিষয় (মামলা/খোরপোষ/দেনমোহর) থাকিলে উহার বিবরণঃ</p>
+      <div class="om-295-row"><span class="om-295-dot om-295-solid">{{unresolved_matter_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ছ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">জাতীয় পরিচয়পত্র/জন্ম সনদ নং</span><span class="om-295-dot om-295-solid">{{prev_spouse_nid_bn}}</span></div>
+    </div>
+  </div>
+
+  <div class="om-mf-sec" style="margin-top: 6px;">
+    <span class="om-mf-sec-num">৩।</span>
+    <div class="om-mf-sec-body">
+      <p style="margin: 0 0 2px 0;">যে পাত্র/ পাত্রীকে বিবাহ করিতে ইচ্ছুক তাহার বিবরণ ঃ</p>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ক।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">নাম ঃ</span><span class="om-295-dot om-295-solid">{{bride_name_bn}}</span><span class="om-295-lbl">ডাক নাম ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bride_nickname_bn}}</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">অবিবাহিত/তালাক প্রাপ্ত/তালাকপ্রাপ্তা/বিধবা/বিপত্নীক ঃ</span><span class="om-295-dot om-295-solid">{{bride_marital_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">খ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">জাতীয়তা ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bride_nationality_bn}}</span><span class="om-295-lbl">জাতীয় পরিচয়পত্র/জন্ম সনদ নং ঃ</span><span class="om-295-dot om-295-solid">{{bride_nid_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">গ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">ধর্ম ঃ</span><span class="om-295-dot om-295-solid">{{bride_religion_bn}}</span><span class="om-295-lbl">সম্প্রদায় ঃ</span><span class="om-295-dot om-295-solid">{{bride_sect_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঘ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">জন্ম তারিখ ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bride_dob_bn}}</span><span class="om-295-lbl">শিক্ষাগত যোগ্যতা ঃ</span><span class="om-295-dot om-295-solid">{{bride_edu_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঙ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">বর্তমান আবাসিক ঠিকানা ঃ</span><span class="om-295-dot om-295-solid">{{bride_present_addr_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">চ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">পেশা ঃ</span><span class="om-295-dot om-295-solid">{{bride_occ_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ছ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">স্থায়ী ঠিকানা ঃ</span><span class="om-295-dot om-295-solid">{{bride_perm_addr_bn}}</span></div>
+    </div>
+  </div>
+
+  <div class="om-mf-footer">
+    <p style="margin: 0; text-align: center;">ক- ১</p>
+    <p style="margin: 0; text-align: center;">সীমিত</p>
+  </div>
+</div>
+<hr class="om-page-break">
+<div class="om-mf-page">
+  <p style="text-align: center; margin: 0 0 8px 0;">সীমিত</p>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">জ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">পিতার নাম ঃ</span><span class="om-295-dot om-295-solid">{{bride_father_name_bn}}</span><span class="om-295-lbl">পেশাঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bride_father_occ_bn}}</span><span class="om-295-lbl">জাতীয়তাঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bride_father_nat_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঝ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">মাতার নাম ঃ</span><span class="om-295-dot om-295-solid">{{bride_mother_name_bn}}</span><span class="om-295-lbl">পেশাঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bride_mother_occ_bn}}</span><span class="om-295-lbl">জাতীয়তা ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bride_mother_nat_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঞ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">পিতা/মাতার স্থায়ী ঠিকানা ঃ</span><span class="om-295-dot om-295-solid">{{bride_parents_addr_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ট।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">পারিবারিক আত্মীয়তা থাকিলে তাহার বর্ণনা ঃ</span><span class="om-295-dot om-295-solid">{{family_relation_bn}}</span></div>
+    </div>
+  </div>
+
+  <div class="om-mf-sec" style="margin-top: 10px;">
+    <span class="om-mf-sec-num">৪।</span>
+    <div class="om-mf-sec-body">
+      <div class="om-295-row"><span class="om-295-lbl">পাত্র/পাত্রী তালাক প্রাপ্ত/তালাকপ্রাপ্তা/বিধবা/বিপত্নীক হইলে পূর্বের স্ত্রী/স্বামীর বিবরণ ঃ</span><span class="om-295-dot om-295-solid">{{sec4_applicable_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ক।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">নাম ঃ</span><span class="om-295-dot om-295-solid">{{bprev_name_bn}}</span><span class="om-295-lbl">পেশা ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bprev_occ_bn}}</span><span class="om-295-lbl">বয়স ঃ</span><span class="om-295-dot om-295-solid om-295-dot-sm">{{bprev_age_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">খ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">জাতীয়তা ঃ</span><span class="om-295-dot om-295-solid">{{bprev_nat_bn}}</span><span class="om-295-lbl">ধর্ম ঃ</span><span class="om-295-dot om-295-solid">{{bprev_rel_bn}}</span><span class="om-295-lbl">সম্প্রদায় ঃ</span><span class="om-295-dot om-295-solid">{{bprev_sect_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">গ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">বর্তমান আবাসিক ঠিকানা ঃ</span><span class="om-295-dot om-295-solid">{{bprev_pres_addr_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঘ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">স্থায়ী ঠিকানা ঃ</span><span class="om-295-dot om-295-solid">{{bprev_perm_addr_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ঙ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">জাতীয় পরিচয়পত্র/জন্ম সনদ নং</span><span class="om-295-dot om-295-solid">{{bprev_nid_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">চ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">পিতার নাম ঃ</span><span class="om-295-dot om-295-solid">{{bprev_father_bn}}</span><span class="om-295-lbl">পেশা ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bprev_father_occ_bn}}</span><span class="om-295-lbl">জাতীয়তা ঃ</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bprev_father_nat_bn}}</span></div>
+    </div>
+  </div>
+  <div class="om-mf-sub">
+    <span class="om-mf-sub-lbl">ছ।</span>
+    <div class="om-mf-sub-body">
+      <div class="om-295-row"><span class="om-295-lbl">সন্তানাদির সংখ্যা ও বিবরণ ঃ</span><span class="om-295-dot om-295-solid">{{bprev_children_note_bn}}</span></div>
+      <div class="om-295-row" style="padding-left: 24px;"><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span><span class="om-295-lbl">নাম ঃ</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span><span class="om-295-lbl">বয়স ঃ</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span><span class="om-295-lbl">পেশা ঃ</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">(১)</span><span class="om-295-dot om-295-solid">{{bprev_c1_name}}</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bprev_c1_age}}</span><span class="om-295-dot om-295-solid">{{bprev_c1_occ}}</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">(২)</span><span class="om-295-dot om-295-solid">{{bprev_c2_name}}</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bprev_c2_age}}</span><span class="om-295-dot om-295-solid">{{bprev_c2_occ}}</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">(৩)</span><span class="om-295-dot om-295-solid">{{bprev_c3_name}}</span><span class="om-295-dot om-295-solid om-295-dot-md">{{bprev_c3_age}}</span><span class="om-295-dot om-295-solid">{{bprev_c3_occ}}</span></div>
+    </div>
+  </div>
+
+  <div class="om-mf-sec" style="margin-top: 8px;">
+    <span class="om-mf-sec-num">৫।</span>
+    <div class="om-mf-sec-body">
+      <div class="om-295-row"><span class="om-295-lbl">বিবাহের সম্ভাব্য তারিখ ঃ</span><span class="om-295-dot om-295-solid">{{expected_marriage_date_bn}}</span></div>
+    </div>
+  </div>
+
+  <p style="text-align: center; margin: 12px 0 8px 0;"><strong>শপথ নামা</strong></p>
+  <p style="margin: 0 0 10px 0; text-indent: 36px; text-align: justify; line-height: 1.28;">আমি শপথ করিতেছি যে, উপরোক্ত তথ্যাবলী আমার জানামতে সত্য এবং সঠিক। আমি এই ব্যাপারে সম্পূর্ণ অবগত আছি যে, বিবাহ সংক্রান্ত কোন মিথ্যা তথ্য পরিবেশন করিয়া থাকিলে আমি আইননতঃ যে কোন শাস্তি মেনে নিতে বাধ্য থাকিব।</p>
+
+  <div class="om-mf-sig-wrap">
+    <div class="om-mf-sig">
+      <div class="om-295-row"><span class="om-295-lbl">স্বাক্ষর</span><span class="om-295-dot">&nbsp;</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">নাম ঃ</span><span class="om-295-dot">{{name_bn}}</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">পদবীঃ</span><span class="om-295-dot">{{rank_bn}}</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">বিডি/</span><span class="om-295-dot">{{bd_no_bn}}</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">পেশাঃ</span><span class="om-295-dot">{{trade_bn}}</span></div>
+      <div class="om-295-row"><span class="om-295-lbl">তারিখঃ</span><span class="om-295-dot">{{app_date_bn | bn_mon_yr}}</span></div>
+    </div>
+  </div>
+
+  <div class="om-mf-sec" style="margin-top: 6px;">
+    <span class="om-mf-sec-num">৬।</span>
+    <div class="om-mf-sec-body">
+      <p style="margin: 0 0 2px 0;">ঘাঁটি/ইউনিট অধিনায়কের সিদ্ধান্ত ঃ</p>
+    </div>
+  </div>
+  <p style="margin: 8px 0 34px 28px;">{{co_decision | strike_co_decision}}</p>
+  <div class="om-295-row" style="padding-left: 28px;"><span class="om-295-lbl">তারিখ ঃ</span><span class="om-295-dot">&nbsp;</span><span class="om-295-dot om-295-dot-gap" style="border-bottom: none;">&nbsp;</span><span class="om-295-lbl">স্বাক্ষর</span><span class="om-295-dot">&nbsp;</span></div>
+
+  <hr style="border: none; border-top: 1px solid #000000; margin: 12px 0 6px 0;">
+  <p style="margin: 0;">দ্রষ্টব্য ঃ অনুমোদিত এক কপি ইউনিটে এবং অন্যটি বিমান বাহিনী রেকর্ড অফিসে ব্যক্তিগত নথিতে সংরক্ষিত হইবে।</p>
+
+  <div class="om-mf-footer">
+    <p style="margin: 0; text-align: center;">ক- ২</p>
+    <p style="margin: 0; text-align: center;">সীমিত</p>
+  </div>
+</div>`,
   },
 ];

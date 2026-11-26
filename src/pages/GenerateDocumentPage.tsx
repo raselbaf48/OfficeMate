@@ -32,6 +32,7 @@ import {
 import {
   computeAutoFields,
   formatBanglaDate,
+  formatBanglaMonthYear,
   formatDateByPattern,
   fromBanglaDigits,
   parseFlexibleDate,
@@ -94,6 +95,10 @@ const TEMPLATE_SUBTITLES: Record<string, string> = {
   'tpl-ration-cert': 'Ration Certificate · Monthly Ration & Strength Breakdown (Arial 12pt)',
   'tpl-auth-chit': 'Authorization Chit · Representative Ration Draw Authorization (Arial 12pt)',
   'tpl-ration-fuel': 'For Fuel · Residence No-Gas Facility Declaration (Arial 12pt)',
+  'tpl-baf-10097': 'BAF F-10097 · General Application – Airmen (Living Out)',
+  'tpl-living-out-bn': 'বহির্বাসের আবেদনপত্র · নিজ ব্যবস্থায় স্ব-পরিবারে অস্থায়ী বহির্বাস',
+  'tpl-baf-10097-marriage': 'BAF F-10097 · General Application – Airmen (Marriage)',
+  'tpl-marriage-form-bn': "ক্রোড়পত্র ‘ক’ · বিবাহের অনুমতি প্রদানের আবেদন পত্র (২ পাতা)",
 };
 
 function readStoredJsonMap(key: string): Record<string, string> {
@@ -248,6 +253,14 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         return 'achit_person';
       case 'tpl-ration-fuel':
         return 'rfuel_addr';
+      case 'tpl-baf-10097':
+        return 'g10097_person';
+      case 'tpl-living-out-bn':
+        return 'lo_person';
+      case 'tpl-baf-10097-marriage':
+        return 'gm97_person';
+      case 'tpl-marriage-form-bn':
+        return 'mf_airman';
       default:
         return 'applicant';
     }
@@ -286,7 +299,21 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
           defaults[f.key] = f.defaultValue || '';
         }
       } else if (savedTemplate[f.key] !== undefined && savedTemplate[f.key] !== '') {
-        defaults[f.key] = savedTemplate[f.key];
+        const isMonYrBn =
+          (activeTemplate.id === 'tpl-living-out-bn' ||
+            activeTemplate.id === 'tpl-baf-10097' ||
+            activeTemplate.id === 'tpl-baf-10097-marriage') &&
+          f.key === 'date_bn';
+        const storedVal =
+          activeTemplate.id === 'tpl-living-out-bn' && f.key === 'closing_para_bn'
+            ? savedTemplate[f.key].replace(/উল্লেখিত/g, 'উল্লিখিত')
+            : savedTemplate[f.key];
+        defaults[f.key] =
+          f.type === 'date' && f.key.endsWith('_bn')
+            ? isMonYrBn
+              ? formatBanglaMonthYear(storedVal)
+              : formatBanglaDate(storedVal)
+            : storedVal;
       } else if (f.type === 'signer' && f.signerRole && f.signerProperty) {
         const signer =
           signers.find((s) => s.role === f.signerRole && s.isDefault) ??
@@ -327,6 +354,34 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             );
             next.leave_to_bn = formatBanglaDate(endDate);
           }
+        }
+      }
+      if (
+        activeTemplate?.id === 'tpl-marriage-form-bn' &&
+        (key === 'dob_bn' || key === 'app_date_bn')
+      ) {
+        const dobDate = parseFlexibleDate(next.dob_bn ?? '');
+        const refDate = parseFlexibleDate(next.app_date_bn ?? '') ?? new Date();
+        if (dobDate && refDate >= dobDate) {
+          let years = refDate.getFullYear() - dobDate.getFullYear();
+          let months = refDate.getMonth() - dobDate.getMonth();
+          let days = refDate.getDate() - dobDate.getDate();
+          if (days < 0) {
+            const prevMonthDays = new Date(refDate.getFullYear(), refDate.getMonth(), 0).getDate();
+            days += prevMonthDays;
+            months -= 1;
+          }
+          if (months < 0) {
+            months += 12;
+            years -= 1;
+          }
+          const bnDigits = (n: number) =>
+            String(Math.max(0, n))
+              .padStart(2, '0')
+              .replace(/\d/g, (d) => ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'][Number(d)] ?? d);
+          next.age_years_bn = bnDigits(years);
+          next.age_months_bn = bnDigits(months);
+          next.age_days_bn = bnDigits(days);
         }
       }
       if (CLERK_KEYS.has(key)) {
@@ -795,6 +850,254 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
           },
         ];
 
+      case 'tpl-baf-10097':
+        return [
+          {
+            id: 'g10097_person',
+            title: 'Applicant Info',
+            keys: new Set(['bd_no_bn', 'rank_bn', 'name_bn', 'trade_bn']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name_bn
+                ? `${vals.rank_bn ? `${vals.rank_bn} ` : ''}${vals.name_bn}`
+                : 'BD/, Rank, Name & Trade',
+          },
+          {
+            id: 'g10097_unit',
+            title: 'Unit & Ref',
+            keys: new Set(['section_bn', 'base_unit_bn', 'date_bn', 'ref_bn']),
+            icon: 'building',
+            subtitle: (vals) =>
+              vals.base_unit_bn || vals.date_bn || 'Section, Base/Unit, Ref & Date',
+          },
+          {
+            id: 'g10097_case',
+            title: 'Case & Enclosure',
+            keys: new Set(['statement_case_bn', 'enclosure_bn']),
+            icon: 'file',
+            subtitle: countFilled,
+          },
+          {
+            id: 'g10097_remarks',
+            title: 'Remarks & Action',
+            keys: new Set([
+              'rem1_date',
+              'rem2_date',
+              'rem3_by',
+              'rem3_date',
+              'co_oc_choice',
+              'rem4_date',
+              'action_ref_app',
+              'action_por',
+              'action_letter_no',
+              'action_dated',
+              'action_date',
+            ]),
+            icon: 'badge',
+            subtitle: countFilled,
+          },
+        ];
+
+      case 'tpl-living-out-bn':
+        return [
+          {
+            id: 'lo_unit',
+            title: 'ইউনিট ও তারিখ',
+            keys: new Set(['unit_line1_bn', 'unit_line2_bn', 'phone_line_bn', 'date_bn', 'subject_bn']),
+            icon: 'building',
+            subtitle: (vals) => vals.unit_line1_bn || vals.date_bn || 'ইউনিট, ফোন ও তারিখ',
+          },
+          {
+            id: 'lo_person',
+            title: 'আবেদনকারী',
+            keys: new Set(['bd_no_bn', 'rank_bn', 'name_bn', 'trade_bn', 'join_date_bn', 'current_unit_bn']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name_bn
+                ? `${vals.rank_bn ? `${vals.rank_bn} ` : ''}${vals.name_bn}`
+                : 'বিডি, পদবী, নাম ও যোগদান',
+          },
+          {
+            id: 'lo_reasons',
+            title: 'কারণ ও ঠিকানা',
+            keys: new Set(['reason_k_bn', 'reason_kh_bn', 'living_address_bn']),
+            icon: 'file',
+            subtitle: countFilled,
+          },
+          {
+            id: 'lo_closing',
+            title: 'স্বাক্ষর ও প্রতি',
+            keys: new Set(['closing_para_bn', 'to_designation_bn', 'to_unit_bn']),
+            icon: 'badge',
+            subtitle: (vals) => vals.to_unit_bn || 'সমাপনী ও প্রতিঃ',
+          },
+        ];
+
+      case 'tpl-baf-10097-marriage':
+        return [
+          {
+            id: 'gm97_person',
+            title: 'Applicant Info',
+            keys: new Set(['bd_no_bn', 'rank_bn', 'name_bn', 'trade_bn']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name_bn
+                ? `${vals.rank_bn ? `${vals.rank_bn} ` : ''}${vals.name_bn}`
+                : 'BD/, Rank, Name & Trade',
+          },
+          {
+            id: 'gm97_unit',
+            title: 'Unit & Ref',
+            keys: new Set(['section_bn', 'base_unit_bn', 'date_bn', 'ref_bn']),
+            icon: 'building',
+            subtitle: (vals) =>
+              vals.base_unit_bn || vals.date_bn || 'Section, Base/Unit, Ref & Date',
+          },
+          {
+            id: 'gm97_case',
+            title: 'Case & Enclosure',
+            keys: new Set(['join_date_bn', 'eligibility_date_bn', 'closing_para_bn', 'enclosure_bn']),
+            icon: 'file',
+            subtitle: countFilled,
+          },
+          {
+            id: 'gm97_remarks',
+            title: 'Remarks & Action',
+            keys: new Set([
+              'rem1_date',
+              'rem2_date',
+              'rem3_by',
+              'rem3_date',
+              'co_oc_choice',
+              'rem4_date',
+              'action_ref_app',
+              'action_por',
+              'action_letter_no',
+              'action_dated',
+              'action_date',
+            ]),
+            icon: 'badge',
+            subtitle: countFilled,
+          },
+        ];
+
+      case 'tpl-marriage-form-bn':
+        return [
+          {
+            id: 'mf_airman',
+            title: 'বিমানসেনার বিবরণ (১)',
+            keys: new Set([
+              'app_date_bn',
+              'bd_no_bn',
+              'rank_bn',
+              'name_bn',
+              'trade_bn',
+              'unit_bn',
+              'dob_bn',
+              'age_years_bn',
+              'age_months_bn',
+              'age_days_bn',
+              'join_date_bn',
+              'eligible_yn',
+              'eligibility_date_bn',
+              'prev_married_yn',
+              'prev_married_text',
+              'prev_married_date_bn',
+              'remarriage_reason_bn',
+              'mobile_bn',
+              'nid_birth_bn',
+            ]),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name_bn
+                ? `${vals.rank_bn ? `${vals.rank_bn} ` : ''}${vals.name_bn}`
+                : 'বিডি, পদবী, নাম ও বয়স',
+          },
+          {
+            id: 'mf_bride',
+            title: 'পাত্র/পাত্রীর বিবরণ (৩)',
+            keys: new Set([
+              'bride_name_bn',
+              'bride_nickname_bn',
+              'bride_marital_bn',
+              'bride_nationality_bn',
+              'bride_nid_bn',
+              'bride_religion_bn',
+              'bride_sect_bn',
+              'bride_dob_bn',
+              'bride_edu_bn',
+              'bride_present_addr_bn',
+              'bride_occ_bn',
+              'bride_perm_addr_bn',
+              'bride_father_name_bn',
+              'bride_father_occ_bn',
+              'bride_father_nat_bn',
+              'bride_mother_name_bn',
+              'bride_mother_occ_bn',
+              'bride_mother_nat_bn',
+              'bride_parents_addr_bn',
+              'family_relation_bn',
+            ]),
+            icon: 'building',
+            subtitle: (vals) => vals.bride_name_bn || 'নাম, জন্ম তারিখ, ঠিকানা ও পিতামাতা',
+          },
+          {
+            id: 'mf_prev',
+            title: 'পূর্ববর্তী বিবাহ (২ ও ৪)',
+            keys: new Set([
+              'sec2_applicable_bn',
+              'prev_spouse_info_bn',
+              'prev_marriage_dt_bn',
+              'prev_marriage_por',
+              'marriage_reg_no',
+              'marriage_reg_dt',
+              'divorce_dt_bn',
+              'divorce_por',
+              'prev_children_note_bn',
+              'prev_child1_name',
+              'prev_child1_age',
+              'prev_child1_occ',
+              'prev_child2_name',
+              'prev_child2_age',
+              'prev_child2_occ',
+              'unresolved_matter_bn',
+              'prev_spouse_nid_bn',
+              'sec4_applicable_bn',
+              'bprev_name_bn',
+              'bprev_occ_bn',
+              'bprev_age_bn',
+              'bprev_nat_bn',
+              'bprev_rel_bn',
+              'bprev_sect_bn',
+              'bprev_pres_addr_bn',
+              'bprev_perm_addr_bn',
+              'bprev_nid_bn',
+              'bprev_father_bn',
+              'bprev_father_occ_bn',
+              'bprev_father_nat_bn',
+              'bprev_children_note_bn',
+              'bprev_c1_name',
+              'bprev_c1_age',
+              'bprev_c1_occ',
+              'bprev_c2_name',
+              'bprev_c2_age',
+              'bprev_c2_occ',
+              'bprev_c3_name',
+              'bprev_c3_age',
+              'bprev_c3_occ',
+            ]),
+            icon: 'file',
+            subtitle: countFilled,
+          },
+          {
+            id: 'mf_oath',
+            title: 'সম্ভাব্য তারিখ ও শপথ (৫-৬)',
+            keys: new Set(['expected_marriage_date_bn', 'co_decision']),
+            icon: 'badge',
+            subtitle: (vals) => vals.expected_marriage_date_bn || 'বিবাহের তারিখ ও অধিনায়কের সিদ্ধান্ত',
+          },
+        ];
+
       default:
         return [
           {
@@ -1029,13 +1332,28 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
           <DatePickerField
             value={value}
             onChange={(formatted, iso) => {
+              const isMonYrBn =
+                (activeTemplate?.id === 'tpl-living-out-bn' ||
+                  activeTemplate?.id === 'tpl-baf-10097') &&
+                field.key === 'date_bn';
               if (field.key.endsWith('_bn')) {
-                updateFieldValue(field.key, iso ? formatBanglaDate(iso) : '');
+                updateFieldValue(
+                  field.key,
+                  iso ? (isMonYrBn ? formatBanglaMonthYear(iso) : formatBanglaDate(iso)) : '',
+                );
               } else {
                 updateFieldValue(field.key, formatted);
               }
             }}
-            placeholder={field.key.endsWith('_bn') ? 'তারিখ নির্বাচন করুন' : settings.dateFormat}
+            placeholder={
+              (activeTemplate?.id === 'tpl-living-out-bn' ||
+                activeTemplate?.id === 'tpl-baf-10097') &&
+              field.key === 'date_bn'
+                ? 'মাস ও বছর (যেমন: নভে ২৬)'
+                : field.key.endsWith('_bn')
+                  ? 'তারিখ নির্বাচন করুন'
+                  : settings.dateFormat
+            }
             dateFormat={settings.dateFormat}
             ariaLabel={field.label}
           />

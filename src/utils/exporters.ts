@@ -5,7 +5,6 @@ import {
   Footer,
   Header,
   HeightRule,
-  LeaderType,
   LevelFormat,
   Packer,
   PageBreak,
@@ -69,6 +68,7 @@ interface InlineRunStyle {
   strike?: boolean;
   fontFamily: string;
   fontSizeHalfPt: number;
+  explicitFontSizeHalfPt?: number;
   color?: string;
 }
 
@@ -179,7 +179,10 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
   const cleanText = text.replace(/\u00A0/g, ' ');
   if (!cleanText) return [];
   const safeFallbackFont = style.fontFamily === 'SutonnyMJ' ? 'Arial' : style.fontFamily || 'Arial';
-  const englishHalfPt = style.fontFamily === 'SutonnyMJ' ? 24 : style.fontSizeHalfPt;
+  const englishHalfPt =
+    style.explicitFontSizeHalfPt ??
+    (style.fontFamily === 'SutonnyMJ' ? 24 : style.fontSizeHalfPt);
+  const bengaliHalfPt = style.explicitFontSizeHalfPt ?? 28;
   const runColor = style.color || '000000';
   const underlineSpec = style.underline
     ? { type: style.underlineType || UnderlineType.SINGLE }
@@ -227,7 +230,7 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
         underline: underlineSpec,
         strike: style.strike || undefined,
         font: { ascii: 'SutonnyMJ', hAnsi: 'SutonnyMJ', cs: 'SutonnyMJ' },
-        size: 28,
+        size: bengaliHalfPt,
         color: runColor,
       }),
     );
@@ -290,7 +293,9 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
   }
   const ptSizeMatch = /^(\d+(?:\.\d+)?)pt$/i.exec(el.style.fontSize.trim());
   if (ptSizeMatch) {
-    nextStyle.fontSizeHalfPt = Math.round(Number(ptSizeMatch[1]) * 2);
+    const explicitHalfPt = Math.round(Number(ptSizeMatch[1]) * 2);
+    nextStyle.fontSizeHalfPt = explicitHalfPt;
+    nextStyle.explicitFontSizeHalfPt = explicitHalfPt;
   }
   if (
     el.classList.contains('om-bn') ||
@@ -300,7 +305,9 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
     el.style.fontFamily.toLowerCase().includes('sutonnymj')
   ) {
     nextStyle.fontFamily = 'SutonnyMJ';
-    nextStyle.fontSizeHalfPt = 28;
+    if (!nextStyle.explicitFontSizeHalfPt) {
+      nextStyle.fontSizeHalfPt = 28;
+    }
   }
 
   if (el.classList.contains('om-baf295-lp')) {
@@ -431,6 +438,12 @@ function htmlToDocxChildren(
     rowEl: HTMLElement,
     usableTwips: number,
     activeStyle: InlineRunStyle,
+    opts?: {
+      prefixLabel?: string;
+      indentLeftTwips?: number;
+      hangingTwips?: number;
+      forceCompact?: boolean;
+    },
   ): Paragraph => {
     const rowChildren = Array.from(rowEl.children) as HTMLElement[];
     const ptSize = (activeStyle.fontSizeHalfPt || 20) / 2;
@@ -443,23 +456,28 @@ function htmlToDocxChildren(
           fixedTwips: number | null;
           flexWeight: number;
           isGap: boolean;
+          isSolid: boolean;
         };
 
-    const segments: Segment[] = rowChildren.map((child) => {
+    const segments: Segment[] = rowChildren.map((child, idx) => {
       const text = (child.textContent || '').replace(/\u00A0/g, ' ').trim();
       if (child.classList.contains('om-295-dot')) {
         const isGap = child.classList.contains('om-295-dot-gap');
+        const isSolid = child.classList.contains('om-295-solid');
         let fixedTwips: number | null = null;
         let flexWeight = 1;
-        if (child.classList.contains('om-295-dot-xs')) fixedTwips = 460;
-        else if (child.classList.contains('om-295-dot-sm')) fixedTwips = 680;
+        if (child.classList.contains('om-295-dot-xs')) fixedTwips = 520;
+        else if (child.classList.contains('om-295-dot-sm')) fixedTwips = 820;
         else if (child.classList.contains('om-295-dot-md')) flexWeight = 0.65;
         else if (isGap) flexWeight = 0.45;
-        return { kind: 'dot', text, fixedTwips, flexWeight, isGap };
+        return { kind: 'dot', text, fixedTwips, flexWeight, isGap, isSolid };
       }
-      const w = text
-        ? measureTextWidthTwips(text, activeStyle.fontFamily, ptSize, activeStyle.bold) + 45
+      const nextIsDot = idx + 1 < rowChildren.length && rowChildren[idx + 1].classList.contains('om-295-dot');
+      const paddedLbl = `${idx > 0 ? ' ' : ''}${text}${nextIsDot ? ' ' : ''}`;
+      const rawW = text
+        ? measureTextWidthTwips(paddedLbl, activeStyle.fontFamily, ptSize, activeStyle.bold)
         : 0;
+      const w = text ? Math.round(rawW * 1.06) + 75 : 0;
       return { kind: 'lbl', text, widthTwips: w };
     });
 
@@ -472,21 +490,37 @@ function htmlToDocxChildren(
       (sum, seg) => sum + (seg.kind === 'dot' && seg.fixedTwips === null ? seg.flexWeight : 0),
       0,
     );
-    const remainingFlex = Math.max(400, usableTwips - fixedUsedTwips);
+    const leftPadPx = parseFloat(rowEl.style.paddingLeft || rowEl.style.marginLeft || '0') || 0;
+    const leftIndentTwips = opts?.indentLeftTwips ?? (leftPadPx > 0 ? Math.round(leftPadPx * 15) : 0);
+    const effectiveUsableTwips = Math.max(800, usableTwips - leftIndentTwips);
+
+    const remainingFlex = Math.max(400, effectiveUsableTwips - fixedUsedTwips);
 
     const tabStops: Array<{
       type: (typeof TabStopType)[keyof typeof TabStopType];
       position: number;
-      leader?: (typeof LeaderType)[keyof typeof LeaderType];
     }> = [];
     const runs: TextRun[] = [];
-    let cursor = 0;
+    let cursor = leftIndentTwips;
+
+    if (opts?.prefixLabel) {
+      runs.push(...createScriptAwareTextRuns(opts.prefixLabel, activeStyle));
+      runs.push(
+        new TextRun({
+          text: '\t',
+          font: activeStyle.fontFamily,
+          size: activeStyle.fontSizeHalfPt,
+        }),
+      );
+    }
 
     segments.forEach((seg, idx) => {
       const isLast = idx === segments.length - 1;
       if (seg.kind === 'lbl') {
+        const nextIsDot = idx + 1 < segments.length && segments[idx + 1].kind === 'dot';
         const prefix = idx > 0 ? ' ' : '';
-        runs.push(...createScriptAwareTextRuns(`${prefix}${seg.text}`, activeStyle));
+        const suffix = nextIsDot ? ' ' : '';
+        runs.push(...createScriptAwareTextRuns(`${prefix}${seg.text}${suffix}`, activeStyle));
         cursor += seg.widthTwips;
         return;
       }
@@ -510,63 +544,106 @@ function htmlToDocxChildren(
         return;
       }
 
+      const lineUnderline = seg.isSolid ? UnderlineType.SINGLE : UnderlineType.DOTTED;
+
       if (!seg.text) {
         tabStops.push({
           type: isLast ? TabStopType.RIGHT : TabStopType.LEFT,
           position: slotEnd,
-          leader: LeaderType.DOT,
         });
         runs.push(
           new TextRun({
             text: '\t',
             font: activeStyle.fontFamily,
             size: activeStyle.fontSizeHalfPt,
+            underline: { type: lineUnderline },
             color: '000000',
           }),
         );
       } else {
-        const slotMid = Math.round(cursor + (slotEnd - cursor) / 2);
-        tabStops.push({
-          type: TabStopType.CENTER,
-          position: slotMid,
-          leader: LeaderType.DOT,
-        });
-        runs.push(
-          new TextRun({
-            text: '\t',
-            font: activeStyle.fontFamily,
-            size: activeStyle.fontSizeHalfPt,
-            color: '000000',
-          }),
+        const valTwips = measureTextWidthTwips(
+          seg.text,
+          activeStyle.fontFamily,
+          ptSize,
+          activeStyle.bold,
         );
-        runs.push(
-          ...createScriptAwareTextRuns(seg.text, {
-            ...activeStyle,
-            underline: true,
-            underlineType: UnderlineType.DOTTED,
-          }),
-        );
-        tabStops.push({
-          type: isLast ? TabStopType.RIGHT : TabStopType.LEFT,
-          position: slotEnd,
-          leader: LeaderType.DOT,
-        });
-        runs.push(
-          new TextRun({
-            text: '\t',
-            font: activeStyle.fontFamily,
-            size: activeStyle.fontSizeHalfPt,
-            color: '000000',
-          }),
-        );
+        const actualSlotW = Math.max(200, slotEnd - cursor);
+        if (valTwips + 180 <= actualSlotW) {
+          const slotMid = Math.round(cursor + actualSlotW / 2);
+          tabStops.push({
+            type: TabStopType.CENTER,
+            position: slotMid,
+          });
+          runs.push(
+            new TextRun({
+              text: '\t',
+              font: activeStyle.fontFamily,
+              size: activeStyle.fontSizeHalfPt,
+              underline: { type: lineUnderline },
+              color: '000000',
+            }),
+          );
+          runs.push(
+            ...createScriptAwareTextRuns(seg.text, {
+              ...activeStyle,
+              underline: true,
+              underlineType: lineUnderline,
+            }),
+          );
+          tabStops.push({
+            type: isLast ? TabStopType.RIGHT : TabStopType.LEFT,
+            position: slotEnd,
+          });
+          runs.push(
+            new TextRun({
+              text: '\t',
+              font: activeStyle.fontFamily,
+              size: activeStyle.fontSizeHalfPt,
+              underline: { type: lineUnderline },
+              color: '000000',
+            }),
+          );
+        } else {
+          runs.push(
+            ...createScriptAwareTextRuns(seg.text, {
+              ...activeStyle,
+              underline: true,
+              underlineType: lineUnderline,
+            }),
+          );
+          tabStops.push({
+            type: isLast ? TabStopType.RIGHT : TabStopType.LEFT,
+            position: slotEnd,
+          });
+          runs.push(
+            new TextRun({
+              text: '\t',
+              font: activeStyle.fontFamily,
+              size: activeStyle.fontSizeHalfPt,
+              underline: { type: lineUnderline },
+              color: '000000',
+            }),
+          );
+        }
       }
 
       cursor = slotEnd;
     });
 
+    const isCompact10096 = Boolean(rowEl.closest('.om-10096-page1, .om-mf-page')) || Boolean(opts?.forceCompact);
+    const rowTopPx = parseFloat(rowEl.style.marginTop || '0') || 0;
+    const rowBottomPx = parseFloat(rowEl.style.marginBottom || '0') || 0;
     return new Paragraph({
       tabStops,
-      spacing: { after: 30, line: lineSpacing },
+      indent:
+        leftIndentTwips > 0
+          ? { left: leftIndentTwips, hanging: opts?.hangingTwips }
+          : undefined,
+      spacing: {
+        before: rowTopPx > 0 ? Math.round(rowTopPx * 15) : undefined,
+        after: rowBottomPx > 0 ? Math.round(rowBottomPx * 15) : isCompact10096 ? 10 : 30,
+        line: isCompact10096 ? Math.min(lineSpacing, 250) : lineSpacing,
+      },
       children: runs.length > 0 ? runs : [new TextRun('')],
     });
   };
@@ -577,10 +654,13 @@ function htmlToDocxChildren(
     parentTwips = printableTwipsGlobal,
   ): Table => {
     const isLayoutTable = tableEl.classList.contains('om-layout-table');
-    const isBoxGrid10096 = tableEl.classList.contains('om-10096-box');
+    const isBoxGrid10097 = tableEl.classList.contains('om-10097-box');
+    const isBoxGrid10096 = tableEl.classList.contains('om-10096-box') || isBoxGrid10097;
+    const isStrictly10096 = Boolean(tableEl.closest('.om-10096-page1'));
+    const tableLineSpacing = isStrictly10096 ? Math.min(lineSpacing, 252) : lineSpacing;
     const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
-    const solidBorder = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
-    const heavySolidBorder = { style: BorderStyle.SINGLE, size: 12, color: '000000' };
+    const solidBorder = { style: BorderStyle.SINGLE, size: 4, color: '000000' };
+    const heavySolidBorder = { style: BorderStyle.SINGLE, size: 18, color: '000000' };
     const doubleBorder = { style: BorderStyle.DOUBLE, size: 6, color: '000000' };
 
     const rows: TableRow[] = [];
@@ -636,10 +716,15 @@ function htmlToDocxChildren(
                   : htmlCell.classList.contains('om-10096-bot')
                     ? heavySolidBorder
                     : solidBorder,
-                left: htmlCell.classList.contains('om-no-left') ? noBorder : solidBorder,
+                left: htmlCell.classList.contains('om-no-left')
+                  ? noBorder
+                  : htmlCell.classList.contains('om-10097-left')
+                    ? heavySolidBorder
+                    : solidBorder,
                 right: htmlCell.classList.contains('om-no-right')
                   ? noBorder
-                  : htmlCell.classList.contains('om-10096-split')
+                  : htmlCell.classList.contains('om-10096-split') ||
+                      htmlCell.classList.contains('om-10097-right')
                     ? heavySolidBorder
                     : solidBorder,
               }
@@ -647,8 +732,16 @@ function htmlToDocxChildren(
 
         const widthStyle = htmlCell.style.width;
         const pctMatch = /^(\d+(?:\.\d+)?)%$/.exec(widthStyle);
+        const totalColsInRow = cellEls.reduce(
+          (sum, c) => sum + Number((c as HTMLElement).getAttribute('colspan') || '1'),
+          0,
+        );
         const cellTwipsEst = Math.round(
-          parentTwips * ((pctMatch ? Number(pctMatch[1]) : 100 / cellEls.length) / 100),
+          parentTwips *
+            ((pctMatch
+              ? Number(pctMatch[1])
+              : (colSpanAttr / Math.max(1, totalColsInRow)) * 100) /
+              100),
         );
         const padLeftPx = parseFloat(htmlCell.style.paddingLeft || '0') || 0;
         const padRightPx = parseFloat(htmlCell.style.paddingRight || '0') || 0;
@@ -666,7 +759,9 @@ function htmlToDocxChildren(
         }
         const cellPtMatch = /^(\d+(?:\.\d+)?)pt$/i.exec(htmlCell.style.fontSize.trim());
         if (cellPtMatch) {
-          cellStyle.fontSizeHalfPt = Math.round(Number(cellPtMatch[1]) * 2);
+          const explicitHalfPt = Math.round(Number(cellPtMatch[1]) * 2);
+          cellStyle.fontSizeHalfPt = explicitHalfPt;
+          cellStyle.explicitFontSizeHalfPt = explicitHalfPt;
         }
 
         if (isVlineCell) {
@@ -841,7 +936,7 @@ function htmlToDocxChildren(
           }
         }
         const hasSigCell = Boolean(htmlCell.querySelector(':scope > .om-10096-sigcell'));
-        const isInside10096 = Boolean(htmlCell.closest('.om-10096-box'));
+        const isInside10096 = Boolean(htmlCell.closest('.om-10096-box, .om-10097-box'));
 
         const cellChildren: Array<Paragraph | Table> = [];
         if (blockChildren.length > 0) {
@@ -859,7 +954,9 @@ function htmlToDocxChildren(
               const pStyle: InlineRunStyle = { ...cellStyle, bold: isTh || cellStyle.bold };
               const pPtMatch = /^(\d+(?:\.\d+)?)pt$/i.exec(pHtml.style.fontSize.trim());
               if (pPtMatch) {
-                pStyle.fontSizeHalfPt = Math.round(Number(pPtMatch[1]) * 2);
+                const explicitHalfPt = Math.round(Number(pPtMatch[1]) * 2);
+                pStyle.fontSizeHalfPt = explicitHalfPt;
+                pStyle.explicitFontSizeHalfPt = explicitHalfPt;
               }
               const pRuns = collectTextRuns(pHtml, pStyle);
               const marginTopPx = parseFloat(pHtml.style.marginTop || '0') || 0;
@@ -869,6 +966,11 @@ function htmlToDocxChildren(
               const indentLeftTwips = pLeftPx > 0 ? Math.round(pLeftPx * 15) : undefined;
               const hangingTwips =
                 pTextIndentPx < 0 ? Math.round(Math.abs(pTextIndentPx) * 15) : undefined;
+              const nextChildEl = blockChildren[idx + 1] as HTMLElement | undefined;
+              const nextIsSigBottomTable =
+                hasSigCell && nextChildEl?.tagName.toLowerCase() === 'table';
+              const nextSigBottomHasBreak =
+                nextIsSigBottomTable && Boolean(nextChildEl?.querySelector('br'));
               cellChildren.push(
                 new Paragraph({
                   alignment: mapAlignment(
@@ -884,14 +986,22 @@ function htmlToDocxChildren(
                     after:
                       marginBottomPx > 0
                         ? Math.round(marginBottomPx * 15)
-                        : hasSigCell && blockChildren[idx + 1]?.tagName.toLowerCase() === 'table'
-                          ? 360
+                        : nextIsSigBottomTable
+                          ? isBoxGrid10097
+                            ? 1600
+                            : isStrictly10096
+                              ? nextSigBottomHasBreak
+                                ? 1390
+                                : 1720
+                              : 1220
                           : hasSigCell || (isLayoutTable && isInside10096)
                             ? 0
                             : isLayoutTable
                               ? 10
-                              : 40,
-                    line: lineSpacing,
+                              : isStrictly10096
+                                ? 15
+                                : 40,
+                    line: tableLineSpacing,
                   },
                   children: pRuns.length > 0 ? pRuns : [new TextRun('')],
                 }),
@@ -909,8 +1019,15 @@ function htmlToDocxChildren(
                 htmlCell.style.textAlign || (isLineCell || isBoxCell ? 'center' : undefined),
               ),
               spacing: {
-                after: hasSigCell || (isLayoutTable && isInside10096) ? 0 : isLayoutTable ? 10 : 40,
-                line: lineSpacing,
+                after:
+                  hasSigCell || (isLayoutTable && isInside10096)
+                    ? 0
+                    : isLayoutTable
+                      ? 10
+                      : isStrictly10096
+                        ? 15
+                        : 40,
+                line: tableLineSpacing,
               },
               children: cellRuns.length > 0 ? cellRuns : [new TextRun('')],
             }),
@@ -946,7 +1063,12 @@ function htmlToDocxChildren(
             ? isBoxCell
               ? { top: 45, bottom: 45, left: 60, right: 60 }
               : isGapCell || isInside10096
-                ? { top: 0, bottom: 0, left: 0, right: 0 }
+                ? {
+                    top: 0,
+                    bottom: 0,
+                    left: padLeftPx > 0 ? Math.round(padLeftPx * 15) : 0,
+                    right: padRightPx > 0 ? Math.round(padRightPx * 15) : 0,
+                  }
                 : {
                     top: isTopCell ? 20 : 70,
                     bottom: 25,
@@ -954,26 +1076,37 @@ function htmlToDocxChildren(
                     right: padRightPx > 0 ? Math.round(padRightPx * 15) : isLineCell ? 40 : 60,
                   }
             : hasSigCell
-              ? { top: 45, bottom: 10, left: 60, right: 60 }
-              : { top: 60, bottom: 60, left: 95, right: 95 },
+              ? { top: 15, bottom: 0, left: isStrictly10096 ? 45 : 60, right: isStrictly10096 ? 45 : 60 }
+              : isStrictly10096
+                ? { top: 35, bottom: 35, left: 55, right: 55 }
+                : { top: 60, bottom: 60, left: 95, right: 95 },
           children: cellChildren,
         });
       });
-      rows.push(new TableRow({ children: cells }));
+      const rowHasSigCell = cellEls.some((ce) => Boolean((ce as HTMLElement).querySelector(':scope > .om-10096-sigcell')));
+      rows.push(
+        new TableRow({
+          height: rowHasSigCell
+            ? { value: isBoxGrid10097 ? 2650 : 2460, rule: HeightRule.ATLEAST }
+            : undefined,
+          children: cells,
+        }),
+      );
     }
 
     return new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
-      borders: isLayoutTable
-        ? {
-            top: noBorder,
-            bottom: noBorder,
-            left: noBorder,
-            right: noBorder,
-            insideHorizontal: noBorder,
-            insideVertical: noBorder,
-          }
-        : undefined,
+      borders:
+        isLayoutTable || isBoxGrid10096
+          ? {
+              top: noBorder,
+              bottom: noBorder,
+              left: noBorder,
+              right: noBorder,
+              insideHorizontal: noBorder,
+              insideVertical: noBorder,
+            }
+          : undefined,
       rows: rows.length > 0 ? rows : [new TableRow({ children: [new TableCell({ children: [new Paragraph('')] })] })],
     });
   };
@@ -996,10 +1129,17 @@ function htmlToDocxChildren(
         blocks.push(new Paragraph({ children: [new PageBreak()] }));
         return;
       }
+      const isCutline = el.classList.contains('om-10096-cutline');
       blocks.push(
         new Paragraph({
-          border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: '000000' } },
-          spacing: { before: 80, after: 80 },
+          border: {
+            bottom: {
+              style: BorderStyle.SINGLE,
+              size: isCutline ? 18 : 8,
+              color: '000000',
+            },
+          },
+          spacing: isCutline ? { before: 100, after: 20, line: 100 } : { before: 80, after: 80 },
           children: [],
         }),
       );
@@ -1251,7 +1391,359 @@ function htmlToDocxChildren(
       return;
     }
 
-    if (el.classList.contains('om-st-item')) {
+    if (el.classList.contains('om-lo-top-header')) {
+      const janabEl = el.querySelector('.om-lo-janab') as HTMLElement | null;
+      const unitBlockEl = el.querySelector('.om-lo-unit-block') as HTMLElement | null;
+      const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+      const noCellBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+      const unitParas = unitBlockEl
+        ? (Array.from(unitBlockEl.children).filter((c) => {
+            const t = c.tagName.toLowerCase();
+            return t === 'p' || t === 'div';
+          }) as HTMLElement[])
+        : [];
+      const baseFontPt = template.pageSettings.fontSize || 14;
+      const maxLineTwips = unitParas.reduce((maxW, pEl) => {
+        const hasBold = Boolean(pEl.querySelector('strong, b'));
+        for (const line of splitElementLines(pEl)) {
+          maxW = Math.max(maxW, measureTextWidthTwips(line, fontFamily, baseFontPt, hasBold));
+        }
+        return maxW;
+      }, 0);
+      const rightWidthTwips = Math.min(
+        Math.round(printableTwipsGlobal * 0.48),
+        Math.max(1800, maxLineTwips + 60),
+      );
+      const leftWidthTwips = Math.max(1200, printableTwipsGlobal - rightWidthTwips);
+
+      const janabRuns = janabEl ? collectTextRuns(janabEl, activeStyle) : [];
+      const unitDocxParas = unitParas.map((pEl) => {
+        const pRuns = collectTextRuns(pEl, activeStyle);
+        const marginTopPx = parseFloat(pEl.style.marginTop || '0') || 0;
+        return new Paragraph({
+          alignment: AlignmentType.LEFT,
+          spacing: {
+            before: marginTopPx > 0 ? Math.round(marginTopPx * 15) : 0,
+            after: 0,
+            line: lineSpacing,
+          },
+          children: pRuns.length > 0 ? pRuns : [new TextRun('')],
+        });
+      });
+
+      blocks.push(
+        new Table({
+          width: { size: printableTwipsGlobal, type: WidthType.DXA },
+          borders: {
+            top: noBorder,
+            bottom: noBorder,
+            left: noBorder,
+            right: noBorder,
+            insideHorizontal: noBorder,
+            insideVertical: noBorder,
+          },
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  width: { size: leftWidthTwips, type: WidthType.DXA },
+                  verticalAlign: VerticalAlign.BOTTOM,
+                  borders: noCellBorders,
+                  margins: { top: 0, bottom: 0, left: 0, right: 0 },
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.LEFT,
+                      spacing: { after: 0, line: lineSpacing },
+                      children: janabRuns.length > 0 ? janabRuns : [new TextRun('')],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  width: { size: rightWidthTwips, type: WidthType.DXA },
+                  verticalAlign: VerticalAlign.TOP,
+                  borders: noCellBorders,
+                  margins: { top: 0, bottom: 0, left: 0, right: 0 },
+                  children: unitDocxParas.length > 0 ? unitDocxParas : [new Paragraph('')],
+                }),
+              ],
+            }),
+          ],
+        }),
+      );
+      return;
+    }
+
+    if (el.classList.contains('om-lo-heading')) {
+      const row1El = el.querySelector('.om-lo-heading-row1');
+      const row2El = el.querySelector('.om-lo-heading-row2');
+      const row1HasSplit = Boolean(row1El && row1El.children.length >= 2);
+      const row1Left = row1HasSplit
+        ? (row1El?.children[0]?.textContent || '').replace(/\u00A0/g, ' ').trim()
+        : (row1El?.textContent || '').replace(/\u00A0/g, ' ').trim();
+      const row1Right = row1HasSplit
+        ? (row1El?.children[1]?.textContent || '').replace(/\u00A0/g, ' ').trim()
+        : '';
+      const row2Left = (row2El?.children[0]?.textContent || '').replace(/\u00A0/g, ' ').trim();
+      const row2Right = (row2El?.children[1]?.textContent || '').replace(/\u00A0/g, ' ').trim();
+      const headingStyle: InlineRunStyle = {
+        ...activeStyle,
+        bold: true,
+        underline: true,
+      };
+      const measuredRow1Twips =
+        measureTextWidthTwips(`${row1Left}${row1Right ? ` ${row1Right}` : ''}`, 'SutonnyMJ', 14, true) +
+        (row1Right ? 180 : 0);
+      const measuredRow2MinTwips =
+        measureTextWidthTwips(`${row2Left} ${row2Right}`, 'SutonnyMJ', 14, true) + 260;
+      const rightEdgeTwips = Math.min(
+        printableTwipsGlobal,
+        Math.max(4200, measuredRow1Twips, measuredRow2MinTwips),
+      );
+      blocks.push(
+        new Paragraph({
+          tabStops: row1Right
+            ? [{ type: TabStopType.RIGHT, position: rightEdgeTwips }]
+            : undefined,
+          spacing: { before: 140, after: 20, line: lineSpacing },
+          children: row1Right
+            ? [
+                ...createScriptAwareTextRuns(row1Left, headingStyle),
+                new TextRun({
+                  text: '\t',
+                  bold: true,
+                  underline: { type: UnderlineType.SINGLE },
+                  font: 'SutonnyMJ',
+                  size: 28,
+                  color: '000000',
+                }),
+                ...createScriptAwareTextRuns(row1Right, headingStyle),
+              ]
+            : createScriptAwareTextRuns(row1Left, headingStyle),
+        }),
+      );
+      blocks.push(
+        new Paragraph({
+          tabStops: [{ type: TabStopType.RIGHT, position: rightEdgeTwips }],
+          spacing: { after: 180, line: lineSpacing },
+          children: [
+            ...createScriptAwareTextRuns(row2Left, headingStyle),
+            new TextRun({
+              text: '\t',
+              bold: true,
+              underline: { type: UnderlineType.SINGLE },
+              font: 'SutonnyMJ',
+              size: 28,
+              color: '000000',
+            }),
+            ...createScriptAwareTextRuns(row2Right, headingStyle),
+          ],
+        }),
+      );
+      return;
+    }
+
+    if (el.classList.contains('om-lo-sign-section')) {
+      const addrCol = el.querySelector('.om-lo-addr-col') as HTMLElement | null;
+      const signCol = el.querySelector('.om-lo-sign-col') as HTMLElement | null;
+      const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+      const noCellBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+
+      const signParas = signCol
+        ? (Array.from(signCol.children).filter((c) => {
+            const t = c.tagName.toLowerCase();
+            return t === 'p' || t === 'div';
+          }) as HTMLElement[])
+        : [];
+      const addrParas = addrCol
+        ? (Array.from(addrCol.children).filter((c) => {
+            const t = c.tagName.toLowerCase();
+            return t === 'p' || t === 'div';
+          }) as HTMLElement[])
+        : [];
+
+      const baseFontPt = template.pageSettings.fontSize || 14;
+      const maxSignLineTwips = signParas.reduce((maxW, pEl) => {
+        const hasBold = Boolean(pEl.querySelector('strong, b'));
+        for (const line of splitElementLines(pEl)) {
+          maxW = Math.max(maxW, measureTextWidthTwips(line, fontFamily, baseFontPt, hasBold));
+        }
+        return maxW;
+      }, 0);
+
+      const signColTwips = Math.min(
+        Math.round(printableTwipsGlobal * 0.56),
+        Math.max(2100, maxSignLineTwips + 80),
+      );
+      const addrColTwips = Math.max(2000, printableTwipsGlobal - signColTwips);
+
+      const toDocxParas = (paras: HTMLElement[]) =>
+        paras.map((pEl) => {
+          const pRuns = collectTextRuns(pEl, activeStyle);
+          const marginTopPx = parseFloat(pEl.style.marginTop || '0') || 0;
+          return new Paragraph({
+            alignment: AlignmentType.LEFT,
+            spacing: {
+              before: marginTopPx > 0 ? Math.round(marginTopPx * 15) : 0,
+              after: 0,
+              line: lineSpacing,
+            },
+            children: pRuns.length > 0 ? pRuns : [new TextRun('')],
+          });
+        });
+
+      const addrDocxParas = toDocxParas(addrParas);
+      const signDocxParas = toDocxParas(signParas);
+
+      blocks.push(
+        new Table({
+          width: { size: printableTwipsGlobal, type: WidthType.DXA },
+          borders: {
+            top: noBorder,
+            bottom: noBorder,
+            left: noBorder,
+            right: noBorder,
+            insideHorizontal: noBorder,
+            insideVertical: noBorder,
+          },
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  width: { size: addrColTwips, type: WidthType.DXA },
+                  verticalAlign: VerticalAlign.TOP,
+                  borders: noCellBorders,
+                  margins: { top: 330, bottom: 0, left: 0, right: 120 },
+                  children: addrDocxParas.length > 0 ? addrDocxParas : [new Paragraph('')],
+                }),
+                new TableCell({
+                  width: { size: signColTwips, type: WidthType.DXA },
+                  verticalAlign: VerticalAlign.TOP,
+                  borders: noCellBorders,
+                  margins: { top: 330, bottom: 0, left: 0, right: 0 },
+                  children: signDocxParas.length > 0 ? signDocxParas : [new Paragraph('')],
+                }),
+              ],
+            }),
+          ],
+        }),
+      );
+      return;
+    }
+
+    if (el.classList.contains('om-mf-sig-wrap')) {
+      const sigEl = (el.querySelector('.om-mf-sig') || el) as HTMLElement;
+      const sigRows = Array.from(sigEl.children).filter((c) =>
+        (c as HTMLElement).classList.contains('om-295-row'),
+      ) as HTMLElement[];
+      const sigColTwips = 3600;
+      const spacerTwips = Math.max(0, printableTwipsGlobal - sigColTwips);
+      const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+      const noCellBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+      const sigParas = sigRows.map((r) =>
+        buildDocxDottedRowParagraph(r, sigColTwips, activeStyle, {
+          indentLeftTwips: 0,
+          forceCompact: true,
+        }),
+      );
+      blocks.push(
+        new Table({
+          width: { size: printableTwipsGlobal, type: WidthType.DXA },
+          borders: {
+            top: noBorder,
+            bottom: noBorder,
+            left: noBorder,
+            right: noBorder,
+            insideHorizontal: noBorder,
+            insideVertical: noBorder,
+          },
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  width: { size: spacerTwips, type: WidthType.DXA },
+                  borders: noCellBorders,
+                  margins: { top: 0, bottom: 0, left: 0, right: 0 },
+                  children: [new Paragraph('')],
+                }),
+                new TableCell({
+                  width: { size: sigColTwips, type: WidthType.DXA },
+                  borders: noCellBorders,
+                  margins: { top: 40, bottom: 0, left: 0, right: 0 },
+                  children: sigParas.length > 0 ? sigParas : [new Paragraph('')],
+                }),
+              ],
+            }),
+          ],
+        }),
+      );
+      return;
+    }
+
+    if (el.classList.contains('om-mf-sec') || el.classList.contains('om-mf-sub')) {
+      const isSub = el.classList.contains('om-mf-sub');
+      const lblEl = el.querySelector(isSub ? '.om-mf-sub-lbl' : '.om-mf-sec-num') as HTMLElement | null;
+      const bodyEl = el.querySelector(isSub ? '.om-mf-sub-body' : '.om-mf-sec-body') as HTMLElement | null;
+      const lblText = (lblEl?.textContent || '').trim();
+      const leftTwips = isSub ? 780 : 420;
+      const hangingTwips = isSub ? 360 : 420;
+      const bodyKids = bodyEl ? (Array.from(bodyEl.children) as HTMLElement[]) : [];
+      if (bodyKids.length > 0) {
+        bodyKids.forEach((kid, idx) => {
+          const isFirst = idx === 0;
+          if (kid.classList.contains('om-295-row')) {
+            blocks.push(
+              buildDocxDottedRowParagraph(kid, printableTwipsGlobal, activeStyle, {
+                prefixLabel: isFirst ? lblText : undefined,
+                indentLeftTwips: leftTwips,
+                hangingTwips: isFirst ? hangingTwips : undefined,
+                forceCompact: true,
+              }),
+            );
+          } else {
+            const kRuns = collectTextRuns(kid, activeStyle);
+            const kTop = parseFloat(kid.style.marginTop || '0') || 0;
+            const kBot = parseFloat(kid.style.marginBottom || '0') || 0;
+            blocks.push(
+              new Paragraph({
+                indent: { left: leftTwips, hanging: isFirst ? hangingTwips : undefined },
+                spacing: {
+                  before: kTop > 0 ? Math.round(kTop * 15) : isSub ? 0 : 40,
+                  after: kBot > 0 ? Math.round(kBot * 15) : 15,
+                  line: Math.min(lineSpacing, 250),
+                },
+                children: isFirst && lblText
+                  ? [
+                      ...createScriptAwareTextRuns(lblText, activeStyle),
+                      new TextRun({ text: '\t', font: 'Arial', size: activeStyle.fontSizeHalfPt }),
+                      ...kRuns,
+                    ]
+                  : kRuns.length > 0
+                    ? kRuns
+                    : [new TextRun('')],
+              }),
+            );
+          }
+        });
+      } else if (bodyEl) {
+        const bRuns = collectTextRuns(bodyEl, activeStyle);
+        blocks.push(
+          new Paragraph({
+            indent: { left: leftTwips, hanging: hangingTwips },
+            spacing: { before: isSub ? 0 : 40, after: 20, line: Math.min(lineSpacing, 250) },
+            children: [
+              ...createScriptAwareTextRuns(lblText, activeStyle),
+              new TextRun({ text: '\t', font: 'Arial', size: activeStyle.fontSizeHalfPt }),
+              ...bRuns,
+            ],
+          }),
+        );
+      }
+      return;
+    }
+
+    if (el.classList.contains('om-st-item') || el.classList.contains('om-lo-subitem')) {
+      const isSubItem = el.classList.contains('om-lo-subitem');
+      const isCompactMf = Boolean(el.closest('.om-mf-page'));
       const numEl = el.querySelector('.om-st-num');
       const textEl = el.querySelector('.om-st-text');
       const numRuns = numEl ? collectTextRuns(numEl, activeStyle) : [];
@@ -1259,8 +1751,11 @@ function htmlToDocxChildren(
       blocks.push(
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
-          indent: { left: 520, hanging: 520 },
-          spacing: { after: 140, line: lineSpacing },
+          indent: { left: isSubItem ? 1040 : 520, hanging: 520 },
+          spacing: {
+            after: isCompactMf ? 30 : 140,
+            line: isCompactMf ? Math.min(lineSpacing, 250) : lineSpacing,
+          },
           children: [
             ...numRuns,
             new TextRun({
@@ -1280,7 +1775,7 @@ function htmlToDocxChildren(
       return;
     }
 
-    if (tag === 'div' && el.querySelector('p, ol, ul, table, h1, h2, h3, h4, hr, .om-295-row')) {
+    if (tag === 'div' && el.querySelector('p, ol, ul, table, h1, h2, h3, h4, hr, .om-295-row, .om-mf-sec, .om-mf-sub, .om-mf-sig-wrap')) {
       for (const child of Array.from(el.children)) {
         processBlockElement(child as HTMLElement, activeStyle);
       }
@@ -1288,16 +1783,28 @@ function htmlToDocxChildren(
     }
 
     const isHeading = tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4';
-    const runs = collectTextRuns(el, {
+    const paraStyle: InlineRunStyle = {
       ...activeStyle,
       bold: isHeading || undefined,
-    });
+    };
+    const elPtMatch = /^(\d+(?:\.\d+)?)pt$/i.exec(el.style.fontSize.trim());
+    if (elPtMatch) {
+      const explicitHalfPt = Math.round(Number(elPtMatch[1]) * 2);
+      paraStyle.fontSizeHalfPt = explicitHalfPt;
+      paraStyle.explicitFontSizeHalfPt = explicitHalfPt;
+    }
+    const runs = collectTextRuns(el, paraStyle);
 
     const marginLeftPx = parseFloat(el.style.marginLeft || el.style.paddingLeft || '0') || 0;
     const marginTopPx = parseFloat(el.style.marginTop || '0') || 0;
+    const marginBottomPx = parseFloat(el.style.marginBottom || '0') || 0;
     const textIndentPx = parseFloat(el.style.textIndent || '0') || 0;
     const indentLeftTwips = marginLeftPx > 0 ? Math.round(marginLeftPx * 15) : undefined;
     const hangingTwips = textIndentPx < 0 ? Math.round(Math.abs(textIndentPx) * 15) : undefined;
+
+    const isInside10096Page = Boolean(el.closest('.om-10096-page1, .om-mf-page'));
+    const hasExplicitZeroBottom = el.style.marginBottom === '0px';
+    const resolvedParaLine = isInside10096Page ? Math.min(lineSpacing, 250) : lineSpacing;
 
     blocks.push(
       new Paragraph({
@@ -1307,8 +1814,17 @@ function htmlToDocxChildren(
           : undefined,
         spacing: {
           before: marginTopPx > 0 ? Math.round(marginTopPx * 15) : undefined,
-          after: runs.length > 0 ? 60 : 20,
-          line: runs.length > 0 ? lineSpacing : 240,
+          after:
+            marginBottomPx > 0
+              ? Math.round(marginBottomPx * 15)
+              : isInside10096Page && hasExplicitZeroBottom
+                ? 0
+                : runs.length > 0
+                  ? isInside10096Page
+                    ? 30
+                    : 60
+                  : 20,
+          line: runs.length > 0 ? resolvedParaLine : 240,
         },
         children: runs.length > 0 ? runs : [new TextRun('')],
       }),

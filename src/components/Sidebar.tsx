@@ -12,6 +12,9 @@ import {
   FileSignature,
   FileText,
   Flame,
+  FolderOpen,
+  Heart,
+  Home,
   Lock,
   PackageCheck,
   PanelLeftClose,
@@ -34,6 +37,41 @@ interface SidebarProps {
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }
+
+const LIVING_OUT_SUB_ITEMS = [
+  {
+    id: 'tpl-baf-10097',
+    label: 'BAF F-10097',
+    icon: ClipboardCheck,
+  },
+  {
+    id: 'tpl-living-out-bn',
+    label: 'Living Out Application',
+    icon: FileSignature,
+  },
+];
+
+const LIVING_OUT_IDS = new Set(LIVING_OUT_SUB_ITEMS.map((item) => item.id));
+
+const MARRIAGE_SUB_ITEMS = [
+  {
+    id: 'tpl-baf-10097-marriage',
+    label: 'BAF F-10097 (Marriage)',
+    icon: ClipboardCheck,
+  },
+  {
+    id: 'tpl-marriage-form-bn',
+    label: "Marriage Form (ক্রোড়পত্র 'ক')",
+    icon: FileSignature,
+  },
+];
+
+const MARRIAGE_IDS = new Set(MARRIAGE_SUB_ITEMS.map((item) => item.id));
+
+const GENERAL_APP_IDS = new Set([
+  ...LIVING_OUT_SUB_ITEMS.map((item) => item.id),
+  ...MARRIAGE_SUB_ITEMS.map((item) => item.id),
+]);
 
 const LEAVE_SUB_ITEMS = [
   {
@@ -93,6 +131,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen,
   onCloseMobile,
 }) => {
+  const isLivingOutChildActive =
+    activeRoute === 'generate' && Boolean(activeTemplateId && LIVING_OUT_IDS.has(activeTemplateId));
+  const isMarriageChildActive =
+    activeRoute === 'generate' && Boolean(activeTemplateId && MARRIAGE_IDS.has(activeTemplateId));
+  const isGeneralAppChildActive = isLivingOutChildActive || isMarriageChildActive;
+  const [generalAppOpen, setGeneralAppOpen] = useState<boolean>(true);
+  const [livingOutOpen, setLivingOutOpen] = useState<boolean>(true);
+  const [marriageOpen, setMarriageOpen] = useState<boolean>(true);
+
   const isLeaveChildActive =
     activeRoute === 'generate' && Boolean(activeTemplateId && LEAVE_SUB_IDS.has(activeTemplateId));
   const [leaveOpen, setLeaveOpen] = useState<boolean>(true);
@@ -100,6 +147,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isRationChildActive =
     activeRoute === 'generate' && Boolean(activeTemplateId && RATION_SUB_IDS.has(activeTemplateId));
   const [rationOpen, setRationOpen] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (isGeneralAppChildActive) {
+      setGeneralAppOpen(true);
+      if (isLivingOutChildActive) setLivingOutOpen(true);
+      if (isMarriageChildActive) setMarriageOpen(true);
+    }
+  }, [isGeneralAppChildActive, isLivingOutChildActive, isMarriageChildActive]);
 
   useEffect(() => {
     if (isLeaveChildActive) {
@@ -238,6 +293,161 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           );
         })}
+
+        {/* Expandable General Application -> Living Out Group */}
+        <div className="pt-0.5 space-y-1">
+          <button
+            type="button"
+            onClick={() => {
+              if (isCollapsed) {
+                onToggleCollapse();
+                setGeneralAppOpen(true);
+                setLivingOutOpen(true);
+              } else {
+                setGeneralAppOpen((prev) => !prev);
+              }
+            }}
+            aria-expanded={generalAppOpen}
+            title="General Application"
+            className={`w-full flex items-center rounded-lg text-[13px] font-medium transition-colors ${
+              isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2.5'
+            } ${
+              isGeneralAppChildActive
+                ? 'bg-emerald-900/70 text-emerald-300 border border-emerald-700/60 font-semibold'
+                : 'text-emerald-100/85 hover:bg-emerald-900/45 hover:text-white border border-transparent hover:border-emerald-800/50'
+            }`}
+          >
+            <span className={`flex items-center ${isCollapsed ? '' : 'gap-2.5 min-w-0'}`}>
+              <FolderOpen
+                className={`w-4 h-4 shrink-0 ${
+                  isGeneralAppChildActive ? 'text-emerald-400' : 'text-emerald-400/75'
+                }`}
+              />
+              {!isCollapsed ? <span className="truncate">General Application</span> : null}
+            </span>
+            {!isCollapsed ? (
+              generalAppOpen ? (
+                <ChevronDown className="w-4 h-4 shrink-0 text-emerald-300/80" />
+              ) : (
+                <ChevronRight className="w-4 h-4 shrink-0 text-emerald-300/80" />
+              )
+            ) : null}
+          </button>
+
+          {!isCollapsed && generalAppOpen ? (
+            <div className="ml-3.5 pl-2.5 border-l border-emerald-800/70 space-y-1">
+              <button
+                type="button"
+                onClick={() => setLivingOutOpen((prev) => !prev)}
+                aria-expanded={livingOutOpen}
+                title="Living Out"
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[12.5px] font-medium transition-colors ${
+                  isLivingOutChildActive
+                    ? 'bg-emerald-900/55 text-emerald-200 border border-emerald-700/50 font-semibold'
+                    : 'text-emerald-100/80 hover:bg-emerald-900/45 hover:text-white border border-transparent hover:border-emerald-800/50'
+                }`}
+              >
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <Home
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      isLivingOutChildActive ? 'text-emerald-400' : 'text-emerald-400/75'
+                    }`}
+                  />
+                  <span className="truncate">Living Out</span>
+                </span>
+                {livingOutOpen ? (
+                  <ChevronDown className="w-3.5 h-3.5 shrink-0 text-emerald-300/80" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-emerald-300/80" />
+                )}
+              </button>
+
+              {livingOutOpen ? (
+                <div className="ml-3 pl-2.5 border-l border-emerald-800/60 space-y-1">
+                  {LIVING_OUT_SUB_ITEMS.map((sub) => {
+                    const SubIcon = sub.icon;
+                    const isSubActive = activeRoute === 'generate' && activeTemplateId === sub.id;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => handleSelectDoc(sub.id)}
+                        title={sub.label}
+                        className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium transition-colors ${
+                          isSubActive
+                            ? 'bg-emerald-500 text-slate-950 shadow-sm font-semibold'
+                            : 'text-emerald-100/80 hover:bg-emerald-900/45 hover:text-white border border-transparent hover:border-emerald-800/50'
+                        }`}
+                      >
+                        <SubIcon
+                          className={`w-3.5 h-3.5 shrink-0 ${
+                            isSubActive ? 'text-slate-950' : 'text-emerald-400/75'
+                          }`}
+                        />
+                        <span className="truncate">{sub.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => setMarriageOpen((prev) => !prev)}
+                aria-expanded={marriageOpen}
+                title="Marriage"
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[12.5px] font-medium transition-colors ${
+                  isMarriageChildActive
+                    ? 'bg-emerald-900/55 text-emerald-200 border border-emerald-700/50 font-semibold'
+                    : 'text-emerald-100/80 hover:bg-emerald-900/45 hover:text-white border border-transparent hover:border-emerald-800/50'
+                }`}
+              >
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <Heart
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      isMarriageChildActive ? 'text-emerald-400' : 'text-emerald-400/75'
+                    }`}
+                  />
+                  <span className="truncate">Marriage</span>
+                </span>
+                {marriageOpen ? (
+                  <ChevronDown className="w-3.5 h-3.5 shrink-0 text-emerald-300/80" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-emerald-300/80" />
+                )}
+              </button>
+
+              {marriageOpen ? (
+                <div className="ml-3 pl-2.5 border-l border-emerald-800/60 space-y-1">
+                  {MARRIAGE_SUB_ITEMS.map((sub) => {
+                    const SubIcon = sub.icon;
+                    const isSubActive = activeRoute === 'generate' && activeTemplateId === sub.id;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => handleSelectDoc(sub.id)}
+                        title={sub.label}
+                        className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium transition-colors ${
+                          isSubActive
+                            ? 'bg-emerald-500 text-slate-950 shadow-sm font-semibold'
+                            : 'text-emerald-100/80 hover:bg-emerald-900/45 hover:text-white border border-transparent hover:border-emerald-800/50'
+                        }`}
+                      >
+                        <SubIcon
+                          className={`w-3.5 h-3.5 shrink-0 ${
+                            isSubActive ? 'text-slate-950' : 'text-emerald-400/75'
+                          }`}
+                        />
+                        <span className="truncate">{sub.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
 
         {/* Expandable Leave Group with 3 Sub-Options */}
         <div className="pt-0.5 space-y-1">

@@ -210,6 +210,7 @@
 }
 
 .a4-paper .om-295-row {
+  box-sizing: border-box;
   display: flex;
   align-items: baseline;
   width: 100%;
@@ -231,6 +232,10 @@
   padding: 0 3px 1px 3px;
   line-height: 1.1;
   white-space: nowrap;
+}
+
+.a4-paper .om-295-dot.om-295-solid {
+  border-bottom: 1px solid #000000;
 }
 
 .a4-paper .om-295-dot-xs {
@@ -354,44 +359,235 @@
 }
 
 .a4-paper table.om-10096-box td.om-10096-top {
-  border-top: 2px solid #000000 !important;
+  border-top: 2.5px solid #000000 !important;
 }
 
 .a4-paper table.om-10096-box td.om-10096-bot {
-  border-bottom: 2px solid #000000 !important;
+  border-bottom: 2.5px solid #000000 !important;
 }
 
 .a4-paper table.om-10096-box td.om-10096-split {
-  border-right: 2px solid #000000 !important;
+  border-right: 2.5px solid #000000 !important;
 }
 
 .a4-paper table.om-10096-box table.om-layout-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 0 !important;
+  margin: 0;
 }
 
 .a4-paper table.om-10096-box table.om-layout-table td {
   border: none !important;
   padding: 0 !important;
   vertical-align: bottom !important;
-  line-height: 1.15;
+  line-height: 1.05;
+}
+
+.a4-paper table.om-10096-box table.om-layout-table td.om-sig-pr {
+  padding-right: 30px !important;
 }
 
 .a4-paper .om-10096-sigcell {
   display: flex;
   flex-direction: column;
-  min-height: 76px;
+  min-height: 150px;
   margin: 0;
   padding: 0;
 }
 
 .a4-paper .om-10096-sigcell > p {
   margin: 0;
+  line-height: 1.08;
 }
 
-.a4-paper .om-10096-sigcell > :last-child {
+.a4-paper table.om-10096-box .om-10096-sigcell > .om-10096-sigbot {
   margin-top: auto !important;
+  margin-bottom: 0 !important;
+}
+
+.a4-paper .om-10096-heading,
+.a4-paper .om-10096-heading .om-bn {
+  font-size: 20pt;
+  line-height: 1.25;
+}
+
+.a4-paper .om-10096-page1 .om-10096-sigcell {
+  min-height: 175px;
+}
+
+.a4-paper .om-10096-page1 {
+  display: flex;
+  flex-direction: column;
+  min-height: 330mm;
+}
+
+.a4-paper .om-10096-bottom {
+  margin-top: 12px;
+  padding-top: 0;
+}
+
+.a4-paper hr.om-10096-cutline {
+  border: none;
+  border-top: 2.5px solid #000000;
+  margin: 0 0 2px 0;
+  height: 0;
+}
+
+.a4-paper table.om-10097-box {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.a4-paper table.om-10097-box td,
+.a4-paper table.om-10097-box th {
+  border: 1px solid #000000;
+  padding: 2px 5px;
+  vertical-align: top;
+}
+
+.a4-paper table.om-10097-box td.om-10096-top {
+  border-top: 2px solid #000000 !important;
+}
+
+.a4-paper table.om-10097-box td.om-10096-bot {
+  border-bottom: 2px solid #000000 !important;
+}
+
+.a4-paper table.om-10097-box td.om-no-top {
+  border-top: none !important;
+}
+
+.a4-paper table.om-10097-box td.om-no-bottom {
+  border-bottom: none !important;
+}
+
+.a4-paper table.om-10097-box td.om-10097-left {
+  border-left: 2px solid #000000 !important;
+}
+
+.a4-paper table.om-10097-box td.om-10097-right {
+  border-right: 2px solid #000000 !important;
+}
+
+.a4-paper table.om-10097-box table.om-layout-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.a4-paper table.om-10097-box table.om-layout-table td {
+  border: none !important;
+  padding: 0 !important;
+  vertical-align: bottom !important;
+  line-height: 1.1;
+}
+
+.a4-paper table.om-10097-box .om-10096-sigcell {
+  min-height: 185px;
+}
+
+.a4-paper table.om-10097-box .om-10096-sigcell > .om-10096-sigbot {
+  margin-top: auto !important;
+  margin-bottom: 0 !important;
+}
+
+.a4-paper .om-lo-subitem {
+  display: flex;
+  align-items: flex-start;
+  margin: 0 0 0.65em 38px;
+}
+
+.a4-paper .om-lo-subitem .om-st-num {
+  width: 30px;
+  flex-shrink: 0;
+}
+
+.a4-paper .om-lo-subitem .om-st-text {
+  flex: 1 1 auto;
+  text-align: justify;
+}
+
+.a4-paper .om-lo-heading {
+  display: inline-flex;
+  flex-direction: column;
+  width: max-content;
+  max-width: 100%;
+  font-weight: 700;
+  margin: 10px 0 18px 0;
+}
+
+.a4-paper .om-lo-heading-row1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  border-bottom: 1.25px solid #000000;
+  padding-bottom: 1px;
+  margin-bottom: 2px;
+}
+
+.a4-paper .om-lo-heading-row2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  width: 100%;
+  border-bottom: 1.25px solid #000000;
+  padding-bottom: 1px;
+}
+
+.a4-paper .om-lo-heading-row1 > span:last-child,
+.a4-paper .om-lo-heading-row2 > span:last-child {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.a4-paper .om-lo-sign-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  width: 100%;
+  margin: 22px 0 0 0;
+}
+
+.a4-paper .om-lo-addr-col {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+.a4-paper .om-lo-sign-col {
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: 145px;
+  text-align: left;
+}
+
+.a4-paper .om-lo-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  margin: 0 0 12px 0;
+}
+
+.a4-paper .om-lo-janab {
+  text-align: left;
+  line-height: 1.25;
+}
+
+.a4-paper .om-lo-unit-block {
+  width: max-content;
+  max-width: 50%;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.a4-paper .om-lo-unit-block p {
+  margin: 0;
 }
 
 .a4-paper .om-sig-align-right {
@@ -502,6 +698,63 @@
 
 .a4-paper .om-st-right-block p {
   margin-bottom: 0;
+}
+
+.a4-paper .om-mf-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 274mm;
+  line-height: 1.22;
+}
+
+.a4-paper .om-mf-sec {
+  display: flex;
+  align-items: baseline;
+  margin: 4px 0 2px 0;
+}
+
+.a4-paper .om-mf-sec-num {
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.a4-paper .om-mf-sec-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.a4-paper .om-mf-sub {
+  display: flex;
+  align-items: flex-start;
+  margin: 1px 0;
+  padding-left: 28px;
+}
+
+.a4-paper .om-mf-sub-lbl {
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.a4-paper .om-mf-sub-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.a4-paper .om-mf-sig-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin: 10px 0 6px 0;
+}
+
+.a4-paper .om-mf-sig {
+  width: 245px;
+}
+
+.a4-paper .om-mf-footer {
+  margin-top: auto;
+  padding-top: 8px;
+  text-align: center;
+  line-height: 1.22;
 }
 
 .a4-paper ol {

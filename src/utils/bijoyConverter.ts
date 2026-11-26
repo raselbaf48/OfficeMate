@@ -36,11 +36,17 @@ const UNICODE_TO_BIJOY_CONJUNCTS: Record<string, string> = {
   'ম্ফ্র': '¤¢ª',
   'ষ্ক্র': '®‹ª',
   'ষ্ট্র': 'óª',
+  'স্ট্র': '÷ª',
+  'স্ট্য': '÷¨',
+  'স্ট্ব': '÷¡',
   'স্ত্র': '¯¿',
+  'স্ত্র্য': '¯¿¨',
   'স্ত্ব': '¯Í¡',
   'স্ত্য': '¯Í¨',
   'স্প্র': '¯úª',
+  'স্প্ল': '¯ú¬',
   'স্ক্র': '¯‹ª',
+  'স্ক্ল': '¯‹¬',
 
   // Two-consonant conjuncts
   'ক্ক': '°',
@@ -154,7 +160,7 @@ const UNICODE_TO_BIJOY_CONJUNCTS: Record<string, string> = {
   'ল্ফ': 'î',
   'ল্ব': 'j¡',
   'ল্ম': 'j¥',
-  'ল্ল': 'jø',
+  'ল্ল': 'j¬',
   'শ্চ': 'ð',
   'শ্ছ': 'ñ',
   'শ্ন': 'kœ',
@@ -405,10 +411,24 @@ export function unicodeToBijoy(input: string): string {
         }
       }
 
-      // Check trailing jophola `্` + `য` right after matched conjunct (e.g., conjunct + ্য)
-      if (text[i] === '্' && text[i + 1] === 'য') {
-        baseCluster += '¨';
-        i += 2;
+      // Check trailing jophola/rophola/bophola/lophola right after matched conjunct (e.g., conjunct + ্য/্র/্ব)
+      while (text[i] === '্' && isBengaliConsonant(text[i + 1])) {
+        const nextC = text[i + 1];
+        if (nextC === 'য') {
+          baseCluster += '¨';
+          i += 2;
+        } else if (nextC === 'র') {
+          baseCluster += 'ª';
+          i += 2;
+        } else if (nextC === 'ব') {
+          baseCluster += '¡';
+          i += 2;
+        } else if (nextC === 'ল') {
+          baseCluster += '¬';
+          i += 2;
+        } else {
+          break;
+        }
       }
 
       // Special SutonnyMJ ligatures for `রু`, `রূ`, `হু`, `গু`, `শু`, `ভু`
@@ -425,6 +445,11 @@ export function unicodeToBijoy(input: string): string {
       }
       if (kar === 'ু' && matchedConjunct === 'হ' && !hasReph && !baseCluster.includes('¨')) {
         out += '\u00FB';
+        i += 1;
+        continue;
+      }
+      if (kar === 'ু' && matchedConjunct === 'গ' && !baseCluster.includes('¨')) {
+        out += hasReph ? '\u00B8©' : '\u00B8';
         i += 1;
         continue;
       }
@@ -446,7 +471,7 @@ export function unicodeToBijoy(input: string): string {
         i += 1;
       } else if (kar && TRAILING_KARS[kar] !== undefined) {
         const post =
-          kar === 'ু' && (matchedConjunct === 'ভ' || matchedConjunct === 'গ' || matchedConjunct === 'শ')
+          kar === 'ু' && (matchedConjunct === 'ভ' || matchedConjunct === 'শ')
             ? 'z'
             : TRAILING_KARS[kar];
         out += baseCluster + (hasReph ? '©' : '') + post;
