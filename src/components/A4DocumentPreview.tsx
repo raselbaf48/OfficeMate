@@ -35,7 +35,7 @@ export const A4DocumentPreview: React.FC<A4DocumentPreviewProps> = ({
 
   return (
     <div
-      className={`flex flex-col items-center gap-6 ${className}`}
+      className={`w-fit mx-auto flex flex-col items-center gap-6 ${className}`}
       style={{
         transform: zoom !== 1 ? `scale(${zoom})` : undefined,
         transformOrigin: 'top center',
@@ -44,7 +44,7 @@ export const A4DocumentPreview: React.FC<A4DocumentPreviewProps> = ({
       {pages.map((pageHtml, index) => (
         <div
           key={index}
-          className={`a4-paper ${isLegal ? 'om-page-legal' : ''} relative border border-slate-300 shadow-sm`}
+          className={`a4-paper ${isLegal ? 'om-page-legal' : ''} shrink-0 relative border border-slate-300 shadow-sm`}
           style={{
             width: isLegal ? '215.9mm' : '210mm',
             minHeight: isLegal ? '355.6mm' : '297mm',

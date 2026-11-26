@@ -457,7 +457,7 @@ export default function App() {
         </header>
 
         {/* Main Content Viewport */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-7 max-w-[1440px] w-full mx-auto">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-7 max-w-[1440px] w-full mx-auto">
           {route === 'dashboard' ? (
             <DashboardPage
               templates={templates}

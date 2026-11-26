@@ -10,8 +10,6 @@ import {
   FileText,
   RotateCcw,
   User,
-  ZoomIn,
-  ZoomOut,
 } from 'lucide-react';
 import { A4DocumentPreview } from '../components/A4DocumentPreview';
 import { ConfirmModal } from '../components/CommonModals';
@@ -227,7 +225,6 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   const isBanglaTemplate = activeTemplate?.pageSettings.fontFamily === 'SutonnyMJ';
 
   const [rawValues, setRawValues] = useState<Record<string, string>>({});
-  const [zoom, setZoom] = useState(0.9);
   const [formExpanded, setFormExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState<InputSectionKey>('applicant');
   const [showErrors, setShowErrors] = useState(false);
@@ -1515,57 +1512,12 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
           </div>
 
           {/* Bottom Full Document Live Preview */}
-          <div className="bg-[#080E1B] border border-slate-800 rounded-xl overflow-hidden flex flex-col">
-            <div className="bg-[#0C1526] px-4 py-2.5 border-b border-slate-800 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 text-xs">
-                <span className="font-semibold text-white">
-                  {activeTemplate.pageSettings.size === 'Legal'
-                    ? 'Full Legal Document Preview'
-                    : 'Full A4 Document Preview'}
-                </span>
-                {rendered.unfilledKeys.length > 0 ? (
-                  <span className="text-slate-400 tabular-nums">
-                    {rendered.unfilledKeys.length} blank field(s) shown as solid lines
-                  </span>
-                ) : (
-                  <span className="text-emerald-400 font-medium">All fields filled</span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.1).toFixed(2))))}
-                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
-                  title="Zoom out"
-                >
-                  <ZoomOut className="w-4 h-4" />
-                </button>
-                <span className="text-xs font-mono text-slate-300 w-11 text-center tabular-nums">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setZoom((z) => Math.min(1.2, Number((z + 0.1).toFixed(2))))}
-                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
-                  title="Zoom in"
-                >
-                  <ZoomIn className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 overflow-x-auto flex justify-center">
-              <div
-                style={{
-                  width: `${(activeTemplate.pageSettings.size === 'Legal' ? 215.9 : 210) * zoom}mm`,
-                  minHeight: `${(activeTemplate.pageSettings.size === 'Legal' ? 355.6 : 297) * zoom}mm`,
-                }}
-              >
+          <div className="bg-[#080E1B] border border-slate-800 rounded-xl overflow-hidden">
+            <div className="w-full overflow-x-auto p-3 sm:p-6">
+              <div className="w-max min-w-full flex flex-col items-center">
                 <A4DocumentPreview
                   renderedHtml={rendered.html}
                   pageSettings={activeTemplate.pageSettings}
-                  zoom={zoom}
                 />
               </div>
             </div>
@@ -1578,7 +1530,6 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         <A4DocumentPreview
           renderedHtml={renderedClean.html}
           pageSettings={activeTemplate.pageSettings}
-          zoom={1}
         />
       </div>
 
