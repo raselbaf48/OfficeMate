@@ -1,13 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CalendarCheck,
   Car,
+  ChevronDown,
+  ChevronRight,
   ClipboardCheck,
   ClipboardList,
   FileBadge,
   FileCheck2,
+  FileSignature,
   FileText,
+  Flame,
   Lock,
+  PackageCheck,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -31,6 +36,26 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
+const RATION_SUB_ITEMS = [
+  {
+    id: 'tpl-ration-cert',
+    label: 'Ration Certificate',
+    icon: FileCheck2,
+  },
+  {
+    id: 'tpl-auth-chit',
+    label: 'Authorization Chit',
+    icon: FileSignature,
+  },
+  {
+    id: 'tpl-ration-fuel',
+    label: 'For Fuel',
+    icon: Flame,
+  },
+];
+
+const RATION_SUB_IDS = new Set(RATION_SUB_ITEMS.map((item) => item.id));
+
 export const Sidebar: React.FC<SidebarProps> = ({
   activeRoute,
   activeTemplateId,
@@ -45,6 +70,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen,
   onCloseMobile,
 }) => {
+  const isRationChildActive =
+    activeRoute === 'generate' && Boolean(activeTemplateId && RATION_SUB_IDS.has(activeTemplateId));
+  const [rationOpen, setRationOpen] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (isRationChildActive) {
+      setRationOpen(true);
+    }
+  }, [isRationChildActive]);
+
   const handleSelect = (route: NavRoute) => {
     onNavigate(route);
     onCloseMobile();
@@ -186,6 +221,75 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           );
         })}
+
+        {/* Expandable Ration Group with 3 Sub-Options */}
+        <div className="pt-0.5 space-y-1">
+          <button
+            type="button"
+            onClick={() => {
+              if (isCollapsed) {
+                onToggleCollapse();
+                setRationOpen(true);
+              } else {
+                setRationOpen((prev) => !prev);
+              }
+            }}
+            aria-expanded={rationOpen}
+            title="Ration"
+            className={`w-full flex items-center rounded-lg text-[13px] font-medium transition-colors ${
+              isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2.5'
+            } ${
+              isRationChildActive
+                ? 'bg-emerald-900/70 text-emerald-300 border border-emerald-700/60 font-semibold'
+                : 'text-emerald-100/85 hover:bg-emerald-900/45 hover:text-white border border-transparent hover:border-emerald-800/50'
+            }`}
+          >
+            <span className={`flex items-center ${isCollapsed ? '' : 'gap-2.5 min-w-0'}`}>
+              <PackageCheck
+                className={`w-4 h-4 shrink-0 ${
+                  isRationChildActive ? 'text-emerald-400' : 'text-emerald-400/75'
+                }`}
+              />
+              {!isCollapsed ? <span className="truncate">Ration</span> : null}
+            </span>
+            {!isCollapsed ? (
+              rationOpen ? (
+                <ChevronDown className="w-4 h-4 shrink-0 text-emerald-300/80" />
+              ) : (
+                <ChevronRight className="w-4 h-4 shrink-0 text-emerald-300/80" />
+              )
+            ) : null}
+          </button>
+
+          {!isCollapsed && rationOpen ? (
+            <div className="ml-3.5 pl-2.5 border-l border-emerald-800/70 space-y-1">
+              {RATION_SUB_ITEMS.map((sub) => {
+                const SubIcon = sub.icon;
+                const isSubActive = activeRoute === 'generate' && activeTemplateId === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => handleSelectDoc(sub.id)}
+                    title={sub.label}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12.5px] font-medium transition-colors ${
+                      isSubActive
+                        ? 'bg-emerald-500 text-slate-950 shadow-sm font-semibold'
+                        : 'text-emerald-100/80 hover:bg-emerald-900/45 hover:text-white border border-transparent hover:border-emerald-800/50'
+                    }`}
+                  >
+                    <SubIcon
+                      className={`w-3.5 h-3.5 shrink-0 ${
+                        isSubActive ? 'text-slate-950' : 'text-emerald-400/75'
+                      }`}
+                    />
+                    <span className="truncate">{sub.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
       </nav>
 
       {/* FIXED BOTTOM: Clerk Info & Settings */}

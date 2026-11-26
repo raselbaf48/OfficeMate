@@ -127,6 +127,26 @@
   padding: 6px 6px 2px 6px;
 }
 
+.a4-paper table.om-layout-table td.om-box-cell {
+  border: 1px solid #000000 !important;
+  text-align: center;
+  vertical-align: middle;
+  padding: 2px 6px !important;
+}
+
+.a4-paper table.om-layout-table td.om-gap-cell {
+  border: none !important;
+  padding: 0 !important;
+}
+
+.a4-paper table.om-layout-table td.om-strength-lbl {
+  border: none !important;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  padding: 2px 4px 2px 0 !important;
+}
+
 .a4-paper .om-blank-slot {
   display: inline-block;
   min-width: 85px;

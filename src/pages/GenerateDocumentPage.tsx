@@ -93,6 +93,9 @@ const TEMPLATE_SUBTITLES: Record<string, string> = {
   'tpl-td-cert-bn': 'প্রত্যয়ন পত্র · অস্থায়ী কর্তব্য (Temporary Duty Certificate)',
   'tpl-vehicle-pass-bn': 'গাড়ীর পাশের জন্য আবেদন পত্র · BAF Base ZHR (SutonnyMJ)',
   'tpl-ration-card': 'Pre-Payment Service Ration Form · Family Particulars & BRO/POR',
+  'tpl-ration-cert': 'Ration Certificate · Monthly Ration & Strength Breakdown (Arial 12pt)',
+  'tpl-auth-chit': 'Authorization Chit · Representative Ration Draw Authorization (Arial 12pt)',
+  'tpl-ration-fuel': 'For Fuel · Residence No-Gas Facility Declaration (Arial 12pt)',
 };
 
 function readStoredJsonMap(key: string): Record<string, string> {
@@ -213,6 +216,12 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         return 'vp_applicant';
       case 'tpl-ration-card':
         return 'rc_applicant';
+      case 'tpl-ration-cert':
+        return 'rcert_person';
+      case 'tpl-auth-chit':
+        return 'achit_person';
+      case 'tpl-ration-fuel':
+        return 'rfuel_addr';
       default:
         return 'applicant';
     }
@@ -638,6 +647,108 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             keys: new Set(['bro_ser_no', 'bro_date', 'por_ser_no', 'por_date', 'present_address', 'adjt_date', 'approve_date']),
             icon: 'badge',
             subtitle: (vals) => vals.por_ser_no || countFilled(vals, activeTemplate.fields),
+          },
+        ];
+
+      case 'tpl-ration-cert':
+        return [
+          {
+            id: 'rcert_person',
+            title: 'Airman Info',
+            keys: new Set(['bd_no', 'rank', 'name', 'trade', 'section']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name ? `${vals.rank ? `${vals.rank} ` : ''}${vals.name}` : 'BD/No, Rank & Name',
+          },
+          {
+            id: 'rcert_ration',
+            title: 'Ration & Month',
+            keys: new Set(['ration_for', 'month_label']),
+            icon: 'calendar',
+            subtitle: (vals) =>
+              `${vals.ration_for || 'Family'} · ${vals.month_label || 'Month'}`,
+          },
+          {
+            id: 'rcert_strength',
+            title: 'Strength & Batman',
+            keys: new Set(['cnt_self', 'cnt_wife', 'cnt_o12', 'cnt_u12', 'cnt_u03', 'batman_cnt']),
+            icon: 'range',
+            subtitle: (vals) => `Wife: ${vals.cnt_wife || '—'} · Batman: ${vals.batman_cnt || '—'}`,
+          },
+          {
+            id: 'rcert_sign',
+            title: 'Signature & Mobile',
+            keys: new Set(['signer_type', 'signer_mobile']),
+            icon: 'badge',
+            subtitle: (vals) => `${vals.signer_type || 'Self'} · ${vals.signer_mobile || 'Mobile'}`,
+          },
+        ];
+
+      case 'tpl-auth-chit':
+        return [
+          {
+            id: 'achit_person',
+            title: 'Applicant Info',
+            keys: new Set(['bd_no', 'rank', 'name']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name ? `${vals.rank ? `${vals.rank} ` : ''}${vals.name}` : 'BD/No, Rank & Name',
+          },
+          {
+            id: 'achit_unit',
+            title: 'Trade & Unit',
+            keys: new Set(['trade', 'unit']),
+            icon: 'building',
+            subtitle: (vals) => vals.unit || 'Trade & Unit',
+          },
+          {
+            id: 'achit_bearer',
+            title: 'Authorized Person',
+            keys: new Set(['authorized_person']),
+            icon: 'file',
+            subtitle: (vals) => vals.authorized_person || 'Blank Line / Representative',
+          },
+          {
+            id: 'achit_ration',
+            title: 'Ration & Month',
+            keys: new Set(['ration_for', 'month_label']),
+            icon: 'calendar',
+            subtitle: (vals) =>
+              `${vals.ration_for || 'Myself & Family'} · ${vals.month_label || 'Month'}`,
+          },
+        ];
+
+      case 'tpl-ration-fuel':
+        return [
+          {
+            id: 'rfuel_stmt',
+            title: 'Declaration',
+            keys: new Set(['fuel_statement']),
+            icon: 'file',
+            subtitle: countFilled,
+          },
+          {
+            id: 'rfuel_addr',
+            title: 'Address',
+            keys: new Set(['address_full']),
+            icon: 'building',
+            subtitle: (vals) =>
+              (vals.address_full || '').split('\n')[0] || 'Residence Address',
+          },
+          {
+            id: 'rfuel_person',
+            title: 'Applicant Info',
+            keys: new Set(['name', 'rank', 'bd_no']),
+            icon: 'user',
+            subtitle: (vals) =>
+              vals.name ? `${vals.rank ? `${vals.rank} ` : ''}${vals.name}` : 'Name, Rank & BD/No',
+          },
+          {
+            id: 'rfuel_unit',
+            title: 'Trade & Unit',
+            keys: new Set(['trade', 'unit']),
+            icon: 'badge',
+            subtitle: (vals) => vals.unit || 'Trade & Unit',
           },
         ];
 

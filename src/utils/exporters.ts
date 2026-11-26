@@ -62,6 +62,7 @@ interface InlineRunStyle {
   bold?: boolean;
   italics?: boolean;
   underline?: boolean;
+  strike?: boolean;
   fontFamily: string;
   fontSizeHalfPt: number;
 }
@@ -181,6 +182,7 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
         bold: style.bold,
         italics: style.italics,
         underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
+        strike: style.strike || undefined,
         font: safeFallbackFont,
         size: englishHalfPt,
         color: '000000',
@@ -201,6 +203,7 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
           bold: style.bold,
           italics: style.italics,
           underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
+          strike: style.strike || undefined,
           font: safeFallbackFont,
           size: englishHalfPt,
           color: '000000',
@@ -213,6 +216,7 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
         bold: style.bold,
         italics: style.italics,
         underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
+        strike: style.strike || undefined,
         font: { ascii: 'SutonnyMJ', hAnsi: 'SutonnyMJ', cs: 'SutonnyMJ' },
         size: 28,
         color: '000000',
@@ -227,6 +231,7 @@ function createScriptAwareTextRuns(text: string, style: InlineRunStyle): TextRun
         bold: style.bold,
         italics: style.italics,
         underline: style.underline ? { type: UnderlineType.SINGLE } : undefined,
+        strike: style.strike || undefined,
         font: safeFallbackFont,
         size: englishHalfPt,
         color: '000000',
@@ -267,6 +272,14 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
     nextStyle.underline = true;
   }
   if (
+    tag === 's' ||
+    tag === 'del' ||
+    tag === 'strike' ||
+    el.style.textDecoration.includes('line-through')
+  ) {
+    nextStyle.strike = true;
+  }
+  if (
     el.classList.contains('om-bn') ||
     el.classList.contains('om-bn-sm') ||
     el.classList.contains('om-bn-md') ||
@@ -283,9 +296,18 @@ function collectTextRuns(node: Node, style: InlineRunStyle): TextRun[] {
     if (!insideLineCell && !insideBlankSlot) {
       const cleanText = (el.textContent || '').replace(/\u00A0/g, ' ').trim();
       if (!cleanText) {
+        const blankCount = el.classList.contains('om-w-xl')
+          ? 28
+          : el.classList.contains('om-w-lg')
+            ? 20
+            : el.classList.contains('om-w-sm')
+              ? 8
+              : el.classList.contains('om-w-xs')
+                ? 5
+                : 14;
         runs.push(
           new TextRun({
-            text: '\u00A0'.repeat(14),
+            text: '\u00A0'.repeat(blankCount),
             bold: nextStyle.bold,
             italics: nextStyle.italics,
             underline: { type: UnderlineType.SINGLE },
@@ -394,17 +416,21 @@ function htmlToDocxChildren(
           isLayoutTable &&
           (htmlCell.classList.contains('om-line-cell') ||
             htmlCell.style.borderBottom.includes('solid'));
+        const isBoxCell = isLayoutTable && htmlCell.classList.contains('om-box-cell');
+        const isGapCell = isLayoutTable && htmlCell.classList.contains('om-gap-cell');
         const isTopCell = isLayoutTable && htmlCell.classList.contains('om-top-cell');
         const hasRightDouble = htmlCell.style.borderRight.includes('double');
         const hasRightSolid = !hasRightDouble && htmlCell.style.borderRight.includes('solid');
 
         const cellBorders = isLayoutTable
-          ? {
-              top: noBorder,
-              bottom: isLineCell ? solidBorder : noBorder,
-              left: noBorder,
-              right: hasRightDouble ? doubleBorder : hasRightSolid ? solidBorder : noBorder,
-            }
+          ? isBoxCell
+            ? { top: solidBorder, bottom: solidBorder, left: solidBorder, right: solidBorder }
+            : {
+                top: noBorder,
+                bottom: isLineCell ? solidBorder : noBorder,
+                left: noBorder,
+                right: hasRightDouble ? doubleBorder : hasRightSolid ? solidBorder : noBorder,
+              }
           : { top: solidBorder, bottom: solidBorder, left: solidBorder, right: solidBorder };
 
         const widthStyle = htmlCell.style.width;
@@ -529,7 +555,7 @@ function htmlToDocxChildren(
           cellChildren.push(
             new Paragraph({
               alignment: mapAlignment(
-                htmlCell.style.textAlign || (isLineCell ? 'center' : undefined),
+                htmlCell.style.textAlign || (isLineCell || isBoxCell ? 'center' : undefined),
               ),
               spacing: { after: isLayoutTable ? 10 : 40, line: lineSpacing },
               children: cellRuns.length > 0 ? cellRuns : [new TextRun('')],
@@ -548,13 +574,19 @@ function htmlToDocxChildren(
           columnSpan: colSpanAttr > 1 ? colSpanAttr : undefined,
           rowSpan: rowSpanAttr > 1 ? rowSpanAttr : undefined,
           verticalAlign: isLayoutTable
-            ? isTopCell
-              ? VerticalAlign.TOP
-              : VerticalAlign.BOTTOM
+            ? isBoxCell
+              ? VerticalAlign.CENTER
+              : isTopCell
+                ? VerticalAlign.TOP
+                : VerticalAlign.BOTTOM
             : undefined,
           borders: cellBorders,
           margins: isLayoutTable
-            ? { top: isTopCell ? 20 : 70, bottom: 25, left: isLineCell ? 40 : 0, right: isLineCell ? 40 : 60 }
+            ? isBoxCell
+              ? { top: 45, bottom: 45, left: 60, right: 60 }
+              : isGapCell
+                ? { top: 0, bottom: 0, left: 0, right: 0 }
+                : { top: isTopCell ? 20 : 70, bottom: 25, left: isLineCell ? 40 : 0, right: isLineCell ? 40 : 60 }
             : { top: 60, bottom: 60, left: 95, right: 95 },
           children: cellChildren,
         });

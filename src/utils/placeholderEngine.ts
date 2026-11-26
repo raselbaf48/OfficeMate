@@ -287,6 +287,39 @@ export interface RenderResult {
   unfilledKeys: string[];
 }
 
+function renderStrikeChoice(
+  rawValue: string,
+  optionsRaw: string,
+  spaced: boolean,
+): string {
+  const parts = optionsRaw
+    .split('|')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return escapeHtml(rawValue);
+
+  const selectedNorm = rawValue.trim().toLowerCase();
+  const sep = spaced ? '/ ' : '/';
+  const out: string[] = [];
+  let i = 0;
+
+  while (i < parts.length) {
+    const isSelected = parts[i].toLowerCase() === selectedNorm;
+    if (isSelected) {
+      out.push(escapeHtml(parts[i]));
+      i++;
+    } else {
+      const struckGroup: string[] = [];
+      while (i < parts.length && parts[i].toLowerCase() !== selectedNorm) {
+        struckGroup.push(escapeHtml(parts[i]));
+        i++;
+      }
+      out.push(`<s>${struckGroup.join(sep)}</s>`);
+    }
+  }
+  return out.join(sep);
+}
+
 export function renderTemplateBody(
   template: Template,
   values: Record<string, string>,
@@ -308,6 +341,19 @@ export function renderTemplateBody(
         return `<span class="om-unfilled" data-missing-key="${escapeHtml(key)}">{{${escapeHtml(key)}}}</span>`;
       }
       return `{{${escapeHtml(key)}}}`;
+    }
+
+    if (filterExpr) {
+      const trimmedFilter = filterExpr.trim();
+      const lowerFilter = trimmedFilter.toLowerCase();
+      if (lowerFilter.startsWith('strike_opts_spaced:')) {
+        const optsPart = trimmedFilter.slice(trimmedFilter.indexOf(':') + 1);
+        return renderStrikeChoice(raw, optsPart, true);
+      }
+      if (lowerFilter.startsWith('strike_opts:')) {
+        const optsPart = trimmedFilter.slice(trimmedFilter.indexOf(':') + 1);
+        return renderStrikeChoice(raw, optsPart, false);
+      }
     }
 
     let formatted = raw;

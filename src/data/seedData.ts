@@ -1267,4 +1267,197 @@ export const INITIAL_TEMPLATES: Template[] = [
   </tbody>
 </table>`,
   },
+  {
+    id: 'tpl-ration-cert',
+    name: 'Ration Certificate',
+    category: 'Certificate',
+    description:
+      'Monthly Ration Certificate with self/family/self & family selection, strength breakdown boxes, batman count, and signature block.',
+    isBuiltIn: true,
+    createdAt: '2026-11-25T21:30:00.000Z',
+    updatedAt: '2026-11-25T21:30:00.000Z',
+    pageSettings: {
+      size: 'A4',
+      margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
+      fontFamily: 'Arial',
+      fontSize: 12,
+      lineHeight: 1.4,
+      headerText: '',
+      footerText: '',
+      showSignatureBlock: false,
+      showCountersigned: false,
+    },
+    fields: [
+      { id: 'frcert-bd', key: 'bd_no', label: 'BD / No', type: 'person', personProperty: 'bd_no', required: true, defaultValue: '465917', validation: { kind: 'bd_no' } },
+      { id: 'frcert-rank', key: 'rank', label: 'Rank', type: 'rank', personProperty: 'rank', required: true, defaultValue: 'WO' },
+      { id: 'frcert-name', key: 'name', label: 'Full Name', type: 'person', personProperty: 'name', required: true, defaultValue: 'Lutfar Rahman' },
+      { id: 'frcert-trade', key: 'trade', label: 'Branch / Trade', type: 'person', personProperty: 'trade', required: true, defaultValue: 'E&I Fitt (Elect)' },
+      { id: 'frcert-sec', key: 'section', label: 'Section / Unit', type: 'text', required: true, defaultValue: '155 UASU BAF' },
+      {
+        id: 'frcert-rfor',
+        key: 'ration_for',
+        label: 'Withdraw Ration Type',
+        type: 'select',
+        options: ['Family', 'Self', 'Self & Family'],
+        required: true,
+        defaultValue: 'Family',
+      },
+      { id: 'frcert-mon', key: 'month_label', label: 'For Month', type: 'text', required: true, defaultValue: 'Nov’26' },
+      { id: 'frcert-self', key: 'cnt_self', label: 'Self', type: 'text', required: false, defaultValue: 'Nil' },
+      { id: 'frcert-wife', key: 'cnt_wife', label: 'Wife', type: 'text', required: false, defaultValue: '01' },
+      { id: 'frcert-o12', key: 'cnt_o12', label: 'Over 12', type: 'text', required: false, defaultValue: 'Nil' },
+      { id: 'frcert-u12', key: 'cnt_u12', label: 'U/12', type: 'text', required: false, defaultValue: '02' },
+      { id: 'frcert-u03', key: 'cnt_u03', label: 'U/03', type: 'text', required: false, defaultValue: 'Nil' },
+      { id: 'frcert-bat', key: 'batman_cnt', label: 'Batman', type: 'text', required: false, defaultValue: '01' },
+      {
+        id: 'frcert-stype',
+        key: 'signer_type',
+        label: 'Signature Role',
+        type: 'select',
+        options: ['Self', 'OIC', 'WOIC', 'UWO'],
+        required: true,
+        defaultValue: 'Self',
+      },
+      { id: 'frcert-mob', key: 'signer_mobile', label: 'Mobile No', type: 'text', required: false, defaultValue: '01678072477' },
+    ],
+    bodyHtml: `<p style="text-align: center; margin: 0 0 18px 0;"><strong><u>Ration Certificate</u></strong></p>
+<p style="text-align: justify; margin: 0 0 14px 0;">Certified that, BD/ <span class="om-line-fill om-solid om-w-sm"><strong>{{bd_no}}</strong></span> Rank: <span class="om-line-fill om-solid om-w-xs"><strong>{{rank}}</strong></span> Name: <span class="om-line-fill om-solid om-w-lg"><strong>{{name}}</strong></span>, Branch/Trade: <span class="om-line-fill om-solid om-w-md"><strong>{{trade}}</strong></span> Section : <span class="om-line-fill om-solid om-w-md"><strong>{{section}}</strong></span> will withdraw {{ration_for | strike_opts:self|family|self & family}} ration for the month of <span class="om-line-fill om-solid om-w-sm"><strong>{{month_label}}</strong></span>.</p>
+<p style="margin: 0 0 10px 0;">Strength :</p>
+<table class="om-layout-table" style="width: 100%; border-collapse: collapse; margin: 0 0 14px 0;">
+  <tbody>
+    <tr>
+      <td class="om-strength-lbl" style="width: 9%;">Self :</td>
+      <td class="om-box-cell" style="width: 8%;">{{cnt_self}}</td>
+      <td class="om-gap-cell" style="width: 3%;"></td>
+      <td class="om-strength-lbl" style="width: 9%;">Wife :</td>
+      <td class="om-box-cell" style="width: 8%;">{{cnt_wife}}</td>
+      <td class="om-gap-cell" style="width: 3%;"></td>
+      <td class="om-strength-lbl" style="width: 13%;">Over 12 :</td>
+      <td class="om-box-cell" style="width: 8%;">{{cnt_o12}}</td>
+      <td class="om-gap-cell" style="width: 3%;"></td>
+      <td class="om-strength-lbl" style="width: 9%;">U/12 :</td>
+      <td class="om-box-cell" style="width: 8%;">{{cnt_u12}}</td>
+      <td class="om-gap-cell" style="width: 3%;"></td>
+      <td class="om-strength-lbl" style="width: 8%;">U/03 :</td>
+      <td class="om-box-cell" style="width: 8%;">{{cnt_u03}}</td>
+    </tr>
+  </tbody>
+</table>
+<p style="margin: 0 0 22px 0;">Batman : {{batman_cnt}}</p>
+<table class="om-layout-table" style="width: 100%; margin: 0;">
+  <tbody>
+    <tr>
+      <td style="width: 68%;"></td>
+      <td style="width: 32%; text-align: left; line-height: 1.35;">Signature<br>{{signer_type | strike_opts:Self|OIC|WOIC|UWO}}<br>{{signer_mobile}}</td>
+    </tr>
+  </tbody>
+</table>`,
+  },
+  {
+    id: 'tpl-auth-chit',
+    name: 'Authorization Chit',
+    category: 'Certificate',
+    description:
+      'Ration Authorization Chit authorizing a representative to draw monthly ration with applicant signature and countersign.',
+    isBuiltIn: true,
+    createdAt: '2026-11-25T21:30:00.000Z',
+    updatedAt: '2026-11-25T21:30:00.000Z',
+    pageSettings: {
+      size: 'A4',
+      margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
+      fontFamily: 'Arial',
+      fontSize: 12,
+      lineHeight: 1.4,
+      headerText: '',
+      footerText: '',
+      showSignatureBlock: false,
+      showCountersigned: false,
+    },
+    fields: [
+      { id: 'fachit-bd', key: 'bd_no', label: 'BD / No', type: 'person', personProperty: 'bd_no', required: true, defaultValue: '465917', validation: { kind: 'bd_no' } },
+      { id: 'fachit-rank', key: 'rank', label: 'Rank', type: 'rank', personProperty: 'rank', required: true, defaultValue: 'WO' },
+      { id: 'fachit-name', key: 'name', label: 'Full Name', type: 'person', personProperty: 'name', required: true, defaultValue: 'Lutfar Rahman' },
+      { id: 'fachit-trade', key: 'trade', label: 'Trade', type: 'person', personProperty: 'trade', required: true, defaultValue: 'E&I Fitt (Elect)' },
+      { id: 'fachit-unit', key: 'unit', label: 'Unit / Base', type: 'text', required: true, defaultValue: '155 UASU, BAF' },
+      { id: 'fachit-authp', key: 'authorized_person', label: 'Authorized Person (Blank Line)', type: 'text', required: false, defaultValue: '' },
+      {
+        id: 'fachit-rfor',
+        key: 'ration_for',
+        label: 'Authorized To Draw',
+        type: 'select',
+        options: ['Myself & Family', 'Myself', 'Family'],
+        required: true,
+        defaultValue: 'Myself & Family',
+      },
+      { id: 'fachit-mon', key: 'month_label', label: 'For Month', type: 'text', required: true, defaultValue: 'Nov’26' },
+    ],
+    bodyHtml: `<p style="text-align: center; margin: 0 0 18px 0;"><strong><u>AUTHORIZATION CHIT</u></strong></p>
+<p style="text-align: justify; margin: 0 0 42px 0;">I am BD/ <span class="om-line-fill om-solid om-w-sm"><strong>{{bd_no}}</strong></span> Rank: <span class="om-line-fill om-solid om-w-xs"><strong>{{rank}}</strong></span> Name: <span class="om-line-fill om-solid om-w-md"><strong>{{name}}</strong></span> Trade: <span class="om-line-fill om-solid om-w-md"><strong>{{trade}}</strong></span>, {{unit}} give this state that, <span class="om-line-fill om-solid om-w-xl">{{authorized_person}}</span>, he is authorized to draw {{ration_for | strike_opts_spaced:myself|family|myself & family}} ration for the month of <span class="om-line-fill om-solid om-w-sm"><strong>{{month_label}}</strong></span>.</p>
+<table class="om-layout-table" style="width: 100%; margin: 0 0 26px 0;">
+  <tbody>
+    <tr>
+      <td style="width: 64%;"></td>
+      <td style="width: 36%; text-align: left; line-height: 1.35;"><strong>{{name | upper}}</strong><br>{{rank}}<br>BD/{{bd_no}}</td>
+    </tr>
+  </tbody>
+</table>
+<p style="text-align: center; margin: 0;"><u>COUNTERSIGN</u></p>`,
+  },
+  {
+    id: 'tpl-ration-fuel',
+    name: 'For Fuel',
+    category: 'Certificate',
+    description:
+      'Certificate declaring no gas facilities in residence for fuel ration entitlement with residential address and countersign.',
+    isBuiltIn: true,
+    createdAt: '2026-11-25T21:30:00.000Z',
+    updatedAt: '2026-11-25T21:30:00.000Z',
+    pageSettings: {
+      size: 'A4',
+      margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
+      fontFamily: 'Arial',
+      fontSize: 12,
+      lineHeight: 1.4,
+      headerText: '',
+      footerText: '',
+      showSignatureBlock: false,
+      showCountersigned: false,
+    },
+    fields: [
+      {
+        id: 'ffuel-stmt',
+        key: 'fuel_statement',
+        label: 'Declaration Statement',
+        type: 'textarea',
+        required: true,
+        defaultValue: 'This is certify that there are no Gas facilities in my residence.',
+      },
+      {
+        id: 'ffuel-addr',
+        key: 'address_full',
+        label: 'Residence Address',
+        type: 'textarea',
+        required: true,
+        defaultValue:
+          'Line No: 4143\nMogardia, Shatarkul, Ward No: 41\nDhaka Uttar City Corporation,\nBadda, Dhaka- 1212',
+      },
+      { id: 'ffuel-bd', key: 'bd_no', label: 'BD / No', type: 'person', personProperty: 'bd_no', required: true, defaultValue: '465917', validation: { kind: 'bd_no' } },
+      { id: 'ffuel-rank', key: 'rank', label: 'Rank', type: 'rank', personProperty: 'rank', required: true, defaultValue: 'WO' },
+      { id: 'ffuel-name', key: 'name', label: 'Full Name', type: 'person', personProperty: 'name', required: true, defaultValue: 'Lutfar Rahman' },
+      { id: 'ffuel-trade', key: 'trade', label: 'Trade', type: 'person', personProperty: 'trade', required: true, defaultValue: 'E&I Fitt (Elect)' },
+      { id: 'ffuel-unit', key: 'unit', label: 'Unit / Base', type: 'text', required: true, defaultValue: '155 UASU, BAF.' },
+    ],
+    bodyHtml: `<p style="text-align: center; margin: 0 0 18px 0;"><strong><u>FOR FUEL</u></strong></p>
+<p style="margin: 0 0 18px 0;">{{fuel_statement}}</p>
+<p style="margin: 0 0 28px 0;"><strong><u>Address:</u></strong><br>{{address_full}}</p>
+<table class="om-layout-table" style="width: 100%; margin: 0 0 22px 0;">
+  <tbody>
+    <tr>
+      <td style="width: 64%;"></td>
+      <td style="width: 36%; text-align: left; line-height: 1.35;"><strong>{{name | upper}}</strong><br>{{rank}}<br>BD/{{bd_no}}<br>{{trade}}<br>{{unit}}</td>
+    </tr>
+  </tbody>
+</table>
+<p style="text-align: center; margin: 0;"><u>COUNTERSIGN</u></p>`,
+  },
 ];
