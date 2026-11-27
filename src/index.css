@@ -27,11 +27,13 @@
     color: #f1f5f9;
     background-color: var(--om-bg);
     color-scheme: dark;
+    overflow-x: clip;
   }
 
   body {
     background-color: var(--om-bg);
     transition: background-color 0.35s ease, color 0.3s ease;
+    overflow-x: clip;
   }
 
   h1, h2, h3, h4 {
@@ -265,31 +267,20 @@ html[data-theme='light'] .shadow-emerald-950\/40 {
   --tw-shadow-color: rgba(5, 150, 105, 0.2);
 }
 
-html[data-theme='light'] ::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.2);
+/* Hide all scrollbars across the entire app (horizontal & vertical) while keeping touch/wheel scroll smooth */
+*,
+*::before,
+*::after {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-html[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(15, 23, 42, 0.35);
-}
-
-/* Subtle dark scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.22);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.38);
+*::-webkit-scrollbar,
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
 .tabular-nums {

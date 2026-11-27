@@ -357,7 +357,7 @@ export default function App() {
     <MotionConfig
       reducedMotion={settings.animationPace === 'minimal' ? 'always' : 'user'}
     >
-    <div className="min-h-screen flex bg-[var(--om-bg)] text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen flex bg-[var(--om-bg)] text-slate-100 transition-colors duration-300 overflow-x-clip">
       <Sidebar
         activeRoute={route}
         activeTemplateId={selectedTemplateId}
