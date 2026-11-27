@@ -130,6 +130,9 @@ export type DateFormatOption =
   | 'DD/MM/YYYY'
   | 'YYYY-MM-DD';
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+export type AnimationPace = 'relaxed' | 'normal' | 'minimal';
+
 export interface AppSettings {
   id: 'default';
   defaultUnit: string;
@@ -141,10 +144,11 @@ export interface AppSettings {
   pinCode: string;
   backupReminderDays: number;
   lastBackupAt?: string;
+  themeMode?: ThemeMode;
+  animationPace?: AnimationPace;
 }
 
 export type NavRoute =
-  | 'dashboard'
   | 'templates'
   | 'builder'
   | 'upload'

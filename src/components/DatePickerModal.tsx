@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Clock, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { DateFormatOption } from '../types/models';
+import { BACKDROP_TRANSITION, modalPanelVariants } from '../utils/motionConfig';
 import { formatDateByPattern, parseFlexibleDate } from '../utils/placeholderEngine';
 
 const MONTH_NAMES = [
@@ -62,8 +64,6 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
     setViewMonth(lockDayMonth ? lockDayMonth.monthZeroBased : d.getMonth());
   }, [open, value, lockDayMonth]);
 
-  if (!open) return null;
-
   const selectedParsed = parseFlexibleDate(value);
   const today = new Date();
 
@@ -117,14 +117,24 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   for (let day = 1; day <= daysInMonth; day++) cells.push(day);
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-[336px] bg-[#131B2E] border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden text-slate-100"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={BACKDROP_TRANSITION}
+          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={onClose}
+        >
+          <motion.div
+            variants={modalPanelVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="w-full max-w-[336px] bg-[#131B2E] border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden text-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
         {/* Header */}
         <div className="px-4 py-3.5 flex items-center justify-between border-b border-slate-800/80">
           <div className="flex items-center gap-2.5">
@@ -272,8 +282,10 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
             Close
           </button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 };
 

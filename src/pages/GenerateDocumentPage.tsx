@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   BadgeCheck,
@@ -11,9 +11,8 @@ import {
   RotateCcw,
   SlidersHorizontal,
   User,
-  ZoomIn,
-  ZoomOut,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { A4DocumentPreview } from '../components/A4DocumentPreview';
 import { ConfirmModal } from '../components/CommonModals';
 import { DatePickerField } from '../components/DatePickerModal';
@@ -41,6 +40,7 @@ import {
   renderTemplateBody,
   validateFieldValues,
 } from '../utils/placeholderEngine';
+import { PANEL_TRANSITION, SMOOTH_EASE } from '../utils/motionConfig';
 
 const CLERK_MEMORY_KEY = 'officemate_clerk_memory_v1';
 const CYCLE_MEMORY_KEY = 'officemate_cycle_start_memory_v1';
@@ -229,13 +229,28 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   const isBanglaTemplate = activeTemplate?.pageSettings.fontFamily === 'SutonnyMJ';
 
   const [rawValues, setRawValues] = useState<Record<string, string>>({});
-  const [zoom, setZoom] = useState(0.9);
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
+  const previewInnerRef = useRef<HTMLDivElement | null>(null);
+  const [previewContainerWidth, setPreviewContainerWidth] = useState(0);
+  const [previewNaturalHeight, setPreviewNaturalHeight] = useState(0);
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [pageOverrides, setPageOverrides] = useState<Record<string, Partial<PageSettings>>>({});
   const [formExpanded, setFormExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState<InputSectionKey>('applicant');
   const [showErrors, setShowErrors] = useState(false);
   const [pendingAction, setPendingAction] = useState<'docx' | 'pdf' | null>(null);
+
+  useEffect(() => {
+    const el = previewContainerRef.current;
+    if (!el) return;
+    const updateWidth = () => {
+      setPreviewContainerWidth(el.clientWidth);
+    };
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [activeTemplate?.id]);
 
   const effectivePageSettings: PageSettings = useMemo(() => {
     if (!activeTemplate) {
@@ -263,6 +278,15 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
       },
     };
   }, [activeTemplate, pageOverrides]);
+
+  const paperWidthPx = (effectivePageSettings.size === 'Legal' ? 215.9 : 210) * (96 / 25.4);
+  const fitZoom = useMemo(() => {
+    if (previewContainerWidth <= 0) return 0.85;
+    const horizontalPad = previewContainerWidth < 640 ? 10 : 28;
+    const available = Math.max(220, previewContainerWidth - horizontalPad);
+    const ratio = Math.floor((available / paperWidthPx) * 1000) / 1000;
+    return Math.min(1.0, Math.max(0.32, ratio));
+  }, [previewContainerWidth, paperWidthPx]);
 
   const updateActivePageOverride = (patch: Partial<PageSettings>) => {
     if (!activeTemplate) return;
@@ -491,6 +515,18 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
       blankDotted: true,
     });
   }, [activeTemplate, computedValues, settings.dateFormat]);
+
+  useEffect(() => {
+    const el = previewInnerRef.current;
+    if (!el) return;
+    const updateHeight = () => {
+      setPreviewNaturalHeight(el.offsetHeight);
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [activeTemplate?.id, rendered.html, effectivePageSettings]);
 
   const buildHistoryRecord = (): GeneratedDocument | null => {
     if (!activeTemplate) return null;
@@ -1452,291 +1488,302 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
     );
   };
 
+  const handleClearFields = () => {
+    setRawValues((prev) => {
+      const next = { ...prev };
+      for (const f of activeTemplate.fields) {
+        if (isStatement) {
+          if (!ST_MEMORY_KEYS.has(f.key)) {
+            next[f.key] = '';
+          }
+        } else if (activeTemplate.id === 'tpl-jsi-8-80') {
+          if (!CLERK_KEYS.has(f.key) && !CYCLE_KEYS.has(f.key)) {
+            next[f.key] = '';
+          }
+        } else {
+          next[f.key] = '';
+        }
+      }
+      writeStoredTemplateMemory(activeTemplate.id, next);
+      return next;
+    });
+    setShowErrors(false);
+  };
+
+  const clearButtonTooltip = isStatement
+    ? 'Clears Person & বিবৃতি fields while keeping Unit, Date & প্রতি'
+    : activeTemplate.id === 'tpl-jsi-8-80'
+      ? 'Clears Applicant & Leave fields while keeping Cycle & Document Clerk'
+      : 'Clear all form inputs for blank template printing';
+
+  const clearButtonLabel = isStatement
+    ? 'Clear Person & বিবৃতি'
+    : activeTemplate.id === 'tpl-jsi-8-80'
+      ? 'Clear Applicant & Leave'
+      : 'Clear All Fields';
+
   return (
     <>
-      <div className="no-print space-y-5">
-        {/* Document Title Strip */}
-        <div className="bg-[#0C1526] border border-slate-800 rounded-xl px-5 py-3.5 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
-            <FileText className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-sm font-bold text-white truncate">
-              {activeTemplate.name}
-            </h2>
-            <p className="text-[11px] text-slate-400 truncate">
-              {TEMPLATE_SUBTITLES[activeTemplate.id] ?? activeTemplate.description}
-            </p>
-          </div>
-        </div>
-
-        {/* Top-to-Bottom Workspace: Collapsible Categorized Input on Top | Full A4 Preview Below */}
-        <div className="space-y-5">
-          {/* Directly Visible Fill Information Boxes & Active Fields */}
-          <div className="bg-[#0C1526] border border-slate-800 rounded-xl p-4 space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-stretch justify-between gap-3">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1">
-                {sectionCards.map((sec) => {
-                  const isActive = formExpanded && activeSection === sec.id;
-                  return (
-                    <button
-                      key={sec.id}
-                      type="button"
-                      onClick={() => handleSectionClick(sec.id)}
-                      aria-expanded={isActive}
-                      className={`px-3.5 py-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
-                        isActive
-                          ? 'bg-emerald-500/15 border-emerald-500/60 text-white shadow-sm'
-                          : sec.hasError
-                            ? 'bg-red-950/20 border-red-500/40 text-slate-200 hover:bg-[#111C31]'
-                            : 'bg-[#111C31] border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+      <div className="no-print space-y-1.5 sm:space-y-2">
+        {/* Compact Single-Row Section Tabs & Collapsible Form Drawer */}
+        <div
+          className="bg-[#0C1526] border border-slate-800 rounded-xl p-1.5 space-y-1.5"
+          title={TEMPLATE_SUBTITLES[activeTemplate.id] ?? activeTemplate.description}
+        >
+          <div className="flex items-center gap-1.5">
+            <div className="flex lg:grid lg:grid-cols-4 items-center gap-1 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {sectionCards.map((sec) => {
+                const isActive = formExpanded && activeSection === sec.id;
+                return (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => handleSectionClick(sec.id)}
+                    aria-expanded={isActive}
+                    title={`${sec.title}: ${sec.subtitle}`}
+                    className={`px-2.5 py-1.5 rounded-lg border text-left transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 lg:min-w-0 ${
+                      isActive
+                        ? 'bg-emerald-500/15 border-emerald-500/60 text-white'
+                        : sec.hasError
+                          ? 'bg-red-950/20 border-red-500/40 text-slate-200 hover:bg-[#111C31]'
+                          : 'bg-[#111C31] border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <span
+                      className={`shrink-0 ${
+                        isActive ? 'text-emerald-400' : 'text-emerald-400/80'
                       }`}
                     >
-                      <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                          isActive
-                            ? 'bg-emerald-500 text-slate-950'
-                            : 'bg-[#0C1526] text-emerald-400 border border-slate-700'
-                        }`}
-                      >
-                        {sec.icon}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold leading-tight truncate">
-                          {sec.title}
-                        </p>
-                        <p className="text-[11px] text-slate-400 truncate mt-0.5 tabular-nums">
-                          {sec.subtitle}
-                        </p>
-                      </div>
+                      {sec.icon}
+                    </span>
+                    <span className="text-[11px] sm:text-xs font-semibold truncate">
+                      {sec.title}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleClearFields}
+              className="hidden lg:inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-300 bg-[#111C31] border border-slate-700 rounded-lg hover:text-white hover:bg-slate-800 shrink-0 whitespace-nowrap"
+              title={clearButtonTooltip}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{clearButtonLabel}</span>
+            </button>
+          </div>
+
+          <AnimatePresence initial={false}>
+            {formExpanded ? (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={PANEL_TRANSITION}
+                className="overflow-hidden"
+              >
+                <div className="bg-[#09101E]/75 border border-slate-800/90 rounded-lg p-2.5 sm:p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-emerald-400 truncate">
+                      {sectionConfigs.find((c) => c.id === activeSection)?.title}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFormExpanded(false)}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-white shrink-0"
+                    >
+                      <span>Hide</span>
+                      <ChevronUp className="w-3.5 h-3.5" />
                     </button>
-                  );
-                })}
-              </div>
+                  </div>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={activeSection}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.3, ease: SMOOTH_EASE }}
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+                    >
+                      {(sectionFields[activeSection] ?? []).map((field) => renderStandardField(field))}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
+
+        {/* Full Document Live Preview (Always Auto-Fit) */}
+        <div className="bg-[#080E1B] border border-slate-800 rounded-xl overflow-hidden flex flex-col">
+          <div className="bg-[#0C1526] px-2.5 sm:px-3.5 py-1.5 border-b border-slate-800 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0 text-[11px] sm:text-xs">
+              <span className="font-semibold text-white whitespace-nowrap">
+                {effectivePageSettings.size === 'Legal' ? 'Legal Preview' : 'A4 Preview'}
+              </span>
+              <span className="text-slate-600" aria-hidden="true">
+                ·
+              </span>
+              {rendered.unfilledKeys.length > 0 ? (
+                <span className="text-slate-400 truncate tabular-nums">
+                  <span className="sm:hidden">{rendered.unfilledKeys.length} blank</span>
+                  <span className="hidden sm:inline">
+                    {rendered.unfilledKeys.length} blank field(s) shown as solid lines
+                  </span>
+                </span>
+              ) : (
+                <span className="text-emerald-400 font-medium whitespace-nowrap">
+                  <span className="sm:hidden">Ready</span>
+                  <span className="hidden sm:inline">All fields filled</span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={handleClearFields}
+                title={clearButtonTooltip}
+                aria-label={clearButtonLabel}
+                className="lg:hidden inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-300 bg-[#111C31] border border-slate-700 rounded-md hover:text-white hover:border-slate-600 transition-colors whitespace-nowrap"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Clear</span>
+              </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  setRawValues((prev) => {
-                    const next = { ...prev };
-                    for (const f of activeTemplate.fields) {
-                      if (isStatement) {
-                        if (!ST_MEMORY_KEYS.has(f.key)) {
-                          next[f.key] = '';
-                        }
-                      } else if (activeTemplate.id === 'tpl-jsi-8-80') {
-                        if (!CLERK_KEYS.has(f.key) && !CYCLE_KEYS.has(f.key)) {
-                          next[f.key] = '';
-                        }
-                      } else {
-                        next[f.key] = '';
-                      }
-                    }
-                    writeStoredTemplateMemory(activeTemplate.id, next);
-                    return next;
-                  });
-                  setShowErrors(false);
-                }}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-300 bg-[#111C31] border border-slate-700 rounded-xl hover:text-white hover:bg-slate-800 shrink-0"
-                title={
-                  isStatement
-                    ? 'Clears Person & বিবৃতি fields while keeping Unit, Date & প্রতি'
-                    : activeTemplate.id === 'tpl-jsi-8-80'
-                      ? 'Clears Applicant & Leave fields while keeping Cycle & Document Clerk'
-                      : 'Clear all form inputs for blank template printing'
-                }
+                onClick={() => setPageSetupOpen((v) => !v)}
+                aria-expanded={pageSetupOpen}
+                className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] sm:text-xs font-medium rounded-md border transition-colors whitespace-nowrap ${
+                  pageSetupOpen
+                    ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-300'
+                    : 'bg-[#111C31] border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
+                }`}
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>
-                  {isStatement
-                    ? 'Clear Person & বিবৃতি'
-                    : activeTemplate.id === 'tpl-jsi-8-80'
-                      ? 'Clear Applicant & Leave'
-                      : 'Clear All Fields'}
-                </span>
+                <SlidersHorizontal className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="sm:hidden">Setup</span>
+                <span className="hidden sm:inline">Page Setup</span>
               </button>
             </div>
-
-            {formExpanded ? (
-              <div className="bg-[#09101E]/70 border border-slate-800/90 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold text-emerald-400">
-                    {sectionConfigs.find((c) => c.id === activeSection)?.title}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setFormExpanded(false)}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-white"
-                  >
-                    <span>Hide</span>
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {(sectionFields[activeSection] ?? []).map((field) => renderStandardField(field))}
-                </div>
-              </div>
-            ) : null}
           </div>
 
-          {/* Bottom Full Document Live Preview */}
-          <div className="bg-[#080E1B] border border-slate-800 rounded-xl overflow-hidden flex flex-col">
-            <div className="bg-[#0C1526] px-4 py-2.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3 text-xs">
-                <span className="font-semibold text-white">
-                  {effectivePageSettings.size === 'Legal'
-                    ? 'Full Legal Document Preview'
-                    : 'Full A4 Document Preview'}
-                </span>
-                {rendered.unfilledKeys.length > 0 ? (
-                  <span className="text-slate-400 tabular-nums">
-                    {rendered.unfilledKeys.length} blank field(s) shown as solid lines
-                  </span>
-                ) : (
-                  <span className="text-emerald-400 font-medium">All fields filled</span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPageSetupOpen((v) => !v)}
-                  aria-expanded={pageSetupOpen}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                    pageSetupOpen
-                      ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-300'
-                      : 'bg-[#111C31] border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
-                  }`}
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>Page Setup</span>
-                </button>
-
-                <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
-                  <button
-                    type="button"
-                    onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.1).toFixed(2))))}
-                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
-                    title="Zoom out"
-                    aria-label="Zoom out"
-                  >
-                    <ZoomOut className="w-4 h-4" />
-                  </button>
-                  <span className="text-xs font-mono text-slate-300 w-11 text-center tabular-nums">
-                    {Math.round(zoom * 100)}%
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setZoom((z) => Math.min(1.2, Number((z + 0.1).toFixed(2))))}
-                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded"
-                    title="Zoom in"
-                    aria-label="Zoom in"
-                  >
-                    <ZoomIn className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
+          <AnimatePresence initial={false}>
             {pageSetupOpen ? (
-              <div className="bg-[#0F1A2E] border-b border-slate-800 px-4 py-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 items-end text-xs">
-                <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Paper Size</label>
-                  <select
-                    value={effectivePageSettings.size}
-                    onChange={(e) =>
-                      updateActivePageOverride({ size: e.target.value as 'A4' | 'Legal' })
-                    }
-                    className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    <option value="A4">A4</option>
-                    <option value="Legal">Legal</option>
-                  </select>
-                </div>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={PANEL_TRANSITION}
+                className="overflow-hidden border-b border-slate-800 bg-[#0F1A2E]"
+              >
+                <div className="px-3 sm:px-4 py-2.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 items-end text-xs">
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Paper Size</label>
+                    <select
+                      value={effectivePageSettings.size}
+                      onChange={(e) =>
+                        updateActivePageOverride({ size: e.target.value as 'A4' | 'Legal' })
+                      }
+                      className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="A4">A4</option>
+                      <option value="Legal">Legal</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Font (pt)</label>
-                  <input
-                    type="number"
-                    min={9}
-                    max={18}
-                    value={effectivePageSettings.fontSize}
-                    onChange={(e) =>
-                      updateActivePageOverride({
-                        fontSize: Math.min(18, Math.max(9, Number(e.target.value) || 12)),
-                      })
-                    }
-                    className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg tabular-nums focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Line Spacing</label>
-                  <select
-                    value={effectivePageSettings.lineHeight}
-                    onChange={(e) =>
-                      updateActivePageOverride({ lineHeight: Number(e.target.value) })
-                    }
-                    className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    <option value={1.15}>1.15</option>
-                    <option value={1.25}>1.25</option>
-                    <option value={1.35}>1.35</option>
-                    <option value={1.45}>1.45</option>
-                    <option value={1.6}>1.60</option>
-                    <option value={1.8}>1.80</option>
-                  </select>
-                </div>
-
-                {(['top', 'bottom', 'left', 'right'] as const).map((side) => (
-                  <div key={side}>
-                    <label className="block text-[11px] text-slate-400 capitalize mb-1">
-                      {side} (mm)
-                    </label>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Font (pt)</label>
                     <input
                       type="number"
-                      step={0.5}
-                      min={5}
-                      max={45}
-                      value={effectivePageSettings.margins[side]}
+                      min={9}
+                      max={18}
+                      value={effectivePageSettings.fontSize}
                       onChange={(e) =>
                         updateActivePageOverride({
-                          margins: {
-                            ...effectivePageSettings.margins,
-                            [side]: Math.min(45, Math.max(5, Number(e.target.value) || 10)),
-                          },
+                          fontSize: Math.min(18, Math.max(9, Number(e.target.value) || 12)),
                         })
                       }
                       className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg tabular-nums focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
-                ))}
 
-                <div>
-                  <button
-                    type="button"
-                    onClick={resetActivePageOverride}
-                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-[#111C31] border border-slate-700 rounded-lg hover:text-white hover:border-slate-600 transition-colors"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Reset</span>
-                  </button>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Line Spacing</label>
+                    <select
+                      value={effectivePageSettings.lineHeight}
+                      onChange={(e) =>
+                        updateActivePageOverride({ lineHeight: Number(e.target.value) })
+                      }
+                      className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value={1.15}>1.15</option>
+                      <option value={1.25}>1.25</option>
+                      <option value={1.35}>1.35</option>
+                      <option value={1.45}>1.45</option>
+                      <option value={1.6}>1.60</option>
+                      <option value={1.8}>1.80</option>
+                    </select>
+                  </div>
+
+                  {(['top', 'bottom', 'left', 'right'] as const).map((side) => (
+                    <div key={side}>
+                      <label className="block text-[11px] text-slate-400 capitalize mb-1">
+                        {side} (mm)
+                      </label>
+                      <input
+                        type="number"
+                        step={0.5}
+                        min={5}
+                        max={45}
+                        value={effectivePageSettings.margins[side]}
+                        onChange={(e) =>
+                          updateActivePageOverride({
+                            margins: {
+                              ...effectivePageSettings.margins,
+                              [side]: Math.min(45, Math.max(5, Number(e.target.value) || 10)),
+                            },
+                          })
+                        }
+                        className="w-full px-2.5 py-1.5 bg-[#111C31] text-white border border-slate-700 rounded-lg tabular-nums focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                  ))}
+
+                  <div>
+                    <button
+                      type="button"
+                      onClick={resetActivePageOverride}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-[#111C31] border border-slate-700 rounded-lg hover:text-white hover:border-slate-600 transition-colors"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             ) : null}
+          </AnimatePresence>
 
-            <div className="w-full overflow-x-auto p-3 sm:p-6">
-              <div className="w-max min-w-full flex flex-col items-center">
-                <div
-                  style={{
-                    width: `${(effectivePageSettings.size === 'Legal' ? 215.9 : 210) * zoom}mm`,
-                    minHeight: `${(effectivePageSettings.size === 'Legal' ? 355.6 : 297) * zoom}mm`,
-                  }}
-                >
+          <div ref={previewContainerRef} className="w-full overflow-hidden p-1 sm:p-2.5">
+            <div className="w-full flex flex-col items-center">
+              <div
+                style={{
+                  width: `${(effectivePageSettings.size === 'Legal' ? 215.9 : 210) * fitZoom}mm`,
+                  height:
+                    previewNaturalHeight > 0
+                      ? `${Math.ceil(previewNaturalHeight * fitZoom) + 2}px`
+                      : `${(effectivePageSettings.size === 'Legal' ? 355.6 : 297) * fitZoom}mm`,
+                  overflow: 'hidden',
+                }}
+              >
+                <div ref={previewInnerRef} className="w-fit">
                   <A4DocumentPreview
                     renderedHtml={rendered.html}
                     pageSettings={effectivePageSettings}
-                    zoom={zoom}
+                    zoom={fitZoom}
                   />
                 </div>
               </div>

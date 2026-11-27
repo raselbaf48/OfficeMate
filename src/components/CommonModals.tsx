@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, BookOpen, CheckCircle2, Lock, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { BACKDROP_TRANSITION, SMOOTH_EASE, modalPanelVariants } from '../utils/motionConfig';
 
 export interface ToastMessage {
   id: string;
@@ -11,36 +13,42 @@ export const ToastContainer: React.FC<{
   toasts: ToastMessage[];
   onDismiss: (id: string) => void;
 }> = ({ toasts, onDismiss }) => {
-  if (toasts.length === 0) return null;
   return (
-    <div className="no-print fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={`flex items-start gap-2.5 px-4 py-3 rounded-lg border shadow-lg text-sm bg-[#0E182B] ${
-            t.type === 'error'
-              ? 'border-red-500/40 text-red-200'
-              : t.type === 'success'
-                ? 'border-emerald-500/40 text-slate-100'
-                : 'border-slate-700 text-slate-100'
-          }`}
-        >
-          {t.type === 'error' ? (
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-          ) : (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-          )}
-          <span className="flex-1 leading-snug">{t.message}</span>
-          <button
-            type="button"
-            onClick={() => onDismiss(t.id)}
-            className="text-slate-400 hover:text-slate-100 p-0.5"
-            aria-label="Dismiss notification"
+    <div className="no-print fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
+      <AnimatePresence>
+        {toasts.map((t) => (
+          <motion.div
+            key={t.id}
+            layout
+            initial={{ opacity: 0, y: 14, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.96 }}
+            transition={{ duration: 0.34, ease: SMOOTH_EASE }}
+            className={`pointer-events-auto flex items-start gap-2.5 px-4 py-3 rounded-lg border shadow-lg text-sm bg-[#0E182B] ${
+              t.type === 'error'
+                ? 'border-red-500/40 text-red-200'
+                : t.type === 'success'
+                  ? 'border-emerald-500/40 text-slate-100'
+                  : 'border-slate-700 text-slate-100'
+            }`}
           >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      ))}
+            {t.type === 'error' ? (
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            )}
+            <span className="flex-1 leading-snug">{t.message}</span>
+            <button
+              type="button"
+              onClick={() => onDismiss(t.id)}
+              className="text-slate-400 hover:text-slate-100 p-0.5"
+              aria-label="Dismiss notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
@@ -64,47 +72,62 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  if (!open) return null;
   return (
-    <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="bg-[#0C1526] border border-slate-700/80 rounded-xl shadow-2xl max-w-md w-full p-6">
-        <div className="flex items-start gap-3">
-          <div
-            className={`p-2 rounded-lg shrink-0 ${
-              danger
-                ? 'bg-red-500/15 text-red-400 border border-red-500/30'
-                : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-            }`}
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={BACKDROP_TRANSITION}
+          className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px] p-4"
+        >
+          <motion.div
+            variants={modalPanelVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="bg-[#0C1526] border border-slate-700/80 rounded-xl shadow-2xl max-w-md w-full p-6"
           >
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-base font-semibold text-white">{title}</h3>
-            <p className="mt-1.5 text-sm text-slate-300 leading-relaxed">{description}</p>
-          </div>
-        </div>
-        <div className="mt-6 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-slate-200 bg-[#111C31] border border-slate-700 rounded-lg hover:bg-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              danger
-                ? 'bg-red-600 text-white hover:bg-red-500'
-                : 'bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400'
-            }`}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+            <div className="flex items-start gap-3">
+              <div
+                className={`p-2 rounded-lg shrink-0 ${
+                  danger
+                    ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                    : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                }`}
+              >
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-white">{title}</h3>
+                <p className="mt-1.5 text-sm text-slate-300 leading-relaxed">{description}</p>
+              </div>
+            </div>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 text-sm font-medium text-slate-200 bg-[#111C31] border border-slate-700 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onConfirm}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  danger
+                    ? 'bg-red-600 text-white hover:bg-red-500'
+                    : 'bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400'
+                }`}
+              >
+                {confirmLabel}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 };
 
@@ -112,10 +135,23 @@ export const GuideModal: React.FC<{ open: boolean; onClose: () => void }> = ({
   open,
   onClose,
 }) => {
-  if (!open) return null;
   return (
-    <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="bg-[#0C1526] border border-slate-700/80 rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col">
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={BACKDROP_TRANSITION}
+          className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px] p-4"
+        >
+          <motion.div
+            variants={modalPanelVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="bg-[#0C1526] border border-slate-700/80 rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col"
+          >
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
           <div className="flex items-center gap-2.5">
             <BookOpen className="w-5 h-5 text-emerald-400" />
@@ -218,8 +254,10 @@ export const GuideModal: React.FC<{ open: boolean; onClose: () => void }> = ({
             Got It
           </button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 };
 
@@ -244,7 +282,12 @@ export const PinLockScreen: React.FC<{
 
   return (
     <div className="min-h-screen bg-[#060B16] flex items-center justify-center p-4">
-      <div className="bg-[#0C1526] border border-slate-800 rounded-xl shadow-2xl max-w-sm w-full p-7">
+      <motion.div
+        variants={modalPanelVariants}
+        initial="initial"
+        animate="animate"
+        className="bg-[#0C1526] border border-slate-800 rounded-xl shadow-2xl max-w-sm w-full p-7"
+      >
         <div className="flex items-center gap-3 mb-5">
           <div className="w-10 h-10 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
             <Lock className="w-5 h-5" />
@@ -284,7 +327,7 @@ export const PinLockScreen: React.FC<{
             Unlock OfficeMate
           </button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronDown, Download, FileSpreadsheet, FileText, Lock, Menu, Plus, Shield } from 'lucide-react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import {
   ConfirmModal,
   GuideModal,
@@ -11,7 +12,6 @@ import { OfflineIndicator, PWAInstallButton } from './components/PWAComponents';
 import { Sidebar } from './components/Sidebar';
 import { DEFAULT_SETTINGS } from './data/seedData';
 import { BatchGeneratePage } from './pages/BatchGeneratePage';
-import { DashboardPage } from './pages/DashboardPage';
 import { GenerateDocumentPage } from './pages/GenerateDocumentPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { PersonnelPage } from './pages/PersonnelPage';
@@ -29,9 +29,9 @@ import {
   Template,
 } from './types/models';
 import { triggerFileDownload } from './utils/exporters';
+import { SMOOTH_EASE, drawerVariants, pageVariants } from './utils/motionConfig';
 
 const ROUTE_TITLES: Record<NavRoute, string> = {
-  dashboard: 'Document & Orderly Room Overview',
   generate: 'Generate Official Document',
   templates: 'Templates Library',
   builder: 'Template Builder',
@@ -43,7 +43,6 @@ const ROUTE_TITLES: Record<NavRoute, string> = {
 };
 
 const ROUTE_BREADCRUMBS: Record<NavRoute, string> = {
-  dashboard: 'DASHBOARD',
   generate: 'GENERATE',
   templates: 'TEMPLATES',
   builder: 'BUILDER',
@@ -59,6 +58,10 @@ export default function App() {
   const [route, setRoute] = useState<NavRoute>('generate');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return true;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
   const [templates, setTemplates] = useState<Template[]>([]);
   const [personnel, setPersonnel] = useState<Person[]>([]);
@@ -144,6 +147,30 @@ export default function App() {
   useEffect(() => {
     void loadAllData();
   }, [loadAllData]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    setSystemIsDark(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setSystemIsDark(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const themeMode = settings.themeMode ?? 'system';
+  const resolvedTheme: 'light' | 'dark' =
+    themeMode === 'system' ? (systemIsDark ? 'dark' : 'light') : themeMode;
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = resolvedTheme;
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute(
+        'content',
+        resolvedTheme === 'light' ? '#f1f5f9' : '#060B16',
+      );
+    }
+  }, [resolvedTheme]);
 
   const handleUseTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId);
@@ -307,7 +334,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#060B16] flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--om-bg)] flex items-center justify-center">
         <div className="text-sm text-emerald-300">Loading OfficeMate workspace...</div>
       </div>
     );
@@ -323,11 +350,18 @@ export default function App() {
     );
   }
 
+  const activeViewKey =
+    route === 'generate' ? `generate-${selectedTemplateId ?? 'default'}` : route;
+
   return (
-    <div className="min-h-screen flex bg-[#060B16] text-slate-100">
+    <MotionConfig
+      reducedMotion={settings.animationPace === 'minimal' ? 'always' : 'user'}
+    >
+    <div className="min-h-screen flex bg-[var(--om-bg)] text-slate-100 transition-colors duration-300">
       <Sidebar
         activeRoute={route}
         activeTemplateId={selectedTemplateId}
+        resolvedTheme={resolvedTheme}
         onSelectDocument={(templateId) => {
           setSelectedTemplateId(templateId);
           setReopenValues(null);
@@ -348,23 +382,37 @@ export default function App() {
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Top Context Header */}
-        <header className="no-print sticky top-0 z-20 bg-[#08101E]/95 backdrop-blur border-b border-slate-800/80 px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+        <header className="no-print sticky top-0 z-20 bg-[#08101E]/95 backdrop-blur border-b border-slate-800/80 px-3 sm:px-5 py-1.5 sm:py-2 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-1.5 text-slate-300 hover:bg-slate-800 rounded-md"
+              className="lg:hidden p-1.5 text-slate-300 hover:bg-slate-800 rounded-md shrink-0"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div className="min-w-0">
-              <div className="text-[10px] font-semibold tracking-wider text-emerald-400 uppercase truncate">
-                {ROUTE_BREADCRUMBS[route]} · {settings.defaultUnit} · OFFICEMATE
-              </div>
-              <div className="text-base font-bold text-white truncate">
-                {ROUTE_TITLES[route]}
-              </div>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={activeViewKey}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.28, ease: SMOOTH_EASE }}
+                  className="min-w-0"
+                >
+                  <div className="text-[10px] font-semibold tracking-wider text-emerald-400 uppercase truncate">
+                    {ROUTE_BREADCRUMBS[route]} · {settings.defaultUnit}
+                  </div>
+                  <div className="text-sm sm:text-base font-bold text-white truncate">
+                    {route === 'generate'
+                      ? (templates.find((t) => t.id === selectedTemplateId) ?? templates[0])?.name ??
+                        ROUTE_TITLES[route]
+                      : ROUTE_TITLES[route]}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
 
@@ -404,44 +452,50 @@ export default function App() {
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
 
-                {exportMenuOpen ? (
-                  <div
-                    role="menu"
-                    className="absolute right-0 mt-2 w-48 rounded-xl bg-[#0C1526] border border-slate-700 shadow-2xl py-1.5 z-50"
-                  >
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setExportMenuOpen(false);
-                        exportTriggerRef.current?.('pdf');
-                      }}
-                      className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 text-xs font-medium text-slate-100 hover:bg-emerald-500/15 hover:text-emerald-300 transition-colors"
+                <AnimatePresence>
+                  {exportMenuOpen ? (
+                    <motion.div
+                      role="menu"
+                      variants={drawerVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      className="absolute right-0 mt-2 w-48 rounded-xl bg-[#0C1526] border border-slate-700 shadow-2xl py-1.5 z-50 origin-top-right"
                     >
-                      <FileText className="w-4 h-4 text-rose-400 shrink-0" />
-                      <div>
-                        <div className="font-semibold">PDF</div>
-                        <div className="text-[10px] text-slate-400">Export A4 PDF document</div>
-                      </div>
-                    </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setExportMenuOpen(false);
+                          exportTriggerRef.current?.('pdf');
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 text-xs font-medium text-slate-100 hover:bg-emerald-500/15 hover:text-emerald-300 transition-colors"
+                      >
+                        <FileText className="w-4 h-4 text-rose-400 shrink-0" />
+                        <div>
+                          <div className="font-semibold">PDF</div>
+                          <div className="text-[10px] text-slate-400">Export A4 PDF document</div>
+                        </div>
+                      </button>
 
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setExportMenuOpen(false);
-                        exportTriggerRef.current?.('docx');
-                      }}
-                      className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 text-xs font-medium text-slate-100 hover:bg-emerald-500/15 hover:text-emerald-300 transition-colors"
-                    >
-                      <FileSpreadsheet className="w-4 h-4 text-sky-400 shrink-0" />
-                      <div>
-                        <div className="font-semibold">DOCX</div>
-                        <div className="text-[10px] text-slate-400">Export editable Word file</div>
-                      </div>
-                    </button>
-                  </div>
-                ) : null}
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setExportMenuOpen(false);
+                          exportTriggerRef.current?.('docx');
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 text-xs font-medium text-slate-100 hover:bg-emerald-500/15 hover:text-emerald-300 transition-colors"
+                      >
+                        <FileSpreadsheet className="w-4 h-4 text-sky-400 shrink-0" />
+                        <div>
+                          <div className="font-semibold">DOCX</div>
+                          <div className="text-[10px] text-slate-400">Export editable Word file</div>
+                        </div>
+                      </button>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </div>
             ) : (
               <button
@@ -457,21 +511,20 @@ export default function App() {
         </header>
 
         {/* Main Content Viewport */}
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-7 max-w-[1440px] w-full mx-auto">
-          {route === 'dashboard' ? (
-            <DashboardPage
-              templates={templates}
-              personnel={personnel}
-              documents={documents}
-              settings={settings}
-              onNavigate={setRoute}
-              onUseTemplate={handleUseTemplate}
-              onEditTemplate={handleEditTemplate}
-              onReopenDocument={handleReopenDocument}
-              onBackupNow={() => void handleBackupDownload()}
-            />
-          ) : null}
-
+        <main
+          className={`flex-1 min-w-0 max-w-[1440px] w-full mx-auto ${
+            route === 'generate' ? 'p-1.5 sm:p-3 lg:p-4' : 'p-4 sm:p-6 lg:p-7'
+          }`}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activeViewKey}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="w-full"
+            >
           {route === 'templates' ? (
             <TemplatesPage
               templates={templates}
@@ -572,6 +625,7 @@ export default function App() {
           {route === 'settings' ? (
             <SettingsPage
               settings={settings}
+              resolvedTheme={resolvedTheme}
               signers={signers}
               onSaveSettings={handleSaveSettings}
               onSaveSigner={handleSaveSigner}
@@ -581,10 +635,12 @@ export default function App() {
               onNotify={notify}
             />
           ) : null}
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         {/* Quiet Footer */}
-        <footer className="no-print border-t border-slate-800/80 px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-400">
+        <footer className="no-print border-t border-slate-800/80 px-4 sm:px-6 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] sm:text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <Shield className="w-3.5 h-3.5 text-emerald-400" />
             <span className="font-medium text-slate-300">
@@ -616,5 +672,6 @@ export default function App() {
 
       <OfflineIndicator />
     </div>
+    </MotionConfig>
   );
 }

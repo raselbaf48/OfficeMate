@@ -22,8 +22,15 @@
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Serif+Bengali:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&family=Tiro+Bangla:ital@0;1&display=swap"
       rel="stylesheet"
     />
+    <script>
+      try {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      } catch (e) {}
+    </script>
   </head>
-  <body class="bg-[#060B16] text-slate-100 antialiased">
+  <body class="antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

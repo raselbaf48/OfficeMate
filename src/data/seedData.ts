@@ -31,6 +31,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   pinCode: '',
   backupReminderDays: 7,
   lastBackupAt: undefined,
+  themeMode: 'system',
+  animationPace: 'relaxed',
 };
 
 export const INITIAL_SIGNERS: Signer[] = [

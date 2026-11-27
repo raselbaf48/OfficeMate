@@ -333,6 +333,77 @@ export function sanitizeDocumentHtml(html: string): string {
 const BENGALI_SEGMENT_REGEX =
   /([\u0980-\u09FF\u0964\u0965][\u0980-\u09FF\u0964\u0965\u200C\u200D0-9/\-,.:;"'() ]*[\u0980-\u09FF\u0964\u0965\u200C\u200D]|[\u0980-\u09FF\u0964\u0965])/g;
 
+const BENGALI_VISARGA_BASE_REGEX =
+  /[\u0985-\u09B9\u09BC\u09BE-\u09CC\u09CE\u09D7\u09DC-\u09DF]/;
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function createVisargaGlyphElement(doc: Document): HTMLSpanElement {
+  const wrap = doc.createElement('span');
+  wrap.className = 'om-bn-visarga';
+  wrap.setAttribute('aria-label', 'ঃ');
+
+  const svg = doc.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('xmlns', SVG_NS);
+  svg.setAttribute('class', 'om-bn-visarga-svg');
+  svg.setAttribute('viewBox', '0 0 10 20');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const topCircle = doc.createElementNS(SVG_NS, 'circle');
+  topCircle.setAttribute('cx', '5');
+  topCircle.setAttribute('cy', '5.8');
+  topCircle.setAttribute('r', '2.15');
+
+  const bottomCircle = doc.createElementNS(SVG_NS, 'circle');
+  bottomCircle.setAttribute('cx', '5');
+  bottomCircle.setAttribute('cy', '14.2');
+  bottomCircle.setAttribute('r', '2.15');
+
+  svg.appendChild(topCircle);
+  svg.appendChild(bottomCircle);
+  wrap.appendChild(svg);
+  return wrap;
+}
+
+/**
+ * In Unicode Bengali fonts (Tiro Bangla, Noto Serif/Sans Bengali), a Visarga (ঃ, U+0983)
+ * that is not immediately preceded by a Bengali letter or vowel sign triggers a dotted circle (◌).
+ * Render such unattached Visarga characters using an inline hollow double-circle glyph so
+ * it stays true Bengali Visarga (ঃ) without the preceding dotted circle.
+ */
+function appendUnicodeBengaliWithCleanVisarga(
+  doc: Document,
+  targetSpan: HTMLSpanElement,
+  segment: string,
+): void {
+  if (!segment.includes('\u0983')) {
+    targetSpan.textContent = segment;
+    return;
+  }
+
+  let buffer = '';
+  for (let i = 0; i < segment.length; i++) {
+    const ch = segment[i];
+    if (ch === '\u0983') {
+      const prev = i > 0 ? segment[i - 1] : '';
+      if (prev && BENGALI_VISARGA_BASE_REGEX.test(prev)) {
+        buffer += ch;
+      } else {
+        if (buffer) {
+          targetSpan.appendChild(doc.createTextNode(buffer));
+          buffer = '';
+        }
+        targetSpan.appendChild(createVisargaGlyphElement(doc));
+      }
+    } else {
+      buffer += ch;
+    }
+  }
+  if (buffer) {
+    targetSpan.appendChild(doc.createTextNode(buffer));
+  }
+}
+
 /**
  * Wraps Bengali Unicode text runs in <span class="om-bn"> so Bangla renders in
  * SutonnyMJ 14pt (using Bijoy ANSI when SutonnyMJ is installed locally, or Tiro Bangla /
@@ -365,7 +436,7 @@ export function decorateMixedScriptHtml(html: string): string {
           span.textContent = unicodeToBijoy(match[0]);
         } else {
           span.style.fontFamily = '"Tiro Bangla", "Noto Serif Bengali", "Noto Sans Bengali", serif';
-          span.textContent = match[0];
+          appendUnicodeBengaliWithCleanVisarga(doc, span, match[0]);
         }
 
         frag.appendChild(span);
@@ -385,6 +456,7 @@ export function decorateMixedScriptHtml(html: string): string {
         tag === 'script' ||
         tag === 'style' ||
         el.classList.contains('om-bn') ||
+        el.classList.contains('om-bn-visarga') ||
         el.classList.contains('om-token') ||
         el.classList.contains('om-unfilled')
       ) {
