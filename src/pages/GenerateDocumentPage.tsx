@@ -59,19 +59,19 @@ const ST_PERSON_KEYS = new Set([
   'rank_bn',
   'name_bn',
   'trade_bn',
-]);
-const ST_BODY_KEYS = new Set(['statement_para1', 'statement_para2']);
-const ST_SIGN_KEYS = new Set([
-  'sign_name_bn',
-  'sign_rank_bn',
+  'to_name_bn',
+  'to_rank_bn',
   'to_designation_bn',
   'to_unit_bn',
 ]);
+const ST_BODY_KEYS = new Set(['statement_para1', 'statement_para2']);
 const ST_MEMORY_KEYS = new Set([
   'unit_line1',
   'unit_line2',
   'phone_line',
   'date_bn',
+  'to_name_bn',
+  'to_rank_bn',
   'to_designation_bn',
   'to_unit_bn',
 ]);
@@ -366,8 +366,12 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         const yr = parsed ? parsed.getFullYear() : 2026;
         defaults[f.key] = formatDateByPattern(new Date(yr, 6, 1), settings.dateFormat);
       } else if (activeTemplate.id === 'tpl-statement-bn' && ST_MEMORY_KEYS.has(f.key)) {
-        defaults[f.key] =
-          savedStatement[f.key] !== undefined && savedStatement[f.key] !== ''
+        const isOptionalToField = f.key.startsWith('to_');
+        defaults[f.key] = isOptionalToField
+          ? savedStatement[f.key] !== undefined
+            ? savedStatement[f.key]
+            : f.defaultValue || ''
+          : savedStatement[f.key] !== undefined && savedStatement[f.key] !== ''
             ? savedStatement[f.key]
             : f.defaultValue || '';
       } else if (activeTemplate.id === 'tpl-jsi-8-80' && CLERK_KEYS.has(f.key)) {
@@ -626,13 +630,13 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
           },
           {
             id: 'st_person',
-            title: 'Person & Title',
+            title: "Applicant's Info",
             keys: ST_PERSON_KEYS,
             icon: 'user',
             subtitle: (vals) =>
               vals.name_bn
                 ? `${vals.rank_bn ? `${vals.rank_bn} ` : ''}${vals.name_bn}`
-                : 'বিডি নং, পদবী ও নাম',
+                : 'বিডি নং, পদবী, নাম ও Application To',
           },
           {
             id: 'st_body',
@@ -640,13 +644,6 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             keys: ST_BODY_KEYS,
             icon: 'file',
             subtitle: countFilled,
-          },
-          {
-            id: 'st_sign',
-            title: 'Signature & প্রতি',
-            keys: ST_SIGN_KEYS,
-            icon: 'badge',
-            subtitle: (vals) => vals.sign_name_bn || 'স্বাক্ষর ও প্রাপক',
           },
         ];
 
@@ -1309,9 +1306,9 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
 
     if (field.key === 'cycle_start') {
       return (
-        <div key={field.id} className="sm:col-span-2 lg:col-span-1">
+        <div key={field.id} className="col-span-2 lg:col-span-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <label className="text-xs font-medium text-slate-300 truncate">
+            <label className="text-[11px] sm:text-xs font-medium text-slate-300 truncate">
               {field.label}
               <span className="text-red-400 ml-0.5">*</span>
             </label>
@@ -1324,7 +1321,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
               aria-label="Cycle Start Year"
               value={cycleStartYear}
               onChange={(e) => setCycleStartYear(Number(e.target.value))}
-              className="px-3 py-2 text-sm font-medium bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 tabular-nums"
+              className="w-full min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 tabular-nums"
             >
               {cycleYears.map((yr) => (
                 <option key={yr} value={yr}>
@@ -1366,26 +1363,26 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
         className={
           field.type === 'textarea'
             ? isBanglaTemplate
-              ? 'sm:col-span-2 lg:col-span-4'
-              : 'sm:col-span-2'
-            : undefined
+              ? 'col-span-2 lg:col-span-4 min-w-0'
+              : 'col-span-2 min-w-0'
+            : 'min-w-0'
         }
       >
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between gap-1 mb-1">
           <label
             htmlFor={`field-${field.key}`}
-            className="text-xs font-medium text-slate-300 truncate"
+            className="text-[11px] sm:text-xs font-medium text-slate-300 truncate min-w-0"
             style={banglaInputStyle}
           >
             {field.label}
             {field.required ? <span className="text-red-400 ml-0.5">*</span> : null}
           </label>
           {field.type === 'auto' ? (
-            <span className="text-[10px] font-medium text-emerald-400 shrink-0 ml-1">
+            <span className="text-[9px] sm:text-[10px] font-medium text-emerald-400 shrink-0">
               Auto
             </span>
           ) : CLERK_KEYS.has(field.key) || (isStatement && ST_MEMORY_KEYS.has(field.key)) ? (
-            <span className="text-[10px] font-medium text-slate-400 shrink-0 ml-1">
+            <span className="hidden sm:inline text-[10px] font-medium text-slate-400 shrink-0">
               Auto-saved
             </span>
           ) : null}
@@ -1396,7 +1393,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             id={`field-${field.key}`}
             value={value}
             onChange={(e) => updateFieldValue(field.key, e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             <option value="">Select rank...</option>
             {settings.ranks.map((r) => (
@@ -1411,7 +1408,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             value={value}
             onChange={(e) => updateFieldValue(field.key, e.target.value)}
             style={banglaInputStyle}
-            className={`w-full px-3 py-2 ${isBanglaField ? 'text-[15px]' : 'text-sm'} bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500`}
+            className={`w-full min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2 ${isBanglaField ? 'text-sm sm:text-[15px]' : 'text-xs sm:text-sm'} bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500`}
           >
             <option value="">Select option...</option>
             {(field.options ?? []).map((opt) => (
@@ -1427,7 +1424,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             value={value}
             onChange={(e) => updateFieldValue(field.key, e.target.value)}
             style={banglaInputStyle}
-            className={`w-full px-3 py-2 ${isBanglaField ? 'text-[15px] leading-relaxed' : 'text-sm'} bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500`}
+            className={`w-full min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2 ${isBanglaField ? 'text-sm sm:text-[15px] leading-relaxed' : 'text-xs sm:text-sm'} bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500`}
           />
         ) : field.type === 'date' ? (
           <DatePickerField
@@ -1465,7 +1462,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             readOnly
             value={value}
             placeholder="Calculated automatically"
-            className="w-full px-3 py-2 text-sm bg-[#09101E] text-emerald-300 border border-slate-800 rounded-lg font-medium tabular-nums"
+            className="w-full min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-[#09101E] text-emerald-300 border border-slate-800 rounded-lg font-medium tabular-nums"
           />
         ) : (
           <input
@@ -1474,7 +1471,7 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
             value={value}
             onChange={(e) => updateFieldValue(field.key, e.target.value)}
             style={banglaInputStyle}
-            className={`w-full px-3 py-2 ${isBanglaField ? 'text-[15px]' : 'text-sm'} bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500`}
+            className={`w-full min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2 ${isBanglaField ? 'text-sm sm:text-[15px]' : 'text-xs sm:text-sm'} bg-[#111C31] text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500`}
           />
         )}
 
@@ -1511,13 +1508,13 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
   };
 
   const clearButtonTooltip = isStatement
-    ? 'Clears Person & বিবৃতি fields while keeping Unit, Date & প্রতি'
+    ? "Clears Applicant's Info & বিবৃতি fields while keeping Unit, Date & Application To"
     : activeTemplate.id === 'tpl-jsi-8-80'
       ? 'Clears Applicant & Leave fields while keeping Cycle & Document Clerk'
       : 'Clear all form inputs for blank template printing';
 
   const clearButtonLabel = isStatement
-    ? 'Clear Person & বিবৃতি'
+    ? 'Clear Applicant & বিবৃতি'
     : activeTemplate.id === 'tpl-jsi-8-80'
       ? 'Clear Applicant & Leave'
       : 'Clear All Fields';
@@ -1531,7 +1528,9 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
           title={TEMPLATE_SUBTITLES[activeTemplate.id] ?? activeTemplate.description}
         >
           <div className="flex items-center gap-1.5">
-            <div className="flex lg:grid lg:grid-cols-4 items-center gap-1 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div
+              className={`flex lg:grid ${sectionCards.length <= 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} items-center gap-1 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
+            >
               {sectionCards.map((sec) => {
                 const isActive = formExpanded && activeSection === sec.id;
                 return (
@@ -1605,9 +1604,23 @@ export const GenerateDocumentPage: React.FC<GenerateDocumentPageProps> = ({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.3, ease: SMOOTH_EASE }}
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+                      className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3"
                     >
-                      {(sectionFields[activeSection] ?? []).map((field) => renderStandardField(field))}
+                      {(sectionFields[activeSection] ?? []).map((field) => (
+                        <React.Fragment key={field.id}>
+                          {isStatement && activeSection === 'st_person' && field.key === 'to_name_bn' ? (
+                            <div className="col-span-2 lg:col-span-4 pt-1.5 mt-0.5 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                              <span className="text-[11px] sm:text-xs font-semibold text-emerald-400">
+                                Application To (প্রতি)
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                Optional · খালি রাখা যাবে
+                              </span>
+                            </div>
+                          ) : null}
+                          {renderStandardField(field)}
+                        </React.Fragment>
+                      ))}
                     </motion.div>
                   </AnimatePresence>
                 </div>

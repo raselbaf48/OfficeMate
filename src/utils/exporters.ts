@@ -449,7 +449,7 @@ function htmlToDocxChildren(
     const ptSize = (activeStyle.fontSizeHalfPt || 20) / 2;
 
     type Segment =
-      | { kind: 'lbl'; text: string; widthTwips: number }
+      | { kind: 'lbl'; text: string; widthTwips: number; tightNext: boolean }
       | {
           kind: 'dot';
           text: string;
@@ -466,19 +466,22 @@ function htmlToDocxChildren(
         const isSolid = child.classList.contains('om-295-solid');
         let fixedTwips: number | null = null;
         let flexWeight = 1;
-        if (child.classList.contains('om-295-dot-xs')) fixedTwips = 520;
+        if (child.classList.contains('om-295-dot-yr')) fixedTwips = 260;
+        else if (child.classList.contains('om-295-dot-xs')) fixedTwips = 520;
         else if (child.classList.contains('om-295-dot-sm')) fixedTwips = 820;
         else if (child.classList.contains('om-295-dot-md')) flexWeight = 0.65;
         else if (isGap) flexWeight = 0.45;
         return { kind: 'dot', text, fixedTwips, flexWeight, isGap, isSolid };
       }
-      const nextIsDot = idx + 1 < rowChildren.length && rowChildren[idx + 1].classList.contains('om-295-dot');
-      const paddedLbl = `${idx > 0 ? ' ' : ''}${text}${nextIsDot ? ' ' : ''}`;
+      const nextChild = idx + 1 < rowChildren.length ? rowChildren[idx + 1] : null;
+      const nextIsDot = Boolean(nextChild && nextChild.classList.contains('om-295-dot'));
+      const tightNext = Boolean(nextChild && nextChild.classList.contains('om-295-dot-yr'));
+      const paddedLbl = `${idx > 0 ? ' ' : ''}${text}${nextIsDot && !tightNext ? ' ' : ''}`;
       const rawW = text
         ? measureTextWidthTwips(paddedLbl, activeStyle.fontFamily, ptSize, activeStyle.bold)
         : 0;
-      const w = text ? Math.round(rawW * 1.06) + 75 : 0;
-      return { kind: 'lbl', text, widthTwips: w };
+      const w = text ? Math.round(rawW * 1.06) + (tightNext ? 25 : 75) : 0;
+      return { kind: 'lbl', text, widthTwips: w, tightNext };
     });
 
     const fixedUsedTwips = segments.reduce(
@@ -519,7 +522,7 @@ function htmlToDocxChildren(
       if (seg.kind === 'lbl') {
         const nextIsDot = idx + 1 < segments.length && segments[idx + 1].kind === 'dot';
         const prefix = idx > 0 ? ' ' : '';
-        const suffix = nextIsDot ? ' ' : '';
+        const suffix = nextIsDot && !seg.tightNext ? ' ' : '';
         runs.push(...createScriptAwareTextRuns(`${prefix}${seg.text}${suffix}`, activeStyle));
         cursor += seg.widthTwips;
         return;

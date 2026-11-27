@@ -556,6 +556,10 @@ export function renderTemplateBody(
         if (!raw) return 'মঞ্জুর/ না মঞ্জুর';
         return renderStrikeChoice(raw, opts, true);
       }
+      if (lowerFilter === 'opt_line') {
+        if (!raw) return '';
+        return `${escapeHtml(raw).replace(/\n/g, '<br>')}<br data-opt-br="1">`;
+      }
     }
 
     if (!raw) {
@@ -615,7 +619,9 @@ export function renderTemplateBody(
     }
 
     return escapeHtml(formatted).replace(/\n/g, '<br>');
-  });
+  })
+    .replace(/(?:<br\s+data-opt-br="1"\s*\/?>)+(?=<\/(?:p|div)>)/gi, '')
+    .replace(/<br\s+data-opt-br="1"\s*\/?>/gi, '<br>');
 
   return {
     html: rendered,

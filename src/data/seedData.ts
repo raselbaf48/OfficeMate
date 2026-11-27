@@ -298,7 +298,7 @@ export const INITIAL_TEMPLATES: Template[] = [
       'Bangla official statement (বিবৃতি) formatted in SutonnyMJ 14pt matching BAF layout.',
     isBuiltIn: true,
     createdAt: '2026-11-25T09:15:00.000Z',
-    updatedAt: '2026-11-25T12:00:00.000Z',
+    updatedAt: '2026-11-27T04:30:00.000Z',
     pageSettings: {
       size: 'A4',
       margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
@@ -384,6 +384,38 @@ export const INITIAL_TEMPLATES: Template[] = [
         defaultValue: 'রেডিও ফিটার',
       },
       {
+        id: 'fst-to-name',
+        key: 'to_name_bn',
+        label: 'নাম (Name)',
+        type: 'text',
+        required: false,
+        defaultValue: '',
+      },
+      {
+        id: 'fst-to-rank',
+        key: 'to_rank_bn',
+        label: 'পদবী (Rank)',
+        type: 'text',
+        required: false,
+        defaultValue: '',
+      },
+      {
+        id: 'fst-to-desig',
+        key: 'to_designation_bn',
+        label: 'পদ (Designation)',
+        type: 'text',
+        required: false,
+        defaultValue: 'এ্যাডজুটেন্ট',
+      },
+      {
+        id: 'fst-to-unit',
+        key: 'to_unit_bn',
+        label: 'ইউনিট (Unit)',
+        type: 'text',
+        required: false,
+        defaultValue: '১৫৫ ইউএএসইউ বি বা',
+      },
+      {
         id: 'fst-p1',
         key: 'statement_para1',
         label: '১। মূল বিবৃতি',
@@ -400,38 +432,6 @@ export const INITIAL_TEMPLATES: Template[] = [
         required: true,
         defaultValue:
           'অতএব, উক্ত বিষয়ে সম্পর্কে আমার জেনে নেওয়া উচিত ছিলো। আমার এই ভুলের জন্য ক্ষমাপ্রার্থী। ভবিষ্যতে এ ধরনের ভুল যেন আর না হয় সে বিষয়ে আমি আরো বেশি সতর্ক থাকবো।',
-      },
-      {
-        id: 'fst-sign-name',
-        key: 'sign_name_bn',
-        label: 'স্বাক্ষরকারীর নাম',
-        type: 'text',
-        required: true,
-        defaultValue: 'মোঃ নাহিদ হাসান খান',
-      },
-      {
-        id: 'fst-sign-rank',
-        key: 'sign_rank_bn',
-        label: 'স্বাক্ষরকারীর পদবী',
-        type: 'text',
-        required: true,
-        defaultValue: 'সার্জেন্ট',
-      },
-      {
-        id: 'fst-to-desig',
-        key: 'to_designation_bn',
-        label: 'প্রতি (পদবী)',
-        type: 'text',
-        required: true,
-        defaultValue: 'এ্যাডজুটেন্ট',
-      },
-      {
-        id: 'fst-to-unit',
-        key: 'to_unit_bn',
-        label: 'প্রতি (ইউনিট)',
-        type: 'text',
-        required: true,
-        defaultValue: '১৫৫ ইউএএসইউ বি বা',
       },
     ],
     bodyHtml: `<div class="om-st-right-wrap">
@@ -451,11 +451,11 @@ export const INITIAL_TEMPLATES: Template[] = [
 <p style="margin: 0; line-height: 1.2;"><br></p>
 <div class="om-st-right-wrap">
   <div class="om-st-right-block">
-    <p style="margin: 0;"><strong>{{sign_name_bn}}</strong><br>{{sign_rank_bn}}</p>
+    <p style="margin: 0;"><strong>{{name_bn}}</strong><br>{{rank_bn}}</p>
   </div>
 </div>
 <p style="margin: 10px 0 0 0;">প্রতি</p>
-<p style="margin: 8px 0 0 0;">{{to_designation_bn}}<br>{{to_unit_bn}}</p>`,
+<p style="margin: 8px 0 0 0;">{{to_name_bn|opt_line}}{{to_rank_bn|opt_line}}{{to_designation_bn|opt_line}}{{to_unit_bn|opt_line}}</p>`,
   },
   {
     id: 'tpl-baf-295',
@@ -465,7 +465,7 @@ export const INITIAL_TEMPLATES: Template[] = [
       'Official two-page BAF Form 295 (1978) Leave/Pass counterfoil, pass certificate, mobilization instructions, and reverse address.',
     isBuiltIn: true,
     createdAt: '2026-11-25T11:00:00.000Z',
-    updatedAt: '2026-11-26T02:00:00.000Z',
+    updatedAt: '2026-11-27T06:42:00.000Z',
     pageSettings: {
       size: 'A4',
       margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 },
@@ -632,8 +632,8 @@ export const INITIAL_TEMPLATES: Template[] = [
         <div class="om-295-row"><span class="om-295-lbl">Name</span><span class="om-295-dot">{{name}}</span></div>
         <div class="om-295-row"><span class="om-295-lbl">Trade</span><span class="om-295-dot">{{trade}}</span></div>
         <div class="om-295-row"><span class="om-295-lbl">From</span><span class="om-295-dot om-295-dot-xs">{{from_hours}}</span><span class="om-295-lbl">hours on</span><span class="om-295-dot">{{from_day_mon}}</span></div>
-        <div class="om-295-row"><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-xs">{{from_yr}}</span></div>
-        <div class="om-295-row"><span class="om-295-lbl">to</span><span class="om-295-dot om-295-dot-xs">{{to_hours}}</span><span class="om-295-lbl">hours on</span><span class="om-295-dot">{{to_day_mon}}</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-xs">{{to_yr}}</span></div>
+        <div class="om-295-row"><span class="om-295-dot">&nbsp;</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-yr">{{from_yr}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">to</span><span class="om-295-dot om-295-dot-xs">{{to_hours}}</span><span class="om-295-lbl">hours on</span><span class="om-295-dot">{{to_day_mon}}</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-yr">{{to_yr}}</span></div>
         <p style="margin: 2px 0 0 0;">He is permitted to wear plain cloths.</p>
         <p style="text-align: right; margin: 48px 0 0 0; line-height: 1.25;"><span class="om-line-fill om-w-md">&nbsp;</span><br>Initials of OC</p>
         <div class="om-295-row" style="margin-top: 26px;"><span class="om-295-lbl">Initials of Sqn/Flt Cdr</span><span class="om-295-dot">&nbsp;</span></div>
@@ -651,9 +651,9 @@ export const INITIAL_TEMPLATES: Template[] = [
                 <table class="om-layout-table" style="width: 100%; margin: 0;">
                   <tbody>
                     <tr>
-                      <td class="om-top-cell" style="width: 46%; vertical-align: middle; font-size: 9pt; line-height: 1.15;">{{pass_type | strike_295_header}}</td>
-                      <td class="om-top-cell" style="width: 16%; vertical-align: middle; text-align: center; font-size: 20pt; line-height: 1;">&#125;</td>
-                      <td class="om-top-cell" style="width: 38%; vertical-align: middle; font-weight: bold; font-size: 9.5pt;">FROM</td>
+                      <td class="om-top-cell" style="width: 35%; vertical-align: middle; font-size: 9pt; line-height: 1.15; white-space: nowrap;">{{pass_type | strike_295_header}}</td>
+                      <td class="om-top-cell" style="width: 9%; vertical-align: middle; text-align: center; font-size: 20pt; line-height: 1; padding: 0;">&#125;</td>
+                      <td class="om-top-cell" style="width: 56%; vertical-align: middle; font-weight: bold; font-size: 9.5pt; padding-left: 1px;">FROM</td>
                     </tr>
                   </tbody>
                 </table>
@@ -676,7 +676,7 @@ export const INITIAL_TEMPLATES: Template[] = [
         <div class="om-295-row"><span class="om-295-lbl">Name</span><span class="om-295-dot">{{name}}</span></div>
         <div class="om-295-row"><span class="om-295-lbl">Trade</span><span class="om-295-dot">{{trade}}</span><span class="om-295-lbl">has permission</span></div>
         <div class="om-295-row"><span class="om-295-lbl">to absent from his barrack/quarters, from</span><span class="om-295-dot">{{from_hours}}</span><span class="om-295-lbl">hours</span></div>
-        <div class="om-295-row"><span class="om-295-lbl">on</span><span class="om-295-dot">{{from_day_mon}}</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-xs">{{from_yr}}</span><span class="om-295-lbl">to</span><span class="om-295-dot om-295-dot-xs">{{to_hours}}</span><span class="om-295-lbl">hours on</span><span class="om-295-dot">{{to_day_mon}}</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-xs">{{to_yr}}</span></div>
+        <div class="om-295-row"><span class="om-295-lbl">on</span><span class="om-295-dot">{{from_day_mon}}</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-yr">{{from_yr}}</span><span class="om-295-lbl">to</span><span class="om-295-dot om-295-dot-xs">{{to_hours}}</span><span class="om-295-lbl">hours on</span><span class="om-295-dot">{{to_day_mon}}</span><span class="om-295-lbl">20</span><span class="om-295-dot om-295-dot-yr">{{to_yr}}</span></div>
         <p style="margin: 6px 0 0 0; line-height: 1.25;">for the purpose of proceeding on {{pass_type | strike_295_stack}} and has permission to wear plain cloths.</p>
         <table class="om-layout-table" style="width: 100%; margin: 44px 0 8px 0;">
           <tbody>

@@ -325,9 +325,9 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
             setOpen(true);
           }
         }}
-        className={`w-full px-3 py-2 text-sm bg-[#111C31] border border-slate-700 rounded-lg flex items-center justify-between gap-2 cursor-pointer hover:border-indigo-500/60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${className}`}
+        className={`w-full min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-[#111C31] border border-slate-700 rounded-lg flex items-center justify-between gap-1.5 sm:gap-2 cursor-pointer hover:border-indigo-500/60 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${className}`}
       >
-        <span className={value ? 'text-white font-medium tabular-nums' : 'text-slate-500'}>
+        <span className={`min-w-0 truncate ${value ? 'text-white font-medium tabular-nums' : 'text-slate-500'}`}>
           {value || placeholder}
         </span>
 
